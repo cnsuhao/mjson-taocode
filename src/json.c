@@ -102,12 +102,11 @@ struct json_value* json_new_array ( void )
 void json_free_value ( struct json_value **value )
 {
 	assert((*value) != NULL);
-	///todo rethink this due to FIFO queue
+	
 	// free each and every child nodes
 	if ( (*value)->child != NULL )
 	{
 		///todo write function to free entire subtree recursively
-// 		json_free_value ( &((*value)->child) );
 		struct json_value *i;
 		for(i = (*value)->child_end; i->previous != NULL; i = i->previous)
 		{
@@ -308,7 +307,6 @@ state1:	// open value
 			case JSON_NUMBER:
 				if(rs_catrs(output,cursor->text) != RS_OK)
 					goto error;
-				///todo integrity check
 				goto state2;
 				break;
 				
@@ -344,21 +342,18 @@ state1:	// open value
 			case JSON_TRUE:
 				if(rs_catcs(output,"true",4) != RS_OK)
 					goto error;
-				///todo integrity check
 				goto state2;
 				break;
 				
 			case JSON_FALSE:
 				if(rs_catcs(output,"false",5) != RS_OK)
 					goto error;
-				///todo integrity check
 				goto state2;
 				break;
 
 			case JSON_NULL:
 				if(rs_catcs(output,"null",5) != RS_OK)
 					goto error;
-				///todo integrity check
 				goto state2;
 				break;
 
@@ -420,7 +415,7 @@ state2:	// close value
 error:
 	{
 		printf("ERROR!");
-		return NULL;	///todo finish error handling
+		return NULL;	///todo implement better, usable error handling
 	}
 	
 end:
@@ -476,7 +471,21 @@ state1:	// start value
 
 state2:	// start structure
 	{
-		//TODO  implement error tree coherency error checking
+		// tree coherency checking
+		if(cursor)	// cursor will be the parent node of this structure
+		{
+			switch ( cursor->type )	//make sure that the parent node can be the parent of a structure node
+			{
+				case JSON_ARRAY:	// types allowed
+				case JSON_STRING:
+					break;
+				default:
+					printf("state 2: dissallowed parent type\n");
+					goto error;
+			}
+		}
+
+		// create the new children objects
 		if(text[pos] == '[')
 			temp = json_new_array();
 		else
@@ -485,24 +494,6 @@ state2:	// start structure
 		pos++;
 		if(pos >= length)
 			goto state20;	//end tree
-
-		if(cursor)	// cursor will be the parent node of this structure
-		{
-			switch ( cursor->type )	//make sure that the parent node can be the parent of a structure node
-			{
-				case JSON_ARRAY:	// types allowed
-				case JSON_STRING:
-					break;
-				case JSON_OBJECT:	// types dissallowed
-				case JSON_NUMBER:
-				case JSON_TRUE:
-				case JSON_FALSE:
-				case JSON_NULL:
-				default:
-					printf("state 2: dissallowed parent type\n");
-					goto error;
-			}
-		}
 		
 		// create new tree node and add as child
 		if(cursor != NULL)
@@ -519,7 +510,6 @@ state3:	// end structure
 	{
 		if(cursor->parent == NULL)	// if current node is already the root node then we have ended.
 		{
-			//TODO implement extraction of child nodes from a text
 			goto state20;	// end tree
 		}
 		else
@@ -906,8 +896,7 @@ state5: 	// process number
 			temp = NULL;
 			if(cursor->type == JSON_STRING)
 				cursor = cursor->parent;
-			/* TODO
-			potential error on:
+			/* TODO potential error on:
 			-> JSON malformed text
 			-> started parsing child node on JSON text snippet
 
@@ -957,7 +946,7 @@ state6:	// true
 			case ']':
 				case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
 					json_insert_child(cursor,json_new_value(JSON_TRUE));
-					//TODO insert a new state: close literal
+					//TODO implement a new state: close literal
 					goto state1;	// start structure
 
 			default:
@@ -1183,16 +1172,16 @@ error:
 		printf("ERROR!\n");
 		if(cursor != NULL)
 		{
-			// TODO implement a way to delete the entire JSON tree
-			free(cursor);
+			json_free_value(&cursor);
 		}
-		return NULL;
+// 		return NULL;
+		cursor = NULL;	// with this even when an error is called the temp variables are cleaned in the end state
 	}
 
 end:
-{
-	return cursor;
-}
+	{
+		return cursor;
+	}
 }
 
 
