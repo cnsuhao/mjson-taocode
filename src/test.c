@@ -31,16 +31,65 @@
 #include "rstring/rstring.h"
 
 
-int main ( )
+int test_json_file(char *filename)
 {
-	struct json_value *root = json_new_string("yey!");
-	json_insert_child(root,json_new_string("bof"));
+	FILE *file;
+	printf("%s: ",filename);
+	file = fopen(filename,"r");
+	if (file == NULL)
+		return 0;
+	rstring *text = rs_create("");
+	char c;
+	while( (c = getc(file)) != EOF)
+	{
+		rs_catchar(text,c);
+	}
+
+	struct json_value *root = json_string_to_tree(text->s);
 	if(root != NULL)
 	{
-		json_free_value(&root);
-		if(root == NULL)
-			printf("null\n");
+		if(json_tree_to_string(root) != NULL)
+		{
+			rs_destroy(&text);
+			json_free_value(&root);
+			printf("pass.\n");
+			return 1;
+		}
 	}
-	printf("bork\n");
+	rs_destroy(&text);
+	json_free_value(&root);
+	printf("failed.\n");
+	return 0;
+}
+
+
+
+int main ( )
+{
+	if(!test_json_file("test/test1.json"))
+	{
+		printf("error\n");
+		return EXIT_SUCCESS;
+	}
+	if(!test_json_file("test/test2.json"))
+	{
+		printf("error\n");
+		return EXIT_SUCCESS;
+	}
+	if(!test_json_file("test/test3.json"))
+	{
+		printf("error\n");
+		return EXIT_SUCCESS;
+	}
+	if(!test_json_file("test/test4.json"))
+	{
+		printf("error\n");
+		return EXIT_SUCCESS;
+	}
+	if(!test_json_file("test/test5.json"))
+	{
+		printf("error\n");
+		return EXIT_SUCCESS;
+	}
 	return EXIT_SUCCESS;
 }

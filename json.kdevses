@@ -3,13 +3,13 @@
 <KDevPrjSession>
  <DocsAndViews NumberOfDocuments="3" >
   <Doc0 NumberOfViews="1" URL="file:///home/rui/development/C/json/src/json.h" >
-   <View0 Encoding="" Type="Source" />
+   <View0 Encoding="" line="0" Type="Source" />
   </Doc0>
   <Doc1 NumberOfViews="1" URL="file:///home/rui/development/C/json/src/json.c" >
-   <View0 Encoding="" line="864" Type="Source" />
+   <View0 Encoding="" line="110" Type="Source" />
   </Doc1>
   <Doc2 NumberOfViews="1" URL="file:///home/rui/development/C/json/src/test.c" >
-   <View0 Encoding="" line="35" Type="Source" />
+   <View0 Encoding="" line="89" Type="Source" />
   </Doc2>
  </DocsAndViews>
  <pluginList>
@@ -23,6 +23,10 @@
   </kdevastyle>
   <kdevbookmarks>
    <bookmarks>
+    <bookmark url="/home/rui/development/C/json/src/json.c" >
+     <mark line="958" />
+     <mark line="933" />
+    </bookmark>
     <bookmark url="/home/rui/development/C/json/src/rstring/rstring.c" >
      <mark line="184" />
     </bookmark>
@@ -33,7 +37,7 @@
   </kdevsubversion>
   <kdevvalgrind>
    <executable path="" params="" />
-   <valgrind path="" params="" />
+   <valgrind path="/usr/bin/valgrind" params=" --tool=memcheck --leak-check=yes" />
    <calltree path="" params="" />
    <kcachegrind path="" />
   </kdevvalgrind>
