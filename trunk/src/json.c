@@ -903,14 +903,14 @@ state5: 	// process number
 			needs to:
 			-> perform error checking
 			*/
-			
+		numberendloop:
 			switch(text[pos])
 			{
 				case  '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
 					pos++;
 					if(pos >= length)
 						goto state20;	//end tree
-					goto numberend;
+					goto numberendloop;	// clear up all whitespaces until a decent character is found.
 					break;
 				case ',':
 					pos++;
@@ -939,15 +939,31 @@ state6:	// true
 			goto error;
 		if(text[++pos] != 'e')
 			goto error;
+	statetrue:
 		switch(text[++pos])
 		{
 			case ',':
+				json_insert_child(cursor,json_new_value(JSON_TRUE));
+				pos++;
+				if(pos >= length)
+					goto state20;	//end tree
+				goto state10;	// sibling
+				break;
+				
 			case '}':
 			case ']':
-				case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
-					json_insert_child(cursor,json_new_value(JSON_TRUE));
-					//TODO implement a new state: close literal
-					goto state1;	// start structure
+				json_insert_child(cursor,json_new_value(JSON_TRUE));
+				pos++;
+				if(pos >= length)
+					goto state20;	//end tree
+				goto state3;	// end structure
+				break;
+				
+			case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
+				json_insert_child(cursor,json_new_value(JSON_TRUE));
+				//TODO implement a new state: close literal
+				goto statetrue;	// loop to get rid of the white spaces
+				break;
 
 			default:
 				printf("Step 6: illegal character (%c) at position %i\n",text[pos], pos);
@@ -1008,20 +1024,47 @@ state7:	// false
 
 state8:	// null
 	{
-		if(text[pos++] != 'u')
+		pos++;
+		if(text[pos] != 'u')
+		{
 			goto error;
-		if(text[pos++] != 'l')
+		}
+		
+		pos++;
+		if(text[pos] != 'l')
+		{
 			goto error;
-		if(text[pos++] != 'l')
+		}
+
+		pos++;
+		if(text[pos] != 'l')
+		{
 			goto error;
+		}
+
+		json_insert_child(cursor,json_new_value(JSON_NULL));
+		
+	null1:
+		pos++;
 		switch(text[pos])
 		{
 			case ',':
+				pos++;
+				if(pos >= length)
+					goto state20;	//end tree
+				goto state10;	// sibling
+				break;
+				
 			case '}':
 			case ']':
+				pos++;
+				if(pos >= length)
+					goto state20;	//end tree
+				goto state3;	// end structure
+				break;
+				
 			case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
-				json_insert_child(cursor,json_new_value(JSON_NULL));
-				goto state1;	// start structure
+				goto null1;	// start structure
 
 			default:
 				goto error;
