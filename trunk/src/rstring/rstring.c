@@ -149,11 +149,11 @@ int rs_catrs(rstring *pre, const rstring *pos)
 			return RS_MEMORY;
 		}
 
-		pre->max = pre->length + pos->length + 1;
+		pre->max = pre->length + pos->length;
 	}
 	strncpy(pre->s+pre->length, pos->s, pos->length);
 	pre->s[pre->length+pos->length] = 0;
-	pre->length = pre->length + pos->length + 1;
+	pre->length = pre->length + pos->length;
 	return RS_OK;
 }
 
@@ -163,20 +163,42 @@ int rs_catcs(rstring *pre, const char *pos, const size_t length)
 	if(pos == NULL)
 		return RS_OK;
 
-	if(pre->max < pre->length + length + 1)
+	if(pre->max < pre->length + length)
 	{
-		pre->s = realloc(pre->s,pre->length + length + 1);
+		pre->s = realloc(pre->s,pre->length + length+1);
 		if(pre->s == NULL)
 		{
 			return RS_MEMORY;
 		}
 
-		pre->max = pre->length + length + 1;
+		pre->max = pre->length + length;
 	}
 	strncpy(pre->s+pre->length, pos, length);
 	pre->s[pre->length+length] = 0;
-	pre->length = pre->length + length + 1;	//is this the correct value? 
+	pre->length = pre->length + length;	//is this the correct value?
 	return RS_OK;
 }
+
+
+int rs_catchar(rstring *pre, const char c)
+{
+	assert(pre != NULL);
+
+	if(pre->max < pre->length + 1)
+	{
+		pre->s = realloc(pre->s,pre->length + 2);
+		if(pre->s == NULL)
+		{
+			return RS_MEMORY;
+		}
+
+		pre->max = pre->length + 1;
+	}
+	strncpy(pre->s+pre->length, &c, 1);
+	pre->s[pre->length+1] = 0;
+	pre->length++;	//is this the correct value?
+	return RS_OK;
+}
+
 
 

@@ -10,7 +10,11 @@
       <keyword>C</keyword>
       <keyword>Code</keyword>
     </keywords>
-    <ignoreparts/>
+    <ignoreparts>
+      <part>kdevsnippet</part>
+      <part>kdevfilelist</part>
+      <part>kdevscripting</part>
+    </ignoreparts>
     <projectname>json</projectname>
     <projectdirectory>.</projectdirectory>
     <absoluteprojectpath>false</absoluteprojectpath>
@@ -34,6 +38,15 @@
       <autoinstall>false</autoinstall>
       <autokdesu>false</autokdesu>
       <envvars/>
+      <runarguments>
+        <json/>
+      </runarguments>
+      <debugarguments>
+        <json/>
+      </debugarguments>
+      <cwd>
+        <json>/home/rui/development/C/json/debug/./src</json>
+      </cwd>
     </run>
     <configurations>
       <optimized>

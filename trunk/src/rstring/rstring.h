@@ -20,6 +20,8 @@
 
 #include <string.h>
 
+#ifndef RSTRING
+#define RSTRING
 
 struct rui_string
 {
@@ -90,3 +92,12 @@ int rs_catrs(rstring *pre, const rstring *pos);
 \return result
 **/
 int rs_catcs(rstring *pre, const char *pos, const size_t length);
+
+/** Concatenates a single char onto the end of a rstring
+\param pre rstring where to append to
+\param c char to be appended
+\return result
+**/
+int rs_catchar(rstring *pre, const char c);
+
+#endif
