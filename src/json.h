@@ -25,6 +25,7 @@
 \author Rui Maciel rui.maciel@gmail.com
  */
 
+#include "rstring/rstring.h"
 
 #ifndef JSON_H
 #define JSON_H
@@ -45,8 +46,8 @@ The JSON document tree node, which is a basic JSON type
 struct json_value
 {
 	enum json_value_type type;	//!< the node's type
-	char *text;		//!< The text stored by the node. It is used exclusively by the JSON_STRING and JSON_NUMBER node types
-
+	rstring *text;	//!< The text stored by the node. It is used exclusively by the JSON_STRING and JSON_NUMBER node types
+	
 	// FIFO queue data
 	struct json_value *next;	//!< The pointer pointing to the next element in the FIFO sibling list
  	struct json_value *previous;	//!< The pointer pointing to the previous element in the FIFO sibling list

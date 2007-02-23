@@ -29,7 +29,12 @@
 struct json_value* json_new_value ( enum json_value_type type )
 {
 	struct json_value *new_object;
+	// allocate memory to the new object
 	new_object = malloc ( sizeof ( struct json_value ) );
+	if(new_object == NULL)
+		return NULL;
+	
+	// initialize members
 	new_object->text = NULL;
 	new_object->parent = NULL;
 	new_object->child = NULL;
@@ -42,17 +47,16 @@ struct json_value* json_new_value ( enum json_value_type type )
 
 struct json_value* json_new_string ( char *text )
 {
+	assert(text != NULL);
+	
 	struct json_value *new_object;
+	// allocate memory to the new object
 	new_object = malloc ( sizeof ( struct json_value ) );
+	if(new_object == NULL)
+		return NULL;
 
-	if(text)
-	{
-		new_object->text = malloc ( strlen(text) );
-		strncpy ( new_object->text, text, strlen ( text ) );
-	}
-	else
-		new_object->text = NULL;
-
+	// initialize members
+	new_object->text = rs_create(text);
 	new_object->parent = NULL;
 	new_object->child = NULL;
 	new_object->child_end = NULL;
@@ -64,17 +68,16 @@ struct json_value* json_new_string ( char *text )
 
 struct json_value* json_new_number ( char *text )
 {
-	struct json_value *new_object;
-	new_object = malloc ( sizeof ( struct json_value ) );
+	assert(text != NULL);
 	
-	if(text)
-	{
-		new_object->text = malloc ( strlen(text) );
-		strncpy ( new_object->text, text, strlen ( text ) );
-	}
-	else
-		new_object->text = NULL;
-
+	struct json_value *new_object;
+	// allocate memory to the new object
+	new_object = malloc ( sizeof ( struct json_value ) );
+	if(new_object == NULL)
+		return NULL;
+	
+	// initialize members
+	new_object->text = rs_create(text);
 	new_object->parent = NULL;
 	new_object->child = NULL;
 	new_object->child_end = NULL;
@@ -98,6 +101,7 @@ struct json_value* json_new_array ( void )
 
 void json_free_value ( struct json_value *value )
 {
+	assert(value != NULL);
 	///todo rethink this due to FIFO queue
 	// free each and every child nodes
 	if ( value->child != NULL )
@@ -198,10 +202,10 @@ void json_render_tree_indented ( struct json_value *root, int level )
 	switch ( root->type )
 	{
 		case JSON_STRING:
-			printf ( "STRING: %s\n",root->text );
+			printf ( "STRING: %s\n",root->text->s );
 			break;
 		case JSON_NUMBER:
-			printf ( "NUMBER: %s\n",root->text );
+			printf ( "NUMBER: %s\n",root->text->s );
 			break;
 		case JSON_OBJECT:
 			printf ( "OBJECT: \n" );
@@ -244,56 +248,43 @@ char *json_tree_to_string ( struct json_value* root )
 	if(cursor == NULL)	// must try to render an existing tree
 		goto end;
 
-	char *output = NULL;
-	size_t n;
+	// set up the output string
+	rstring *output = rs_create("");;
+	if(output == NULL)
+		return NULL;
 
+	// start the convoluted fun
 state1:	// open value
 	{
 		if( (cursor->previous) && (cursor != root))	//TODO does this make sense?
 		{
-			n = strlen(",");
-			if(output == NULL)
-			{
-				output = malloc(n);
-			}
-			else
-			{
-				output = realloc(output, strlen(output)+n);
-			}
-			strcat(output,",");
+			if(rs_catchar(output,',') != RS_OK)
+				goto error;
 		}
 		switch ( cursor->type )
 		{
 			case JSON_STRING:
-				n = 2*strlen("\"")+strlen(cursor->text);
-				if(output == NULL)
-				{
-					output = malloc(n);
-				}
-				else
-				{
-					output = realloc(output,strlen(output)+ n);
-				}
-				strcat ( output,"\"" );
-				strcat ( output,cursor->text );
-				strcat ( output,"\"" );
+				if(rs_catchar(output,'\"') != RS_OK)
+					goto error;
+				if(rs_catrs(output,cursor->text) != RS_OK)
+					goto error;
+				if(rs_catchar(output,'\"') != RS_OK)
+					goto error;
+				
 				if ( cursor->parent )
 				{
 					if ( cursor->parent->type == JSON_OBJECT )
 					{
-						n = strlen(":");
-						output = realloc(output,strlen(output)+n);
-						strcat ( output,":" );
-						
+						if(rs_catchar(output,':') != RS_OK)
+							goto error;
 					}
 				}
 				else
 				{
 					if ( cursor->child )
 					{
-						n = strlen(":");
-						output = realloc(output,strlen(output)+n);
-						strcat ( output,":" );
+						if(rs_catchar(output,':') != RS_OK)
+							goto error;
 					}
 					else
 					{
@@ -303,31 +294,16 @@ state1:	// open value
 				break;
 				
 			case JSON_NUMBER:
-				n = strlen(cursor->text);
-				if(output == NULL)
-				{
-					output = malloc(n);
-				}
-				else
-				{
-					output = realloc(output, strlen(output)+n);
-				}
-				strcat ( output,cursor->text );
+				if(rs_catrs(output,cursor->text) != RS_OK)
+					goto error;
 				///todo integrity check
 				goto state2;
 				break;
 				
 			case JSON_OBJECT:
-				n = strlen("{");
-				if(output == NULL)
-				{
-					output = malloc(n);
-				}
-				else
-				{
-					output = realloc(output, strlen(output)+n);
-				}
-				strcat ( output,"{" );
+				if(rs_catchar(output,'{') != RS_OK)
+					goto error;
+				
 				if ( cursor->child )
 				{
 					cursor = cursor->child;
@@ -340,17 +316,8 @@ state1:	// open value
 				break;
 				
 			case JSON_ARRAY:
-				n = strlen("[");
-				if(output == NULL)
-				{
-					output = malloc(n);
-				}
-				else
-				{
-					output = realloc(output, strlen(output)+n);
-				}
-				strcat ( output,"[" );
-				
+				if(rs_catchar(output,'[') != RS_OK)
+					goto error;
 				if ( cursor->child )
 				{
 					cursor = cursor->child;
@@ -363,48 +330,22 @@ state1:	// open value
 				break;
 				
 			case JSON_TRUE:
-				n = strlen("true");
-				if(output == NULL)
-				{
-					output = malloc(n);
-				}
-				else
-				{
-					output = realloc(output,strlen(output)+ n);
-				}
-				strcat ( output,"true" );
-				
+				if(rs_catcs(output,"true",4) != RS_OK)
+					goto error;
 				///todo integrity check
 				goto state2;
 				break;
 				
 			case JSON_FALSE:
-				n = strlen("false");
-				if(output == NULL)
-				{
-					output = malloc(n);
-				}
-				else
-				{
-					output = realloc(output, strlen(output)+n);
-				}
-				strcat ( output,"false" );
-				
+				if(rs_catcs(output,"false",5) != RS_OK)
+					goto error;
 				///todo integrity check
 				goto state2;
 				break;
 
 			case JSON_NULL:
-				n = strlen("null");
-				if(output == NULL)
-				{
-					output = malloc(n);
-				}
-				else
-				{
-					output = realloc(output, strlen(output)+n);
-				}
-				strcat ( output,"null" );
+				if(rs_catcs(output,"null",5) != RS_OK)
+					goto error;
 				///todo integrity check
 				goto state2;
 				break;
@@ -426,29 +367,13 @@ state2:	// close value
 			switch ( cursor->type )
 		{
 			case JSON_OBJECT:
-				n = strlen("}");
-				if(output == NULL)
-				{
-					output = malloc(n);
-				}
-				else
-				{
-					output = realloc(output,strlen(output)+ n);
-				}
-				strcat(output,"}");
+				if(rs_catchar(output,'}') != RS_OK)
+					goto error;
 				break;
 				
 			case JSON_ARRAY:
-				n = strlen("]");
-				if(output == NULL)
-				{
-					output = malloc(n);
-				}
-				else
-				{
-					output = realloc(output,strlen(output)+ n);
-				}
-				strcat(output,"]");
+				if(rs_catchar(output,']') != RS_OK)
+					goto error;
 				break;
 				
 			case JSON_STRING:
@@ -487,7 +412,7 @@ error:
 	}
 	
 end:
-	return output;
+	return output->s;
 }
 
 
@@ -622,6 +547,7 @@ state3:	// end structure
 					break;
 
 				case '}':
+				case ']':
 					pos++;
 					if(pos >= length)
 						goto state20;	//end tree
@@ -647,7 +573,7 @@ state4:	// process string
 		pos++;	//TODO the "enter string" state must receive the cursor past the \" character
 		if(pos >= length)
 			goto state20;	//end tree
-		temp = json_new_string(NULL);
+		temp = json_new_string("");
 
 		// tree structure integrity check
 		if(cursor)
@@ -675,16 +601,9 @@ state4:	// process string
 		switch(text[pos])
 		{
 			case '\\':	// escaped characters
-				if(temp->text == NULL)
-				{
-					temp->text = malloc(1);
-				}
-				else
-				{
-					temp->text = realloc(temp->text, strlen(temp->text)+1);
-				}
-					
-				strncat(temp->text, &text[pos],1);	//appends single character
+				if(rs_catchar(temp->text,'\\') != RS_OK)
+					goto error;
+				
 				pos++;
 				if(pos >= length)
 					goto state20;	//end tree
@@ -693,8 +612,8 @@ state4:	// process string
 					case '\"':
 					case '\\':
 					case '/': case 'b': case 'f': case 'n': case 'r': case 't':
-						temp->text = realloc(temp->text, strlen(temp->text)+1);
-						strncat(temp->text, &text[pos],1);	//appends single character
+						if(rs_catchar(temp->text, text[pos]) != RS_OK)
+							goto error;
 						pos++;
 						if(pos >= length)
 							goto state20;	//end tree
@@ -752,15 +671,8 @@ state4:	// process string
 				
 				
 			default:
-				if(temp->text == NULL)
-				{
-					temp->text = malloc(1);
-				}
-				else
-				{
-					temp->text = realloc(temp->text, strlen(temp->text)+1);
-				}
-				strncat(temp->text, &text[pos],1);	//appends single character
+				if(rs_catchar(temp->text,text[pos]) != RS_OK)
+					goto error;
 				pos++;
 				if(pos >= length)
 					goto state20;	//end tree
@@ -770,52 +682,29 @@ state4:	// process string
 	
 state5: 	// process number
 	{
-		temp = json_new_number(NULL);
+		temp = json_new_number("");
 			// start number
 			switch(text[pos])
 			{
 				case '-':
-					if(temp->text == NULL)
-					{
-						temp->text = malloc(2);
-						strncpy(temp->text,"-",2);
-					}
-					else
-					{
-						temp->text = realloc(temp->text, strlen(temp->text)+1);
-						strncat(temp->text, "-",1);	//appends single character
-					}
+					if(rs_catchar(temp->text,'-') != RS_OK)
+						goto error;
 					pos++;
 					if(pos >= length)
 						goto state20;	//end tree
 					goto number3;	//decimal part
 					break;
 				case '0':
-					if(temp->text == NULL)
-					{
-						temp->text = malloc(2);
-						strncpy(temp->text,"0",2);
-					}
-					else
-					{
-						temp->text = realloc(temp->text, strlen(temp->text)+ 1);
-					}
-					strncat(temp->text, "0",1);	//appends single character
+					if(rs_catchar(temp->text,'0') != RS_OK)
+						goto error;
 					pos++;
 					if(pos >= length)
 						goto state20;	//end tree
 					goto number2;	// leading zero
 					break;
 				case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-					if(temp->text == NULL)
-					{
-						temp->text = malloc(2);
-					}
-					else
-					{
-						temp->text = realloc(temp->text, strlen(temp->text)+ 1);
-					}
-					strncat(temp->text, &text[pos],1);	//appends single character
+					if(rs_catchar(temp->text,text[pos]) != RS_OK)
+						goto error;
 					pos++;
 					if(pos >= length)
 						goto state20;	//end tree
@@ -831,15 +720,8 @@ state5: 	// process number
 			switch(text[pos])
 			{
 				case '.':
-					if(temp->text == NULL)
-					{
-						temp->text = malloc(1);
-					}
-					else
-					{
-						temp->text = realloc(temp->text, strlen(temp->text)+ 1);
-					}
-					strncat(temp->text, ".",1);
+					if(rs_catchar(temp->text,'.') != RS_OK)
+						goto error;
 					pos++;
 					if(pos >= length)
 						goto state20;	//end tree
@@ -865,15 +747,8 @@ state5: 	// process number
 			switch(text[pos])
 			{
 				case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-					if(temp->text == NULL)
-					{
-						temp->text = malloc(1);
-					}
-					else
-					{
-						temp->text = realloc(temp->text, strlen(temp->text)+ 1);
-					}
-					strncat(temp->text, &text[pos],1);	//appends single character
+					if(rs_catchar(temp->text,text[pos]) != RS_OK)
+						goto error;
 					pos++;
 					if(pos >= length)
 						goto state20;	//end tree
@@ -881,30 +756,16 @@ state5: 	// process number
 					break;
 				
 				case '.':
-					if(temp->text == NULL)
-					{
-						temp->text = malloc(1);
-					}
-					else
-					{
-						temp->text = realloc(temp->text, strlen(temp->text)+ 1);
-					}
-					strncat(temp->text, ".",1);
+					if(rs_catchar(temp->text,'.') != RS_OK)
+						goto error;
 					pos++;
 					if(pos >= length)
 						goto state20;	//end tree
 					goto number4;	// fractional part
 
 				case 'e': case 'E':
-					if(temp->text == NULL)
-					{
-						temp->text = malloc(1);
-					}
-					else
-					{
-						temp->text = realloc(temp->text, strlen(temp->text)+ 1);
-					}
-					strncat(temp->text, &text[pos],1);	//appends single character
+					if(rs_catchar(temp->text,text[pos]) != RS_OK)
+						goto error;
 					pos++;
 					if(pos >= length)
 						goto state20;	//end tree
@@ -930,15 +791,8 @@ state5: 	// process number
 			switch(text[pos])
 			{
 				case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-					if(temp->text == NULL)
-					{
-						temp->text = malloc(1);
-					}
-					else
-					{
-						temp->text = realloc(temp->text, strlen(temp->text)+ 1);
-					}
-					strncat(temp->text, &text[pos],1);	//appends single character
+					if(rs_catchar(temp->text,text[pos]) != RS_OK)
+						goto error;
 					pos++;
 					if(pos >= length)
 						goto state20;	//end tree
@@ -954,15 +808,8 @@ state5: 	// process number
 			switch(text[pos])
 			{
 				case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-					if(temp->text == NULL)
-					{
-						temp->text = malloc(1);
-					}
-					else
-					{
-						temp->text = realloc(temp->text, strlen(temp->text)+ 1);
-					}
-					strncat(temp->text, &text[pos],1);	//appends single character
+					if(rs_catchar(temp->text,text[pos]) != RS_OK)
+						goto error;
 					pos++;
 					if(pos >= length)
 						goto state20;	//end tree
@@ -970,15 +817,8 @@ state5: 	// process number
 					break;
 
 				case 'e': case 'E':
-					if(temp->text == NULL)
-					{
-						temp->text = malloc(1);
-					}
-					else
-					{
-						temp->text = realloc(temp->text, strlen(temp->text)+ 1);
-					}
-					strncat(temp->text, &text[pos],1);	//appends single character
+					if(rs_catchar(temp->text,text[pos]) != RS_OK)
+						goto error;
 					pos++;
 					if(pos >= length)
 						goto state20;	//end tree
@@ -1006,15 +846,8 @@ state5: 	// process number
 				case '+':
 				case '-':
 				case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-					if(temp->text == NULL)
-					{
-						temp->text = malloc(1);
-					}
-					else
-					{
-						temp->text = realloc(temp->text, strlen(temp->text)+ 1);
-					}
-					strncat(temp->text, &text[pos],1);	//appends single character
+					if(rs_catchar(temp->text,text[pos]) != RS_OK)
+						goto error;
 					pos++;
 					if(pos >= length)
 						goto state20;	//end tree
@@ -1030,15 +863,8 @@ state5: 	// process number
 			switch(text[pos])
 			{
 				case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-					if(temp->text == NULL)
-					{
-						temp->text = malloc(1);
-					}
-					else
-					{
-						temp->text = realloc(temp->text, strlen(temp->text)+ 1);
-					}
-					strncat(temp->text, &text[pos],1);	//appends single character
+					if(rs_catchar(temp->text,text[pos]) != RS_OK)
+						goto error;
 					pos++;
 					if(pos >= length)
 						goto state20;	//end tree
@@ -1119,6 +945,7 @@ state6:	// true
 			case ']':
 				case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
 					json_insert_child(cursor,json_new_value(JSON_TRUE));
+					//TODO insert a new state: close literal
 					goto state1;	// start structure
 
 			default:

@@ -1,21 +1,24 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
 <!DOCTYPE KDevPrjSession>
 <KDevPrjSession>
- <DocsAndViews NumberOfDocuments="3" >
+ <DocsAndViews NumberOfDocuments="4" >
   <Doc0 NumberOfViews="1" URL="file:///home/rui/development/C/json/src/json.h" >
    <View0 Encoding="" Type="Source" />
   </Doc0>
   <Doc1 NumberOfViews="1" URL="file:///home/rui/development/C/json/src/json.c" >
-   <View0 Encoding="" Type="Source" />
+   <View0 Encoding="" line="303" Type="Source" />
   </Doc1>
   <Doc2 NumberOfViews="1" URL="file:///home/rui/development/C/json/src/test.c" >
-   <View0 Encoding="" line="51" Type="Source" />
+   <View0 Encoding="" line="47" Type="Source" />
   </Doc2>
+  <Doc3 NumberOfViews="1" URL="file:///home/rui/development/C/json/src/rstring/rstring.c" >
+   <View0 Encoding="" line="197" Type="Source" />
+  </Doc3>
  </DocsAndViews>
  <pluginList>
   <kdevdebugger>
    <breakpointList>
-    <breakpoint0 location="/home/rui/development/C/json/src/json.c:216" type="1" tracingFormatString="" traceFormatStringEnabled="0" condition="" tracingEnabled="0" enabled="1" >
+    <breakpoint0 location="/home/rui/development/C/json/src/json.c:300" type="1" tracingFormatString="" traceFormatStringEnabled="0" condition="" tracingEnabled="0" enabled="1" >
      <tracedExpressions/>
     </breakpoint0>
    </breakpointList>
@@ -27,10 +30,8 @@
   </kdevastyle>
   <kdevbookmarks>
    <bookmarks>
-    <bookmark url="/home/rui/development/C/json/src/json.c" >
-     <mark line="396" />
-     <mark line="519" />
-     <mark line="214" />
+    <bookmark url="/home/rui/development/C/json/src/rstring/rstring.c" >
+     <mark line="184" />
     </bookmark>
    </bookmarks>
   </kdevbookmarks>

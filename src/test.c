@@ -33,7 +33,7 @@
 
 int main ( )
 {
-// 	char text[] = "{\"id\":1215,\"value\":13}";
+	char text[] = "{\"id\":1215,\"value\":13}";
 // 	char text[] = "{\"id\":[[\"fir\",\"sec\"],\"second\"],\"value\":13}";
 // 	char text[] = "{\"id\":\"file\",\"value\":\"File\"}";
 // 	char text[] = "{\"label1\":{\"label2\":\"value1\"},\"label1\":{\"label3\":\"value2\", \"label2\":\"value1\"},\"label3\":\"value2\",\"label4\":\"value3\"}";
@@ -43,10 +43,14 @@ int main ( )
 // 	char text[] = "{\"widget\": { \"debug\": \"on\", \"window\": { \"title\": \"Sample Konfabulator Widget\", \"name\": \"main_window\", \"width\": 500, \"height\": 500 }, \"image\": { \"src\": \"Images/Sun.png\", \"name\": \"sun1\", \"hOffset\": 250, \"vOffset\": 250, \"alignment\": \"center\" }, \"text\": { \"data\": \"Click Here\", \"size\": 36, \"style\": \"bold\", \"name\": \"text1\", \"hOffset\": 250, \"vOffset\": 100, \"alignment\": \"center\", \"onMouseUp\": \"sun1.opacity = (sun1.opacity / 100) * 90;\" } }}";
 // 	char text[] = "-0.1";
 
-	rstring *r = rs_create("bof");
+	printf("string to tree:\n");
+	struct json_value * root = json_string_to_tree(text);
+	if(root != NULL)
+	{
+		printf("tree to string\n");
+		char *test = json_tree_to_string(root);
 
-	printf("%s\n",r->s);
-	
-	
+		printf("%s\n",test);
+	}
 	return EXIT_SUCCESS;
 }
