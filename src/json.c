@@ -99,46 +99,58 @@ struct json_value* json_new_array ( void )
 }
 
 
-void json_free_value ( struct json_value *value )
+void json_free_value ( struct json_value **value )
 {
-	assert(value != NULL);
+	assert((*value) != NULL);
 	///todo rethink this due to FIFO queue
 	// free each and every child nodes
-	if ( value->child != NULL )
+	if ( (*value)->child != NULL )
 	{
 		///todo write function to free entire subtree recursively
-		json_free_value ( value->child );
-	}
-
-	// fix sibling linked list connections
-	if ( value->previous && value->next )
-	{
-		value->previous->next = value->next;
-		value->next->previous = value->previous;
-	}
-	if ( value->previous )
-	{
-		value->previous->next = NULL;
-	}
-	if ( value->next )
-	{
-		value->next->previous = NULL;
-	}
-
-	//fix parent node connections
-	if ( value->parent )
-	{
-		if ( value->parent->child == value )
+// 		json_free_value ( &((*value)->child) );
+		struct json_value *i;
+		for(i = (*value)->child_end; i->previous != NULL; i = i->previous)
 		{
-			if ( value->next )
-				value->parent->child = value->next;	// the parent node always points to the first node
-			else
-				value->parent->child = NULL;
+			json_free_value(&i);
 		}
 	}
 
-	//finally, free the memory
-	free ( value );
+	// fix sibling linked list connections
+	if ( (*value)->previous && (*value)->next )
+	{
+		(*value)->previous->next = (*value)->next;
+		(*value)->next->previous = (*value)->previous;
+	}
+	if ( (*value)->previous )
+	{
+		(*value)->previous->next = NULL;
+	}
+	if ( (*value)->next )
+	{
+		(*value)->next->previous = NULL;
+	}
+
+	//fix parent node connections
+	if ( (*value)->parent )
+	{
+		if ( (*value)->parent->child == (*value) )
+		{
+			if ( (*value)->next )
+				(*value)->parent->child = (*value)->next;	// the parent node always points to the first node
+			else
+			if ( (*value)->previous )
+				(*value)->parent->child = (*value)->next;	// the parent node always points to the first node
+			(*value)->parent->child = NULL;
+		}
+	}
+
+	//finally, free the memory allocated for this value
+	if((*value)->text != NULL)
+	{
+		rs_destroy(&(*value)->text);	// the string
+	}
+	free ( (*value) );	// the json value
+	(*value) = NULL;
 }
 
 
