@@ -33,24 +33,14 @@
 
 int main ( )
 {
-	char text[] = "{\"id\":1215,\"value\":13}";
-// 	char text[] = "{\"id\":[[\"fir\",\"sec\"],\"second\"],\"value\":13}";
-// 	char text[] = "{\"id\":\"file\",\"value\":\"File\"}";
-// 	char text[] = "{\"label1\":{\"label2\":\"value1\"},\"label1\":{\"label3\":\"value2\", \"label2\":\"value1\"},\"label3\":\"value2\",\"label4\":\"value3\"}";
-// 	char text[] = "{\"label1\":false, \"label2\":false}";
-// 	char text[] = "{\"label\":\"false\", \"label\":\"false\"}";
-// 	char text[] = "{\"menu\": { \"id\": \"file\", \"value\": \"File\", \"popup\": { \"menuitem\": [ {\"value\": \"New\", \"onclick\": \"CreateNewDoc()\"}, {\"value\": \"Open\", \"onclick\": \"OpenDoc()\"}, {\"value\": \"Close\", \"onclick\": \"CloseDoc()\"} ] } }}";
-// 	char text[] = "{\"widget\": { \"debug\": \"on\", \"window\": { \"title\": \"Sample Konfabulator Widget\", \"name\": \"main_window\", \"width\": 500, \"height\": 500 }, \"image\": { \"src\": \"Images/Sun.png\", \"name\": \"sun1\", \"hOffset\": 250, \"vOffset\": 250, \"alignment\": \"center\" }, \"text\": { \"data\": \"Click Here\", \"size\": 36, \"style\": \"bold\", \"name\": \"text1\", \"hOffset\": 250, \"vOffset\": 100, \"alignment\": \"center\", \"onMouseUp\": \"sun1.opacity = (sun1.opacity / 100) * 90;\" } }}";
-// 	char text[] = "-0.1";
-
-	printf("string to tree:\n");
-	struct json_value * root = json_string_to_tree(text);
+	struct json_value *root = json_new_string("yey!");
+	json_insert_child(root,json_new_string("bof"));
 	if(root != NULL)
 	{
-		printf("tree to string\n");
-		char *test = json_tree_to_string(root);
-
-		printf("%s\n",test);
+		json_free_value(&root);
+		if(root == NULL)
+			printf("null\n");
 	}
+	printf("bork\n");
 	return EXIT_SUCCESS;
 }

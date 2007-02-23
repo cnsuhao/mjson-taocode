@@ -86,7 +86,7 @@ struct json_value* json_new_array(void);
 Frees the memory appointed to the value fed as the parameter, as well as all the child values
 @param value the root node of the tree being freed
 **/
-void json_free_value(struct json_value *value);
+void json_free_value(struct json_value **value);
 
 /**
 Inserts a child node into a parent node, as well as performs some document tree integrity checks.
