@@ -67,6 +67,7 @@ int test_json_file(char *filename)
 
 int main ( )
 {
+	// tests the example JSON document taken from the JSON site
 	if(!test_json_file("test/test1.json"))
 	{
 		printf("error\n");
