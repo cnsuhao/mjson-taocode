@@ -158,6 +158,7 @@ void json_free_value ( struct json_value **value )
 
 enum json_errors json_insert_child ( struct json_value *parent, struct json_value *child )
 {
+	///fixme: when the same value is inserted as a child the json_tree_to_string function enters a infinite loop
 	assert ( parent != NULL );	// the parent must exist
 	assert ( child != NULL );	// the child must exist
 	assert ( ( parent->type == JSON_OBJECT ) || ( parent->type == JSON_ARRAY ) || ( parent->type == JSON_STRING ) );	// must be a valid parent type
@@ -261,9 +262,10 @@ void json_render_tree ( struct json_value *root )
 
 char *json_tree_to_string ( struct json_value* root )
 {
+	assert (root != NULL);
 	struct json_value* cursor = root;
-	if ( cursor == NULL )	// must try to render an existing tree
-		goto end;
+// 	if ( cursor == NULL )	// must try to render an existing tree
+// 		goto end;
 
 	// set up the output string
 	rstring *output = rs_create ( "" );
@@ -273,7 +275,7 @@ char *json_tree_to_string ( struct json_value* root )
 	// start the convoluted fun
 state1:	// open value
 	{
-		if ( ( cursor->previous ) && ( cursor != root ) )	//TODO does this make sense?
+		if ( ( cursor->previous ) && ( cursor != root ) )	//if cursor is children and not root than it is a followup sibling
 		{
 			if ( rs_catchar ( output,',' ) != RS_OK )
 				goto error;
@@ -288,29 +290,41 @@ state1:	// open value
 				if ( rs_catchar ( output,'\"' ) != RS_OK )
 					goto error;
 
-				if ( cursor->parent )
+				if ( cursor->parent != NULL )
 				{
-					if ( cursor->parent->type == JSON_OBJECT )
+					if ( cursor->parent->type == JSON_OBJECT )	// cursor is label in label:value pair
 					{
-						if ( rs_catchar ( output,':' ) != RS_OK )
+						// error checking: if parent is object and cursor is string then cursor must have a single child
+						if(cursor->child != NULL)
+						{
+							if ( rs_catchar ( output,':' ) != RS_OK )
+								goto error;
+						}
+						else
+						{
+							// malformed document tree: label without value in label:value pair
+							printf("Tree integrity error: string as object children must be label:value pair\n");
 							goto error;
+						}
 					}
 				}
-				else
+				else	// does not have a parent
 				{
-					if ( cursor->child )
+					if ( cursor->child != NULL)	// is root label in label:value pair
 					{
 						if ( rs_catchar ( output,':' ) != RS_OK )
 							goto error;
 					}
 					else
 					{
+						// malformed document tree: label without value in label:value pair
 						goto error;	// no root but siblings
 					}
 				}
 				break;
 
 			case JSON_NUMBER:
+				// must not have any children
 				if ( rs_catrs ( output,cursor->text ) != RS_OK )
 					goto error;
 				goto state2;	// close value
@@ -334,7 +348,7 @@ state1:	// open value
 			case JSON_ARRAY:
 				if ( rs_catchar ( output,'[' ) != RS_OK )
 					goto error;
-				if ( cursor->child )
+				if ( cursor->child != NULL)
 				{
 					cursor = cursor->child;
 					goto state1;
@@ -346,18 +360,21 @@ state1:	// open value
 				break;
 
 			case JSON_TRUE:
+				// must not have any children
 				if ( rs_catcs ( output,"true",4 ) != RS_OK )
 					goto error;
 				goto state2;	// close value
 				break;
 
 			case JSON_FALSE:
+				// must not have any children
 				if ( rs_catcs ( output,"false",5 ) != RS_OK )
 					goto error;
 				goto state2;	// close value
 				break;
 
 			case JSON_NULL:
+				// must not have any children
 				if ( rs_catcs ( output,"null",5 ) != RS_OK )
 					goto error;
 				goto state2;	// close value
@@ -372,7 +389,10 @@ state1:	// open value
 			goto state1;
 		}
 		else
+		{
+			// does not have any children
 			goto state2;	// close value
+		}
 	}
 
 state2:	// close value
@@ -402,14 +422,14 @@ state2:	// close value
 			default:
 				goto error;
 		}
-		if ( cursor->next )
+		if ( ( cursor->parent == NULL ) || ( cursor == root ) )
+		{
+			goto end;
+		}
+		else if ( cursor->next )
 		{
 			cursor = cursor->next;
 			goto state1;
-		}
-		else if ( ( cursor->parent == NULL ) || ( cursor == root ) )
-		{
-			goto end;
 		}
 		else
 		{
