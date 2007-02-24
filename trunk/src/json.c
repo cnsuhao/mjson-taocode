@@ -45,6 +45,7 @@ struct json_value* json_new_value ( enum json_value_type type )
 	return new_object;
 }
 
+
 struct json_value* json_new_string ( char *text )
 {
 	assert ( text != NULL );
@@ -65,6 +66,7 @@ struct json_value* json_new_string ( char *text )
 	new_object->type = JSON_STRING;
 	return new_object;
 }
+
 
 struct json_value* json_new_number ( char *text )
 {
@@ -93,6 +95,7 @@ struct json_value* json_new_object ( void )
 	return json_new_value ( JSON_OBJECT );
 }
 
+
 struct json_value* json_new_array ( void )
 {
 	return json_new_value ( JSON_ARRAY );
@@ -106,7 +109,7 @@ void json_free_value ( struct json_value **value )
 	// free each and every child nodes
 	if ( ( *value )->child != NULL )
 	{
-		///todo write function to free entire subtree recursively
+		///fixme write function to free entire subtree recursively
 		struct json_value *i;
 		for ( i = ( *value )->child_end; i->previous != NULL; i = i->previous )
 		{
@@ -202,6 +205,7 @@ enum json_errors json_insert_pair_into_object ( struct json_value *parent, struc
 	return JSON_OK;
 }
 
+
 void json_render_tree_indented ( struct json_value *root, int level )
 {
 	assert ( root != NULL );
@@ -248,10 +252,12 @@ void json_render_tree_indented ( struct json_value *root, int level )
 	}
 }
 
+
 void json_render_tree ( struct json_value *root )
 {
 	json_render_tree_indented ( root, 0 );
 }
+
 
 char *json_tree_to_string ( struct json_value* root )
 {
@@ -260,7 +266,7 @@ char *json_tree_to_string ( struct json_value* root )
 		goto end;
 
 	// set up the output string
-	rstring *output = rs_create ( "" );;
+	rstring *output = rs_create ( "" );
 	if ( output == NULL )
 		return NULL;
 
@@ -307,7 +313,7 @@ state1:	// open value
 			case JSON_NUMBER:
 				if ( rs_catrs ( output,cursor->text ) != RS_OK )
 					goto error;
-				goto state2;
+				goto state2;	// close value
 				break;
 
 			case JSON_OBJECT:
@@ -321,7 +327,7 @@ state1:	// open value
 				}
 				else
 				{
-					goto state2;
+					goto state2;	// close value
 				}
 				break;
 
@@ -335,26 +341,26 @@ state1:	// open value
 				}
 				else
 				{
-					goto state2;
+					goto state2;	// close value
 				}
 				break;
 
 			case JSON_TRUE:
 				if ( rs_catcs ( output,"true",4 ) != RS_OK )
 					goto error;
-				goto state2;
+				goto state2;	// close value
 				break;
 
 			case JSON_FALSE:
 				if ( rs_catcs ( output,"false",5 ) != RS_OK )
 					goto error;
-				goto state2;
+				goto state2;	// close value
 				break;
 
 			case JSON_NULL:
 				if ( rs_catcs ( output,"null",5 ) != RS_OK )
 					goto error;
-				goto state2;
+				goto state2;	// close value
 				break;
 
 			default:
@@ -366,7 +372,7 @@ state1:	// open value
 			goto state1;
 		}
 		else
-			goto state2;
+			goto state2;	// close value
 	}
 
 state2:	// close value
@@ -408,13 +414,14 @@ state2:	// close value
 		else
 		{
 			cursor = cursor->parent;
-			goto state2;
+			goto state2;	// close value
 		}
 	}
 
 error:
 	{
 		printf ( "ERROR!" );
+		rs_destroy ( &output );
 		return NULL;	///todo implement better, usable error handling
 	}
 
@@ -518,8 +525,7 @@ state3:	// end structure
 
 			switch ( cursor->type )
 			{
-				case JSON_STRING:
-					///todo potential problem. does this type make sense as a child?
+				case JSON_STRING:	// cursor is label in label:value pair
 				case JSON_OBJECT:
 					if ( cursor->parent == NULL )
 					{
