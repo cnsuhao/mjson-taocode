@@ -56,12 +56,14 @@ struct json_value
   	struct json_value *child_end;	//!< The pointer pointing to the last child node in the document tree
 };
 
+
 /**
 Creates a new JSON value and defines it's type
 @param type the value's type
 @return a pointer to the newly created value structure
 **/
 struct json_value* json_new_value(enum json_value_type type);
+
 
 /**
 Creates a new JSON string and defines it's text
@@ -70,11 +72,13 @@ Creates a new JSON string and defines it's text
 **/
 struct json_value* json_new_string(char *text);
 
+
 /**
 Creates a new JSON object
 @return a pointer to the newly created JSON object
 **/
 struct json_value* json_new_object(void);
+
 
 /**
 Creates a new JSON array
@@ -82,11 +86,13 @@ Creates a new JSON array
 **/
 struct json_value* json_new_array(void);
 
+
 /**
 Frees the memory appointed to the value fed as the parameter, as well as all the child values
 @param value the root node of the tree being freed
 **/
 void json_free_value(struct json_value **value);
+
 
 /**
 Inserts a child node into a parent node, as well as performs some document tree integrity checks.
@@ -95,6 +101,7 @@ Inserts a child node into a parent node, as well as performs some document tree 
 @return the error code corresponding to the operation state
 **/
 enum json_errors json_insert_child(struct json_value *parent, struct json_value *child);
+
 
 /**
 Inserts a label:value pair into a parent node, as well as performs some document tree integrity checks.
@@ -105,12 +112,14 @@ Inserts a label:value pair into a parent node, as well as performs some document
 **/
 enum json_errors json_insert_pair_into_object(struct json_value *parent, struct json_value *label, struct json_value *value);
 
+
 /**
 Renders the tree structure where root is the tree's root, which can also be a tree branch. This function is used recursively by json_render_tree()
 @param root the tree's root node (may be a child node)
 @param level the indentation level (number of tabs)
 **/
 void json_render_tree_indented(struct json_value *root, int level);
+
 
 /**
 Renders the tree structure where root is the tree's root, which can also be a tree branch.
@@ -126,11 +135,28 @@ Produces a JSON markup text document from a document tree
 **/
 char* json_tree_to_string(struct json_value* root);
 
+
 /**
 Produces a document tree from a JSON markup text string
 @param text the JSON document text string
 @return the document's root node or NULL if some problem is encountered while parsing the JSON text
 **/
 struct json_value * json_string_to_tree(char * text);
+
+
+/**
+Checks if the character in question is a JSON markup white space
+@param c the character to be analized
+@return 1 if it is, 0 if it isn't
+**/
+int json_white_space(const char c);
+
+
+/**
+Strips all JSON white spaces from the given string
+@param text a JSON formatted document or document node
+@return a rstring holding the stripped down document
+**/
+rstring *json_strip_white_spaces ( const rstring *text );
 #endif
 

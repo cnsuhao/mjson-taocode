@@ -42,7 +42,8 @@ int test_json_file(char *filename)
 	char c;
 	while( (c = getc(file)) != EOF)
 	{
-		rs_catchar(text,c);
+		if(json_white_space(c) == 0)
+			rs_catchar(text,c);
 	}
 
 	struct json_value *root = json_string_to_tree(text->s);
