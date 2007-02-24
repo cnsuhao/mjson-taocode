@@ -74,6 +74,14 @@ struct json_value* json_new_string ( char *text );
 
 
 /**
+Creates a new JSON number and defines it's text
+@param text the value's number
+@return a pointer to the newly created JSON string
+**/
+struct json_value* json_new_number ( char *text );
+
+
+/**
 Creates a new JSON object
 @return a pointer to the newly created JSON object
 **/
@@ -85,6 +93,27 @@ Creates a new JSON array
 @return a pointer to the newly created JSON array
 **/
 struct json_value* json_new_array ( void );
+
+
+/**
+Creates a new JSON null
+@return a pointer to the newly created JSON null
+**/
+struct json_value* json_new_null ( void );
+
+
+/**
+Creates a new JSON true
+@return a pointer to the newly created JSON true
+**/
+struct json_value* json_new_true( void );
+
+
+/**
+Creates a new JSON false
+@return a pointer to the newly created JSON false
+**/
+struct json_value* json_new_false ( void );
 
 
 /**

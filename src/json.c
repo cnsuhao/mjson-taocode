@@ -72,6 +72,8 @@ struct json_value* json_new_number ( char *text )
 {
 	assert ( text != NULL );
 
+	//TODO enforce number string correctness
+
 	struct json_value *new_object;
 	// allocate memory to the new object
 	new_object = malloc ( sizeof ( struct json_value ) );
@@ -99,6 +101,24 @@ struct json_value* json_new_object ( void )
 struct json_value* json_new_array ( void )
 {
 	return json_new_value ( JSON_ARRAY );
+}
+
+
+struct json_value* json_new_null(void)
+{
+	return json_new_value(JSON_NULL);
+}
+
+
+struct json_value* json_new_true(void)
+{
+	return json_new_value(JSON_TRUE);
+}
+
+
+struct json_value* json_new_false(void)
+{
+	return json_new_value(JSON_FALSE);
 }
 
 
