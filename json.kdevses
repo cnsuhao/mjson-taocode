@@ -3,13 +3,13 @@
 <KDevPrjSession>
  <DocsAndViews NumberOfDocuments="3" >
   <Doc0 NumberOfViews="1" URL="file:///home/rui/development/C/json/src/json.c" >
-   <View0 Encoding="" line="1004" Type="Source" />
+   <View0 Encoding="" line="1382" Type="Source" />
   </Doc0>
   <Doc1 NumberOfViews="1" URL="file:///home/rui/development/C/json/src/test.c" >
-   <View0 Encoding="" line="44" Type="Source" />
+   <View0 Encoding="" line="96" Type="Source" />
   </Doc1>
   <Doc2 NumberOfViews="1" URL="file:///home/rui/development/C/json/src/json.h" >
-   <View0 Encoding="" line="159" Type="Source" />
+   <View0 Encoding="" line="191" Type="Source" />
   </Doc2>
  </DocsAndViews>
  <pluginList>
@@ -24,8 +24,8 @@
   <kdevbookmarks>
    <bookmarks>
     <bookmark url="/home/rui/development/C/json/src/json.c" >
-     <mark line="958" />
-     <mark line="933" />
+     <mark line="1398" />
+     <mark line="1349" />
     </bookmark>
     <bookmark url="/home/rui/development/C/json/src/rstring/rstring.c" >
      <mark line="184" />
