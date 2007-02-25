@@ -187,5 +187,8 @@ Strips all JSON white spaces from the given string
 @return a rstring holding the stripped down document
 **/
 rstring *json_strip_white_spaces ( const rstring *text );
+
+
+rstring * json_format_string(const rstring *text);
 #endif
 

@@ -72,7 +72,7 @@ struct json_value* json_new_number ( char *text )
 {
 	assert ( text != NULL );
 
-	//TODO enforce number string correctness
+	//TODO enforce number string correctness or leave it to the user?
 
 	struct json_value *new_object;
 	// allocate memory to the new object
@@ -1345,5 +1345,104 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 
 	return output;
 }
+
+
+rstring * json_format_string(const rstring *text)
+{
+	size_t pos = 0;
+	unsigned int indentation = 0, i;
+	rstring *output = rs_create("");
+	while (pos < text->length)
+	{
+		switch(text->s[pos])
+		{
+			case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
+				pos++;
+				break;
+
+			case '{':
+				if ( rs_catcs ( output, "{\n",2 ) != RS_OK )
+					return NULL;
+				pos++;
+				indentation++;
+				for(i = 0; i < indentation; i++)
+				{
+					rs_catchar(output,'\t');
+				}
+				break;
+
+			case '}':
+				if ( rs_catchar (  output, '\n' ) != RS_OK )
+					return NULL;
+				pos++;
+				indentation--;
+				for(i = 0; i < indentation; i++)
+				{
+					rs_catchar(output,'\t');
+				}
+				if ( rs_catchar (  output, '}' ) != RS_OK )
+					return NULL;
+				break;
+
+			case ':':
+				if ( rs_catcs ( output,  ": ",2 ) != RS_OK )
+					return NULL;
+				pos++;
+				break;
+
+			case ',':
+				if ( rs_catcs ( output,  ",\n",2 ) != RS_OK )
+					return NULL;
+				pos++;
+				for(i = 0; i < indentation; i++)
+				{
+					rs_catchar(output,'\t');
+				}
+				break;
+
+			case '\"':	//open string
+				if ( rs_catchar ( output,text->s[pos] ) != RS_OK )
+					return NULL;
+				pos++;
+				char loop = 1;	// inner string loop trigger
+				while ( loop )	// parse the inner part of the string
+				{
+					if ( text->s[pos] == '\\' )	// escaped sequence
+					{
+						if ( rs_catchar ( output,text->s[pos] ) != RS_OK )
+							return NULL;
+						pos++;
+						if ( text->s[pos] == '\"' )	// don't consider a \" escaped sequence as an end of string
+						{
+
+							if ( rs_catchar ( output,text->s[pos] ) != RS_OK )
+								return NULL;
+							pos++;
+						}
+					}
+					else if ( text->s[pos] == '\"' )	// reached end of string
+					{
+						loop = 0;
+					}
+
+					if ( rs_catchar ( output,text->s[pos] ) != RS_OK )
+						return NULL;
+					pos++;
+					if ( pos >= text->length )
+						loop = 0;
+				}
+				break;
+
+			default:
+				if ( rs_catchar ( output,text->s[pos] ) != RS_OK )
+					return NULL;
+				pos++;
+				break;
+		}
+	}
+
+	return output;
+}
+
 
 

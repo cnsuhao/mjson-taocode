@@ -68,30 +68,33 @@ int test_json_file(char *filename)
 int main ( )
 {
 	// tests the example JSON document taken from the JSON site
-	if(!test_json_file("test/test1.json"))
-	{
-		printf("error\n");
-		return EXIT_SUCCESS;
-	}
-	if(!test_json_file("test/test2.json"))
-	{
-		printf("error\n");
-		return EXIT_SUCCESS;
-	}
-	if(!test_json_file("test/test3.json"))
-	{
-		printf("error\n");
-		return EXIT_SUCCESS;
-	}
-	if(!test_json_file("test/test4.json"))
-	{
-		printf("error\n");
-		return EXIT_SUCCESS;
-	}
-	if(!test_json_file("test/test5.json"))
-	{
-		printf("error\n");
-		return EXIT_SUCCESS;
-	}
+// 	if(!test_json_file("test/test1.json"))
+// 	{
+// 		printf("error\n");
+// 		return EXIT_SUCCESS;
+// 	}
+// 	if(!test_json_file("test/test2.json"))
+// 	{
+// 		printf("error\n");
+// 		return EXIT_SUCCESS;
+// 	}
+// 	if(!test_json_file("test/test3.json"))
+// 	{
+// 		printf("error\n");
+// 		return EXIT_SUCCESS;
+// 	}
+// 	if(!test_json_file("test/test4.json"))
+// 	{
+// 		printf("error\n");
+// 		return EXIT_SUCCESS;
+// 	}
+// 	if(!test_json_file("test/test5.json"))
+// 	{
+// 		printf("error\n");
+// 		return EXIT_SUCCESS;
+// 	}
+
+	rstring * text = rs_create("{\"label\":\"value\",\"label\":{\"label\":\"value\",\"label\":\"value\"},\"label\":\"value\"}");
+	printf("%s\n",json_format_string(text)->s);
 	return EXIT_SUCCESS;
 }
