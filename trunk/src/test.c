@@ -31,35 +31,35 @@
 #include "rstring/rstring.h"
 
 
-int test_json_file(char *filename)
+int test_json_file ( char *filename )
 {
 	FILE *file;
-	printf("%s: ",filename);
-	file = fopen(filename,"r");
-	if (file == NULL)
+	printf ( "%s: ",filename );
+	file = fopen ( filename,"r" );
+	if ( file == NULL )
 		return 0;
-	rstring *text = rs_create("");
+	rstring *text = rs_create ( "" );
 	char c;
-	while( (c = getc(file)) != EOF)
+	while ( ( c = getc ( file ) ) != EOF )
 	{
-		if(json_white_space(c) == 0)
-			rs_catchar(text,c);
+		if ( json_white_space ( c ) == 0 )
+			rs_catchar ( text,c );
 	}
 
-	struct json_value *root = json_string_to_tree(text->s);
-	if(root != NULL)
+	struct json_value *root = json_string_to_tree ( text->s );
+	if ( root != NULL )
 	{
-		if(json_tree_to_string(root) != NULL)
+		if ( json_tree_to_string ( root ) != NULL )
 		{
-			rs_destroy(&text);
-			json_free_value(&root);
-			printf("pass.\n");
+			rs_destroy ( &text );
+			json_free_value ( &root );
+			printf ( "pass.\n" );
 			return 1;
 		}
 	}
-	rs_destroy(&text);
-	json_free_value(&root);
-	printf("failed.\n");
+	rs_destroy ( &text );
+	json_free_value ( &root );
+	printf ( "failed.\n" );
 	return 0;
 }
 
@@ -68,33 +68,30 @@ int test_json_file(char *filename)
 int main ( )
 {
 	// tests the example JSON document taken from the JSON site
-// 	if(!test_json_file("test/test1.json"))
-// 	{
-// 		printf("error\n");
-// 		return EXIT_SUCCESS;
-// 	}
-// 	if(!test_json_file("test/test2.json"))
-// 	{
-// 		printf("error\n");
-// 		return EXIT_SUCCESS;
-// 	}
-// 	if(!test_json_file("test/test3.json"))
-// 	{
-// 		printf("error\n");
-// 		return EXIT_SUCCESS;
-// 	}
-// 	if(!test_json_file("test/test4.json"))
-// 	{
-// 		printf("error\n");
-// 		return EXIT_SUCCESS;
-// 	}
-// 	if(!test_json_file("test/test5.json"))
-// 	{
-// 		printf("error\n");
-// 		return EXIT_SUCCESS;
-// 	}
-
-	rstring * text = rs_create("{\"label\":\"value\",\"label\":{\"label\":\"value\",\"label\":\"value\"},\"label\":\"value\"}");
-	printf("%s\n",json_format_string(text)->s);
+	if ( !test_json_file ( "test/test1.json" ) )
+	{
+		printf ( "error\n" );
+		return EXIT_SUCCESS;
+	}
+	if ( !test_json_file ( "test/test2.json" ) )
+	{
+		printf ( "error\n" );
+		return EXIT_SUCCESS;
+	}
+	if ( !test_json_file ( "test/test3.json" ) )
+	{
+		printf ( "error\n" );
+		return EXIT_SUCCESS;
+	}
+	if ( !test_json_file ( "test/test4.json" ) )
+	{
+		printf ( "error\n" );
+		return EXIT_SUCCESS;
+	}
+	if ( !test_json_file ( "test/test5.json" ) )
+	{
+		printf ( "error\n" );
+		return EXIT_SUCCESS;
+	}
 	return EXIT_SUCCESS;
 }

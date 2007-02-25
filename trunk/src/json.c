@@ -104,21 +104,21 @@ struct json_value* json_new_array ( void )
 }
 
 
-struct json_value* json_new_null(void)
+struct json_value* json_new_null ( void )
 {
-	return json_new_value(JSON_NULL);
+	return json_new_value ( JSON_NULL );
 }
 
 
-struct json_value* json_new_true(void)
+struct json_value* json_new_true ( void )
 {
-	return json_new_value(JSON_TRUE);
+	return json_new_value ( JSON_TRUE );
 }
 
 
-struct json_value* json_new_false(void)
+struct json_value* json_new_false ( void )
 {
-	return json_new_value(JSON_FALSE);
+	return json_new_value ( JSON_FALSE );
 }
 
 
@@ -282,7 +282,7 @@ void json_render_tree ( struct json_value *root )
 
 char *json_tree_to_string ( struct json_value* root )
 {
-	assert (root != NULL);
+	assert ( root != NULL );
 	struct json_value* cursor = root;
 // 	if ( cursor == NULL )	// must try to render an existing tree
 // 		goto end;
@@ -315,7 +315,7 @@ state1:	// open value
 					if ( cursor->parent->type == JSON_OBJECT )	// cursor is label in label:value pair
 					{
 						// error checking: if parent is object and cursor is string then cursor must have a single child
-						if(cursor->child != NULL)
+						if ( cursor->child != NULL )
 						{
 							if ( rs_catchar ( output,':' ) != RS_OK )
 								goto error;
@@ -323,14 +323,14 @@ state1:	// open value
 						else
 						{
 							// malformed document tree: label without value in label:value pair
-							printf("Tree integrity error: string as object children must be label:value pair\n");
+							printf ( "Tree integrity error: string as object children must be label:value pair\n" );
 							goto error;
 						}
 					}
 				}
 				else	// does not have a parent
 				{
-					if ( cursor->child != NULL)	// is root label in label:value pair
+					if ( cursor->child != NULL )	// is root label in label:value pair
 					{
 						if ( rs_catchar ( output,':' ) != RS_OK )
 							goto error;
@@ -368,7 +368,7 @@ state1:	// open value
 			case JSON_ARRAY:
 				if ( rs_catchar ( output,'[' ) != RS_OK )
 					goto error;
-				if ( cursor->child != NULL)
+				if ( cursor->child != NULL )
 				{
 					cursor = cursor->child;
 					goto state1;
@@ -1347,16 +1347,16 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 }
 
 
-rstring * json_format_string(const rstring *text)
+rstring * json_format_string ( const rstring *text )
 {
 	size_t pos = 0;
 	unsigned int indentation = 0, i;
-	rstring *output = rs_create("");
-	while (pos < text->length)
+	rstring *output = rs_create ( "" );
+	while ( pos < text->length )
 	{
-		switch(text->s[pos])
+		switch ( text->s[pos] )
 		{
-			case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
+case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 				pos++;
 				break;
 
@@ -1365,22 +1365,22 @@ rstring * json_format_string(const rstring *text)
 					return NULL;
 				pos++;
 				indentation++;
-				for(i = 0; i < indentation; i++)
+				for ( i = 0; i < indentation; i++ )
 				{
-					rs_catchar(output,'\t');
+					rs_catchar ( output,'\t' );
 				}
 				break;
 
 			case '}':
-				if ( rs_catchar (  output, '\n' ) != RS_OK )
+				if ( rs_catchar ( output, '\n' ) != RS_OK )
 					return NULL;
 				pos++;
 				indentation--;
-				for(i = 0; i < indentation; i++)
+				for ( i = 0; i < indentation; i++ )
 				{
-					rs_catchar(output,'\t');
+					rs_catchar ( output,'\t' );
 				}
-				if ( rs_catchar (  output, '}' ) != RS_OK )
+				if ( rs_catchar ( output, '}' ) != RS_OK )
 					return NULL;
 				break;
 
@@ -1394,9 +1394,9 @@ rstring * json_format_string(const rstring *text)
 				if ( rs_catcs ( output,  ",\n",2 ) != RS_OK )
 					return NULL;
 				pos++;
-				for(i = 0; i < indentation; i++)
+				for ( i = 0; i < indentation; i++ )
 				{
-					rs_catchar(output,'\t');
+					rs_catchar ( output,'\t' );
 				}
 				break;
 
