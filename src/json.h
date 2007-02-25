@@ -106,7 +106,7 @@ struct json_value* json_new_null ( void );
 Creates a new JSON true
 @return a pointer to the newly created JSON true
 **/
-struct json_value* json_new_true( void );
+struct json_value* json_new_true ( void );
 
 
 /**
@@ -189,6 +189,11 @@ Strips all JSON white spaces from the given string
 rstring *json_strip_white_spaces ( const rstring *text );
 
 
-rstring * json_format_string(const rstring *text);
+/**
+Formats a JSON markup text contained in the given string
+@param text a JSON formatted document
+@return a rstring holding the formated document
+**/
+rstring * json_format_string ( const rstring *text );
 #endif
 
