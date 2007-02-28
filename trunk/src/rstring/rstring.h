@@ -18,14 +18,14 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include <string.h>
+#include <wchar.h>
 
 #ifndef RSTRING
 #define RSTRING
 
 struct rui_string
 {
-	char *s;	///<! regular c-string 
+	wchar_t *s;	///<! wchar_t c-string
 	size_t length; ///<! current length of s
 	size_t max;	///<! maximum length of s, according to the allocated memory
 };
@@ -42,7 +42,7 @@ Creates and initializes a string
 \param cstring a c-string containing the initial string text
 \return a pointer to the newly created rstring
 **/
-rstring *rs_create(const char *cstring);
+rstring *rs_create(const wchar_t *cstring);
 
 /**
 Frees the memory allocated to a rstring
@@ -76,7 +76,7 @@ int rs_copyrs(rstring *to, const rstring *from);
 \param length the length of c-string to be copied
 \return result
 **/
-int rs_copycs(rstring *to, const char *from, const size_t length);
+int rs_copycs(rstring *to, const wchar_t *from, const size_t length);
 
 /** Concatenates a rstring onto the end of a rstring
 \param pre rstring where to append to
@@ -91,13 +91,13 @@ int rs_catrs(rstring *pre, const rstring *pos);
 \param length the length of c-string to be copied
 \return result
 **/
-int rs_catcs(rstring *pre, const char *pos, const size_t length);
+int rs_catcs(rstring *pre, const wchar_t *pos, const size_t length);
 
-/** Concatenates a single char onto the end of a rstring
+/** Concatenates a single wchar_t onto the end of a rstring
 \param pre rstring where to append to
-\param c char to be appended
+\param c wchar_t to be appended
 \return result
 **/
-int rs_catchar(rstring *pre, const char c);
+int rs_catchar(rstring *pre, const wchar_t c);
 
 #endif

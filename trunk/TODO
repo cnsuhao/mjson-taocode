@@ -1,5 +1,5 @@
-* a "clean whitespaces" function
-* a "format JSON text" function
 * finish the json_free_value function so that it really frees all allocated memory 
 * implement decent error handling on the parsing functions
+* make sure that the library is capable of hanling UTF-8 correctly
+* support parsing incomplete documents (streaming, stdin)
 
