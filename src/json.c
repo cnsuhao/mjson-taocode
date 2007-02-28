@@ -297,17 +297,17 @@ state1:	// open value
 	{
 		if ( ( cursor->previous ) && ( cursor != root ) )	//if cursor is children and not root than it is a followup sibling
 		{
-			if ( rs_catchar ( output,',' ) != RS_OK )
+			if ( rs_catchar ( output,L',' ) != RS_OK )
 				goto error;
 		}
 		switch ( cursor->type )
 		{
 			case JSON_STRING:
-				if ( rs_catchar ( output,'\"' ) != RS_OK )
+				if ( rs_catchar ( output,L'\"' ) != RS_OK )
 					goto error;
 				if ( rs_catrs ( output,cursor->text ) != RS_OK )
 					goto error;
-				if ( rs_catchar ( output,'\"' ) != RS_OK )
+				if ( rs_catchar ( output,L'\"' ) != RS_OK )
 					goto error;
 
 				if ( cursor->parent != NULL )
@@ -317,7 +317,7 @@ state1:	// open value
 						// error checking: if parent is object and cursor is string then cursor must have a single child
 						if ( cursor->child != NULL )
 						{
-							if ( rs_catchar ( output,':' ) != RS_OK )
+							if ( rs_catchar ( output,L':' ) != RS_OK )
 								goto error;
 						}
 						else
@@ -332,7 +332,7 @@ state1:	// open value
 				{
 					if ( cursor->child != NULL )	// is root label in label:value pair
 					{
-						if ( rs_catchar ( output,':' ) != RS_OK )
+						if ( rs_catchar ( output,L':' ) != RS_OK )
 							goto error;
 					}
 					else
@@ -351,7 +351,7 @@ state1:	// open value
 				break;
 
 			case JSON_OBJECT:
-				if ( rs_catchar ( output,'{' ) != RS_OK )
+				if ( rs_catchar ( output,L'{' ) != RS_OK )
 					goto error;
 
 				if ( cursor->child )
@@ -366,7 +366,7 @@ state1:	// open value
 				break;
 
 			case JSON_ARRAY:
-				if ( rs_catchar ( output,'[' ) != RS_OK )
+				if ( rs_catchar ( output,L'[' ) != RS_OK )
 					goto error;
 				if ( cursor->child != NULL )
 				{
@@ -420,12 +420,12 @@ state2:	// close value
 		switch ( cursor->type )
 		{
 			case JSON_OBJECT:
-				if ( rs_catchar ( output,'}' ) != RS_OK )
+				if ( rs_catchar ( output,L'}' ) != RS_OK )
 					goto error;
 				break;
 
 			case JSON_ARRAY:
-				if ( rs_catchar ( output,']' ) != RS_OK )
+				if ( rs_catchar ( output,L']' ) != RS_OK )
 					goto error;
 				break;
 
@@ -533,7 +533,7 @@ state2:	// start structure
 		}
 
 		// create the new children objects
-		if ( text[pos] == '[' )
+		if ( text[pos] == L'[' )
 			temp = json_new_array();
 		else
 			temp = json_new_object();
@@ -587,7 +587,7 @@ state3:	// end structure
 		endstructure1:
 			switch ( text[pos] )
 			{
-	case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
+	case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
 					pos++;
 					if ( pos >= length )
 						goto state20;	//end tree
@@ -649,7 +649,7 @@ state4:	// process string
 		switch ( text[pos] )
 		{
 			case '\\':	// escaped characters
-				if ( rs_catchar ( temp->text,'\\' ) != RS_OK )
+				if ( rs_catchar ( temp->text,L'\\' ) != RS_OK )
 					goto error;
 
 				pos++;
@@ -735,7 +735,7 @@ state5: 	// process number
 		switch ( text[pos] )
 		{
 			case '-':
-				if ( rs_catchar ( temp->text,'-' ) != RS_OK )
+				if ( rs_catchar ( temp->text,L'-' ) != RS_OK )
 					goto error;
 				pos++;
 				if ( pos >= length )
@@ -743,7 +743,7 @@ state5: 	// process number
 				goto number3;	//decimal part
 				break;
 			case '0':
-				if ( rs_catchar ( temp->text,'0' ) != RS_OK )
+				if ( rs_catchar ( temp->text,L'0' ) != RS_OK )
 					goto error;
 				pos++;
 				if ( pos >= length )
@@ -768,7 +768,7 @@ case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': 
 		switch ( text[pos] )
 		{
 			case '.':
-				if ( rs_catchar ( temp->text,'.' ) != RS_OK )
+				if ( rs_catchar ( temp->text,L'.' ) != RS_OK )
 					goto error;
 				pos++;
 				if ( pos >= length )
@@ -804,7 +804,7 @@ case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': 
 				break;
 
 			case '.':
-				if ( rs_catchar ( temp->text,'.' ) != RS_OK )
+				if ( rs_catchar ( temp->text,L'.' ) != RS_OK )
 					goto error;
 				pos++;
 				if ( pos >= length )
@@ -979,11 +979,11 @@ case  '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
 
 state6:	// true
 	{
-		if ( text[++pos] != 'r' )
+		if ( text[++pos] != L'r' )
 			goto error;
-		if ( text[++pos] != 'u' )
+		if ( text[++pos] != L'u' )
 			goto error;
-		if ( text[++pos] != 'e' )
+		if ( text[++pos] != L'e' )
 			goto error;
 	statetrue:
 		switch ( text[++pos] )
@@ -1019,13 +1019,13 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
 
 state7:	// false
 	{
-		if ( text[++pos] != 'a' )
+		if ( text[++pos] != L'a' )
 			goto error;
-		if ( text[++pos] != 'l' )
+		if ( text[++pos] != L'l' )
 			goto error;
-		if ( text[++pos] != 's' )
+		if ( text[++pos] != L's' )
 			goto error;
-		if ( text[++pos] != 'e' )
+		if ( text[++pos] != L'e' )
 			goto error;
 		pos++;
 		if ( pos >= length )
@@ -1071,19 +1071,19 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
 state8:	// null
 	{
 		pos++;
-		if ( text[pos] != 'u' )
+		if ( text[pos] != L'u' )
 		{
 			goto error;
 		}
 
 		pos++;
-		if ( text[pos] != 'l' )
+		if ( text[pos] != L'l' )
 		{
 			goto error;
 		}
 
 		pos++;
-		if ( text[pos] != 'l' )
+		if ( text[pos] != L'l' )
 		{
 			goto error;
 		}
@@ -1309,12 +1309,12 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 				char loop = 1;	// inner string loop trigger
 				while ( loop )	// parse the inner part of the string
 				{
-					if ( text->s[pos] == '\\' )	// escaped sequence
+					if ( text->s[pos] == L'\\' )	// escaped sequence
 					{
 						if ( rs_catchar ( output,text->s[pos] ) != RS_OK )
 							return NULL;
 						pos++;
-						if ( text->s[pos] == '\"' )	// don't consider a \" escaped sequence as an end of string
+						if ( text->s[pos] == L'\"' )	// don't consider a \" escaped sequence as an end of string
 						{
 
 							if ( rs_catchar ( output,text->s[pos] ) != RS_OK )
@@ -1322,7 +1322,7 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 							pos++;
 						}
 					}
-					else if ( text->s[pos] == '\"' )	// reached end of string
+					else if ( text->s[pos] == L'\"' )	// reached end of string
 					{
 						loop = 0;
 					}
@@ -1367,20 +1367,20 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 				indentation++;
 				for ( i = 0; i < indentation; i++ )
 				{
-					rs_catchar ( output,'\t' );
+					rs_catchar ( output,L'\t' );
 				}
 				break;
 
 			case '}':
-				if ( rs_catchar ( output, '\n' ) != RS_OK )
+				if ( rs_catchar ( output, L'\n' ) != RS_OK )
 					return NULL;
 				pos++;
 				indentation--;
 				for ( i = 0; i < indentation; i++ )
 				{
-					rs_catchar ( output,'\t' );
+					rs_catchar ( output,L'\t' );
 				}
-				if ( rs_catchar ( output, '}' ) != RS_OK )
+				if ( rs_catchar ( output, L'}' ) != RS_OK )
 					return NULL;
 				break;
 
@@ -1407,12 +1407,12 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 				char loop = 1;	// inner string loop trigger
 				while ( loop )	// parse the inner part of the string
 				{
-					if ( text->s[pos] == '\\' )	// escaped sequence
+					if ( text->s[pos] == L'\\' )	// escaped sequence
 					{
 						if ( rs_catchar ( output,text->s[pos] ) != RS_OK )
 							return NULL;
 						pos++;
-						if ( text->s[pos] == '\"' )	// don't consider a \" escaped sequence as an end of string
+						if ( text->s[pos] == L'\"' )	// don't consider a \" escaped sequence as an end of string
 						{
 
 							if ( rs_catchar ( output,text->s[pos] ) != RS_OK )
@@ -1420,7 +1420,7 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 							pos++;
 						}
 					}
-					else if ( text->s[pos] == '\"' )	// reached end of string
+					else if ( text->s[pos] == L'\"' )	// reached end of string
 					{
 						loop = 0;
 					}
