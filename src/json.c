@@ -46,7 +46,7 @@ struct json_value* json_new_value ( enum json_value_type type )
 }
 
 
-struct json_value* json_new_string ( char *text )
+struct json_value* json_new_string ( wchar_t *text )
 {
 	assert ( text != NULL );
 
@@ -68,7 +68,7 @@ struct json_value* json_new_string ( char *text )
 }
 
 
-struct json_value* json_new_number ( char *text )
+struct json_value* json_new_number ( wchar_t *text )
 {
 	assert ( text != NULL );
 
@@ -238,10 +238,10 @@ void json_render_tree_indented ( struct json_value *root, int level )
 	switch ( root->type )
 	{
 		case JSON_STRING:
-			printf ( "STRING: %s\n",root->text->s );
+			printf ( "STRING: %ls\n",root->text->s );
 			break;
 		case JSON_NUMBER:
-			printf ( "NUMBER: %s\n",root->text->s );
+			printf ( "NUMBER: %ls\n",root->text->s );
 			break;
 		case JSON_OBJECT:
 			printf ( "OBJECT: \n" );
@@ -280,7 +280,7 @@ void json_render_tree ( struct json_value *root )
 }
 
 
-char *json_tree_to_string ( struct json_value* root )
+wchar_t *json_tree_to_string ( struct json_value* root )
 {
 	assert ( root != NULL );
 	struct json_value* cursor = root;
@@ -288,7 +288,7 @@ char *json_tree_to_string ( struct json_value* root )
 // 		goto end;
 
 	// set up the output string
-	rstring *output = rs_create ( "" );
+	rstring *output = rs_create ( L"" );
 	if ( output == NULL )
 		return NULL;
 
@@ -381,21 +381,21 @@ state1:	// open value
 
 			case JSON_TRUE:
 				// must not have any children
-				if ( rs_catcs ( output,"true",4 ) != RS_OK )
+				if ( rs_catcs ( output,L"true",4 ) != RS_OK )
 					goto error;
 				goto state2;	// close value
 				break;
 
 			case JSON_FALSE:
 				// must not have any children
-				if ( rs_catcs ( output,"false",5 ) != RS_OK )
+				if ( rs_catcs ( output,L"false",5 ) != RS_OK )
 					goto error;
 				goto state2;	// close value
 				break;
 
 			case JSON_NULL:
 				// must not have any children
-				if ( rs_catcs ( output,"null",5 ) != RS_OK )
+				if ( rs_catcs ( output,L"null",5 ) != RS_OK )
 					goto error;
 				goto state2;	// close value
 				break;
@@ -470,10 +470,10 @@ end:
 }
 
 
-struct json_value * json_string_to_tree ( char * text )
+struct json_value * json_string_to_tree ( wchar_t * text )
 {
 	size_t pos = 0;
-	size_t length = strlen ( text );
+	size_t length = wcslen ( text );
 	struct json_value *cursor = NULL, *temp = NULL;
 
 state1:	// start value
@@ -621,7 +621,7 @@ state4:	// process string
 		pos++;	//TODO the "enter string" state must receive the cursor past the \" character
 		if ( pos >= length )
 			goto state20;	//end tree
-		temp = json_new_string ( "" );
+		temp = json_new_string ( L"" );
 
 		// tree structure integrity check
 		if ( cursor )
@@ -730,7 +730,7 @@ case '/': case 'b': case 'f': case 'n': case 'r': case 't':
 
 state5: 	// process number
 	{
-		temp = json_new_number ( "" );
+		temp = json_new_number ( L"" );
 		// start number
 		switch ( text[pos] )
 		{
@@ -1273,7 +1273,7 @@ end:
 	}
 }
 
-int json_white_space ( const char c )
+int json_white_space ( const wchar_t c )
 {
 	switch ( c )
 	{
@@ -1290,7 +1290,7 @@ rstring *json_strip_white_spaces ( const rstring *text )
 	assert ( text != NULL );
 	// declaring the variables
 	size_t pos = 0;
-	rstring *output = rs_create ( "" );
+	rstring *output = rs_create ( L"" );
 	if ( output == NULL )
 		return NULL;
 
@@ -1351,7 +1351,7 @@ rstring * json_format_string ( const rstring *text )
 {
 	size_t pos = 0;
 	unsigned int indentation = 0, i;
-	rstring *output = rs_create ( "" );
+	rstring *output = rs_create ( L"" );
 	while ( pos < text->length )
 	{
 		switch ( text->s[pos] )
@@ -1361,7 +1361,7 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 				break;
 
 			case '{':
-				if ( rs_catcs ( output, "{\n",2 ) != RS_OK )
+				if ( rs_catcs ( output, L"{\n",2 ) != RS_OK )
 					return NULL;
 				pos++;
 				indentation++;
@@ -1385,18 +1385,18 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 				break;
 
 			case ':':
-				if ( rs_catcs ( output,  ": ",2 ) != RS_OK )
+				if ( rs_catcs ( output,  L": ",2 ) != RS_OK )
 					return NULL;
 				pos++;
 				break;
 
 			case ',':
-				if ( rs_catcs ( output,  ",\n",2 ) != RS_OK )
+				if ( rs_catcs ( output,  L",\n",2 ) != RS_OK )
 					return NULL;
 				pos++;
 				for ( i = 0; i < indentation; i++ )
 				{
-					rs_catchar ( output,'\t' );
+					rs_catchar ( output,L'\t' );
 				}
 				break;
 

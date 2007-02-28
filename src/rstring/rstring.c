@@ -22,23 +22,24 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <wchar.h>
 
 
-rstring *rs_create(const char *cstring)
+rstring *rs_create(const wchar_t *cstring)
 {
 	assert(cstring != NULL);
-	rstring *rs = malloc(sizeof(rstring));
+	rstring *rs = calloc(wcslen(cstring), sizeof(wchar_t));
 	if(rs == NULL)
 		return NULL;
 
-	rs->length = rs->max = strlen(cstring);
+	rs->length = rs->max = wcslen(cstring);
 
 	rs->s = NULL;
-	rs->s = malloc(rs->length + 1);
+	rs->s = calloc(rs->length + 1, sizeof(wchar_t));
 	if(rs->s == NULL)
 		return NULL;
 
-	strncpy(rs->s, cstring, rs->length);
+	wcsncpy(rs->s, cstring, rs->length);
 	return rs;
 }
 
@@ -66,7 +67,7 @@ rstring *rs_duplicate(rstring *copied)
 	if(copy == NULL)
 		return NULL;
 
-	copy->s = malloc(1);
+	copy->s = calloc(1,sizeof(wchar_t));
 	if(copy->s == NULL)
 		return NULL;
 	copy->s[0] = 0;
@@ -95,7 +96,7 @@ int rs_copyrs(rstring *to, const rstring *from)
 	//TODO implement intelligent memory allocation
 	if(to->max < from->length)
 	{
-		to->s = realloc(to->s,from->length + 1);
+		to->s = realloc(to->s,(from->length + 1)*sizeof(wchar_t));
 		if(to->s == NULL)
 		{
 			return RS_MEMORY;
@@ -103,14 +104,14 @@ int rs_copyrs(rstring *to, const rstring *from)
 
 		to->max = from->length;
 	}
-	strncpy(to->s, from->s, from->length);
+	wcsncpy(to->s, from->s, from->length);
 	to->s[from->length] = 0;
 	to->length = from->length;
 	return RS_OK;
 }
 
 
-int rs_copycs(rstring *to, const char *from, const size_t length)
+int rs_copycs(rstring *to, const wchar_t *from, const size_t length)
 {
 	assert(to != NULL);
 
@@ -121,7 +122,7 @@ int rs_copycs(rstring *to, const char *from, const size_t length)
 	//TODO implement intelligent memory allocation
 	if(to->max < length)
 	{
-		to->s = realloc(to->s,length + 1);
+		to->s = realloc(to->s,(length + 1)*sizeof(wchar_t));
 		if(to->s == NULL)
 		{
 			return RS_MEMORY;
@@ -129,7 +130,7 @@ int rs_copycs(rstring *to, const char *from, const size_t length)
 
 		to->max = length;
 	}
-	strncpy(to->s, from, length);
+	wcsncpy(to->s, from, length);
 	to->s[length] = 0;
 	to->length = length;
 	return RS_OK;
@@ -143,7 +144,7 @@ int rs_catrs(rstring *pre, const rstring *pos)
 
 	if(pre->max < pre->length + pos->length + 1)
 	{
-		pre->s = realloc(pre->s,pre->length + pos->length + 1);
+		pre->s = realloc(pre->s,(pre->length + pos->length + 1)*sizeof(wchar_t));
 		if(pre->s == NULL)
 		{
 			return RS_MEMORY;
@@ -151,13 +152,13 @@ int rs_catrs(rstring *pre, const rstring *pos)
 
 		pre->max = pre->length + pos->length;
 	}
-	strncpy(pre->s+pre->length, pos->s, pos->length);
+	wcsncpy(pre->s+pre->length, pos->s, pos->length);
 	pre->s[pre->length+pos->length] = 0;
 	pre->length = pre->length + pos->length;
 	return RS_OK;
 }
 
-int rs_catcs(rstring *pre, const char *pos, const size_t length)
+int rs_catcs(rstring *pre, const wchar_t *pos, const size_t length)
 {
 	assert(pre != NULL);
 	if(pos == NULL)
@@ -165,7 +166,7 @@ int rs_catcs(rstring *pre, const char *pos, const size_t length)
 
 	if(pre->max < pre->length + length)
 	{
-		pre->s = realloc(pre->s,pre->length + length+1);
+		pre->s = realloc(pre->s,(pre->length + length + 1)*sizeof(wchar_t));
 		if(pre->s == NULL)
 		{
 			return RS_MEMORY;
@@ -173,20 +174,20 @@ int rs_catcs(rstring *pre, const char *pos, const size_t length)
 
 		pre->max = pre->length + length;
 	}
-	strncpy(pre->s+pre->length, pos, length);
+	wcsncpy(pre->s+pre->length, pos, length);
 	pre->s[pre->length+length] = 0;
 	pre->length = pre->length + length;	//is this the correct value?
 	return RS_OK;
 }
 
 
-int rs_catchar(rstring *pre, const char c)
+int rs_catchar(rstring *pre, const wchar_t c)
 {
 	assert(pre != NULL);
 
 	if(pre->max < pre->length + 1)
 	{
-		pre->s = realloc(pre->s,pre->length + 2);
+		pre->s = realloc(pre->s,(pre->length + 2)*sizeof(wchar_t));
 		if(pre->s == NULL)
 		{
 			return RS_MEMORY;
@@ -194,7 +195,7 @@ int rs_catchar(rstring *pre, const char c)
 
 		pre->max = pre->length + 1;
 	}
-	strncpy(pre->s+pre->length, &c, 1);
+	wcsncpy(pre->s+pre->length, &c, 1);
 	pre->s[pre->length+1] = 0;
 	pre->length++;	//is this the correct value?
 	return RS_OK;

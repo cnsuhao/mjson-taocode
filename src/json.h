@@ -70,7 +70,7 @@ Creates a new JSON string and defines it's text
 @param text the value's text
 @return a pointer to the newly created JSON string
 **/
-struct json_value* json_new_string ( char *text );
+struct json_value* json_new_string ( wchar_t *text );
 
 
 /**
@@ -78,7 +78,7 @@ Creates a new JSON number and defines it's text
 @param text the value's number
 @return a pointer to the newly created JSON string
 **/
-struct json_value* json_new_number ( char *text );
+struct json_value* json_new_number ( wchar_t *text );
 
 
 /**
@@ -162,7 +162,7 @@ Produces a JSON markup text document from a document tree
 @param root The document's root node
 @return The JSON text document, or NULL if some problem is encountered while traversing the tree.
 **/
-char* json_tree_to_string ( struct json_value* root );
+wchar_t* json_tree_to_string ( struct json_value* root );
 
 
 /**
@@ -170,7 +170,7 @@ Produces a document tree from a JSON markup text string
 @param text the JSON document text string
 @return the document's root node or NULL if some problem is encountered while parsing the JSON text
 **/
-struct json_value * json_string_to_tree ( char * text );
+struct json_value * json_string_to_tree ( wchar_t * text );
 
 
 /**
@@ -178,7 +178,7 @@ Checks if the character in question is a JSON markup white space
 @param c the character to be analized
 @return 1 if it is, 0 if it isn't
 **/
-int json_white_space ( const char c );
+int json_white_space ( const wchar_t c );
 
 
 /**

@@ -25,9 +25,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <wchar.h>
+#include <locale.h>
 
 #include "json.h"
-
 #include "rstring/rstring.h"
 
 
@@ -38,7 +39,7 @@ int test_json_file ( char *filename )
 	file = fopen ( filename,"r" );
 	if ( file == NULL )
 		return 0;
-	rstring *text = rs_create ( "" );
+	rstring *text = rs_create ( L"" );
 	char c;
 	while ( ( c = getc ( file ) ) != EOF )
 	{
@@ -67,31 +68,38 @@ int test_json_file ( char *filename )
 
 int main ( )
 {
-	// tests the example JSON document taken from the JSON site
-	if ( !test_json_file ( "test/test1.json" ) )
-	{
-		printf ( "error\n" );
-		return EXIT_SUCCESS;
-	}
-	if ( !test_json_file ( "test/test2.json" ) )
-	{
-		printf ( "error\n" );
-		return EXIT_SUCCESS;
-	}
-	if ( !test_json_file ( "test/test3.json" ) )
-	{
-		printf ( "error\n" );
-		return EXIT_SUCCESS;
-	}
-	if ( !test_json_file ( "test/test4.json" ) )
-	{
-		printf ( "error\n" );
-		return EXIT_SUCCESS;
-	}
-	if ( !test_json_file ( "test/test5.json" ) )
-	{
-		printf ( "error\n" );
-		return EXIT_SUCCESS;
-	}
+// 	// tests the example JSON document taken from the JSON site
+// 	if ( !test_json_file ( "test/test1.json" ) )
+// 	{
+// 		printf ( "error\n" );
+// 		return EXIT_SUCCESS;
+// 	}
+// 	if ( !test_json_file ( "test/test2.json" ) )
+// 	{
+// 		printf ( "error\n" );
+// 		return EXIT_SUCCESS;
+// 	}
+// 	if ( !test_json_file ( "test/test3.json" ) )
+// 	{
+// 		printf ( "error\n" );
+// 		return EXIT_SUCCESS;
+// 	}
+// 	if ( !test_json_file ( "test/test4.json" ) )
+// 	{
+// 		printf ( "error\n" );
+// 		return EXIT_SUCCESS;
+// 	}
+// 	if ( !test_json_file ( "test/test5.json" ) )
+// 	{
+// 		printf ( "error\n" );
+// 		return EXIT_SUCCESS;
+// 	}
+	setlocale(LC_CTYPE,"");
+	
+ 	rstring *me = rs_create(L"me!");
+	
+	rs_copycs(me,L"too!",4);
+	printf("%ls\n",me->s);
+	rs_destroy(&me);
 	return EXIT_SUCCESS;
 }
