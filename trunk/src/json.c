@@ -130,10 +130,17 @@ void json_free_value ( struct json_value **value )
 	if ( ( *value )->child != NULL )
 	{
 		///fixme write function to free entire subtree recursively
-		struct json_value *i;
-		for ( i = ( *value )->child_end; i->previous != NULL; i = i->previous )
+		struct json_value *i, *j;
+// 		for ( i = ( *value )->child_end; i != NULL; i = i->previous )
+// 		{
+// 			json_free_value ( &i );
+// 		}
+		i = (*value)->child_end;
+		while(i != NULL)
 		{
-			json_free_value ( &i );
+			j = i->previous;
+			json_free_value(&i);
+			i = j;
 		}
 	}
 
@@ -158,11 +165,15 @@ void json_free_value ( struct json_value **value )
 		if ( ( *value )->parent->child == ( *value ) )
 		{
 			if ( ( *value )->next )
+			{
 				( *value )->parent->child = ( *value )->next;	// the parent node always points to the first node
+			}
 			else
+			{
 				if ( ( *value )->previous )
 					( *value )->parent->child = ( *value )->next;	// the parent node always points to the first node
-			( *value )->parent->child = NULL;
+				( *value )->parent->child = NULL;
+			}
 		}
 	}
 
