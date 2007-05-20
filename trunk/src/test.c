@@ -43,24 +43,23 @@ int test_json_file ( char *filename )
 	char c;
 	while ( ( c = getc ( file ) ) != EOF )
 	{
-		if ( json_white_space ( c ) == 0 )
-			rs_catc ( text,c );
+		rs_catc ( text,c );
 	}
-
-	printf("%ls\n",text->s);
 
 	struct json_value *root = json_string_to_tree ( text->s );
 	if ( root != NULL )
 	{
-		if ( json_tree_to_string ( root ) != NULL )
+		rs_destroy ( &text );
+		text = rs_wrap( json_tree_to_string( root ) );
+		json_free_value ( &root );
+		if ( text != NULL )
 		{
+			printf ( "pass.\n%ls\n",text->s );
 			rs_destroy ( &text );
-			json_free_value ( &root );
-			printf ( "pass.\n" );
 			return 1;
 		}
 	}
-	rs_destroy ( &text );
+// 	rs_destroy ( &text );
 	printf ( "failed.\n" );
 	return 0;
 }

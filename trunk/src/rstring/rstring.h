@@ -70,13 +70,13 @@ size_t rs_length(rstring *rs);
 **/
 int rs_copyrs(rstring *to, const rstring *from);
 
-/** Copies a c-string into a rstring
+/** Copies a wchar_t string into a rstring
 \param to rstring where to copy to
-\param from c-string where to copy from
-\param length the length of c-string to be copied
+\param from wchar_t string where to copy from
+\param length the length to be copied
 \return result
 **/
-int rs_copycs(rstring *to, const wchar_t *from, const size_t length);
+int rs_copywcs(rstring *to, const wchar_t *from, const size_t length);
 
 /** Concatenates a rstring onto the end of a rstring
 \param pre rstring where to append to
@@ -85,13 +85,13 @@ int rs_copycs(rstring *to, const wchar_t *from, const size_t length);
 **/
 int rs_catrs(rstring *pre, const rstring *pos);
 
-/** Concatenates a c-string onto the end of a rstring
+/** Concatenates a wchar_t string onto the end of a rstring
 \param pre rstring where to append to
-\param pos c-string where to append from
-\param length the length of c-string to be copied
+\param pos wchar_t string where to append from
+\param length the length to be copied
 \return result
 **/
-int rs_catcs(rstring *pre, const wchar_t *pos, const size_t length);
+int rs_catwcs(rstring *pre, const wchar_t *pos, const size_t length);
 
 /** Concatenates a single wchar_t onto the end of a rstring
 \param pre rstring where to append to
@@ -106,5 +106,11 @@ int rs_catwc(rstring *pre, const wchar_t c);
 \return result
 **/
 int rs_catc(rstring *pre, const char c);
+
+/** Wraps a wchar_t string with a rstring structure
+\param wcs wchar_t structure which will be wrapped
+\return a rstring structure with the s pointer pointing towards wcs
+**/
+rstring *rs_wrap(wchar_t *wcs);
 
 #endif
