@@ -44,7 +44,7 @@ int test_json_file ( char *filename )
 	while ( ( c = getc ( file ) ) != EOF )
 	{
 		if ( json_white_space ( c ) == 0 )
-			rs_catchar ( text,c );
+			rs_catc ( text,c );
 	}
 
 	printf("%ls",text->s);
@@ -77,25 +77,25 @@ int main ( )
 		printf ( "error\n" );
 		return EXIT_SUCCESS;
 	}
-	if ( !test_json_file ( "test/test2.json" ) )
-	{
-		printf ( "error\n" );
-		return EXIT_SUCCESS;
-	}
-	if ( !test_json_file ( "test/test3.json" ) )
-	{
-		printf ( "error\n" );
-		return EXIT_SUCCESS;
-	}
-	if ( !test_json_file ( "test/test4.json" ) )
-	{
-		printf ( "error\n" );
-		return EXIT_SUCCESS;
-	}
-	if ( !test_json_file ( "test/test5.json" ) )
-	{
-		printf ( "error\n" );
-		return EXIT_SUCCESS;
-	}
+// 	if ( !test_json_file ( "test/test2.json" ) )
+// 	{
+// 		printf ( "error\n" );
+// 		return EXIT_SUCCESS;
+// 	}
+// 	if ( !test_json_file ( "test/test3.json" ) )
+// 	{
+// 		printf ( "error\n" );
+// 		return EXIT_SUCCESS;
+// 	}
+// 	if ( !test_json_file ( "test/test4.json" ) )
+// 	{
+// 		printf ( "error\n" );
+// 		return EXIT_SUCCESS;
+// 	}
+// 	if ( !test_json_file ( "test/test5.json" ) )
+// 	{
+// 		printf ( "error\n" );
+// 		return EXIT_SUCCESS;
+// 	}
 	return EXIT_SUCCESS;
 }
