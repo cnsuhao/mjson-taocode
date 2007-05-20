@@ -28,14 +28,14 @@
 rstring *rs_create(const wchar_t *cstring)
 {
 	assert(cstring != NULL);
-	rstring *rs = calloc(wcslen(cstring), sizeof(wchar_t));
+	rstring *rs = malloc(sizeof(rstring));	// allocates memory for a struct rstring
 	if(rs == NULL)
 		return NULL;
 
-	rs->length = rs->max = wcslen(cstring);
+	rs->length = rs->max = wcslen(cstring)+sizeof(wchar_t);
 
-	rs->s = NULL;
-	rs->s = calloc(rs->length + 1, sizeof(wchar_t));
+// 	rs->s = NULL;
+	rs->s = calloc(rs->length, sizeof(wchar_t));
 	if(rs->s == NULL)
 		return NULL;
 
