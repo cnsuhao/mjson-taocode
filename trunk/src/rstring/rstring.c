@@ -182,7 +182,7 @@ int rs_catcs(rstring *pre, const wchar_t *pos, const size_t length)
 }
 
 
-int rs_catchar(rstring *pre, const wchar_t c)	///todo rename function to rs_catwc
+int rs_catwc(rstring *pre, const wchar_t c)	///todo rename function to rs_catwc
 {
 	assert(pre != NULL);
 	if(pre->max <= pre->length )
@@ -207,7 +207,7 @@ int rs_catc(rstring *pre, const char c)
 // 	assert(pre != NULL);
 	wchar_t newc;
 	mbtowc(&newc, &c, 1);
-	return rs_catchar(pre,newc);
+	return rs_catwc(pre,newc);
 }
 
 

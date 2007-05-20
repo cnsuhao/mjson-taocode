@@ -98,7 +98,7 @@ int rs_catcs(rstring *pre, const wchar_t *pos, const size_t length);
 \param c wchar_t to be appended
 \return result
 **/
-int rs_catchar(rstring *pre, const wchar_t c);
+int rs_catwc(rstring *pre, const wchar_t c);
 
 /** Concatenates a single char onto the end of a rstring
 \param pre rstring where to append to

@@ -308,17 +308,17 @@ state1:	// open value
 	{
 		if ( ( cursor->previous ) && ( cursor != root ) )	//if cursor is children and not root than it is a followup sibling
 		{
-			if ( rs_catchar ( output,L',' ) != RS_OK )
+			if ( rs_catwc ( output,L',' ) != RS_OK )
 				goto error;
 		}
 		switch ( cursor->type )
 		{
 			case JSON_STRING:
-				if ( rs_catchar ( output,L'\"' ) != RS_OK )
+				if ( rs_catwc ( output,L'\"' ) != RS_OK )
 					goto error;
 				if ( rs_catrs ( output,cursor->text ) != RS_OK )
 					goto error;
-				if ( rs_catchar ( output,L'\"' ) != RS_OK )
+				if ( rs_catwc ( output,L'\"' ) != RS_OK )
 					goto error;
 
 				if ( cursor->parent != NULL )
@@ -328,7 +328,7 @@ state1:	// open value
 						// error checking: if parent is object and cursor is string then cursor must have a single child
 						if ( cursor->child != NULL )
 						{
-							if ( rs_catchar ( output,L':' ) != RS_OK )
+							if ( rs_catwc ( output,L':' ) != RS_OK )
 								goto error;
 						}
 						else
@@ -343,7 +343,7 @@ state1:	// open value
 				{
 					if ( cursor->child != NULL )	// is root label in label:value pair
 					{
-						if ( rs_catchar ( output,L':' ) != RS_OK )
+						if ( rs_catwc ( output,L':' ) != RS_OK )
 							goto error;
 					}
 					else
@@ -362,7 +362,7 @@ state1:	// open value
 				break;
 
 			case JSON_OBJECT:
-				if ( rs_catchar ( output,L'{' ) != RS_OK )
+				if ( rs_catwc ( output,L'{' ) != RS_OK )
 					goto error;
 
 				if ( cursor->child )
@@ -377,7 +377,7 @@ state1:	// open value
 				break;
 
 			case JSON_ARRAY:
-				if ( rs_catchar ( output,L'[' ) != RS_OK )
+				if ( rs_catwc ( output,L'[' ) != RS_OK )
 					goto error;
 				if ( cursor->child != NULL )
 				{
@@ -431,12 +431,12 @@ state2:	// close value
 		switch ( cursor->type )
 		{
 			case JSON_OBJECT:
-				if ( rs_catchar ( output,L'}' ) != RS_OK )
+				if ( rs_catwc ( output,L'}' ) != RS_OK )
 					goto error;
 				break;
 
 			case JSON_ARRAY:
-				if ( rs_catchar ( output,L']' ) != RS_OK )
+				if ( rs_catwc ( output,L']' ) != RS_OK )
 					goto error;
 				break;
 
@@ -660,7 +660,7 @@ state4:	// process string
 		switch ( text[pos] )
 		{
 			case '\\':	// escaped characters
-				if ( rs_catchar ( temp->text,L'\\' ) != RS_OK )
+				if ( rs_catwc ( temp->text,L'\\' ) != RS_OK )
 					goto error;
 
 				pos++;
@@ -671,7 +671,7 @@ state4:	// process string
 					case '\"':
 					case '\\':
 case '/': case 'b': case 'f': case 'n': case 'r': case 't':
-						if ( rs_catchar ( temp->text, text[pos] ) != RS_OK )
+						if ( rs_catc ( temp->text, text[pos] ) != RS_OK )
 							goto error;
 						pos++;
 						if ( pos >= length )
@@ -730,7 +730,7 @@ case '/': case 'b': case 'f': case 'n': case 'r': case 't':
 
 
 			default:
-				if ( rs_catchar ( temp->text,text[pos] ) != RS_OK )
+				if ( rs_catwc ( temp->text,text[pos] ) != RS_OK )
 					goto error;
 				pos++;
 				if ( pos >= length )
@@ -746,7 +746,7 @@ state5: 	// process number
 		switch ( text[pos] )
 		{
 			case '-':
-				if ( rs_catchar ( temp->text,L'-' ) != RS_OK )
+				if ( rs_catwc ( temp->text,L'-' ) != RS_OK )
 					goto error;
 				pos++;
 				if ( pos >= length )
@@ -754,7 +754,7 @@ state5: 	// process number
 				goto number3;	//decimal part
 				break;
 			case '0':
-				if ( rs_catchar ( temp->text,L'0' ) != RS_OK )
+				if ( rs_catwc ( temp->text,L'0' ) != RS_OK )
 					goto error;
 				pos++;
 				if ( pos >= length )
@@ -762,7 +762,7 @@ state5: 	// process number
 				goto number2;	// leading zero
 				break;
 case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-				if ( rs_catchar ( temp->text,text[pos] ) != RS_OK )
+				if ( rs_catc ( temp->text,text[pos] ) != RS_OK )
 					goto error;
 				pos++;
 				if ( pos >= length )
@@ -779,7 +779,7 @@ case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': 
 		switch ( text[pos] )
 		{
 			case '.':
-				if ( rs_catchar ( temp->text,L'.' ) != RS_OK )
+				if ( rs_catwc ( temp->text,L'.' ) != RS_OK )
 					goto error;
 				pos++;
 				if ( pos >= length )
@@ -806,7 +806,7 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
 		switch ( text[pos] )
 		{
 case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-				if ( rs_catchar ( temp->text,text[pos] ) != RS_OK )
+				if ( rs_catc ( temp->text,text[pos] ) != RS_OK )
 					goto error;
 				pos++;
 				if ( pos >= length )
@@ -815,7 +815,7 @@ case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': 
 				break;
 
 			case '.':
-				if ( rs_catchar ( temp->text,L'.' ) != RS_OK )
+				if ( rs_catwc ( temp->text,L'.' ) != RS_OK )
 					goto error;
 				pos++;
 				if ( pos >= length )
@@ -823,7 +823,7 @@ case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': 
 				goto number4;	// fractional part
 
 		case 'e': case 'E':
-				if ( rs_catchar ( temp->text,text[pos] ) != RS_OK )
+				if ( rs_catc ( temp->text,text[pos] ) != RS_OK )
 					goto error;
 				pos++;
 				if ( pos >= length )
@@ -850,7 +850,7 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
 		switch ( text[pos] )
 		{
 case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-				if ( rs_catchar ( temp->text,text[pos] ) != RS_OK )
+				if ( rs_catc ( temp->text,text[pos] ) != RS_OK )
 					goto error;
 				pos++;
 				if ( pos >= length )
@@ -867,7 +867,7 @@ case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': 
 		switch ( text[pos] )
 		{
 case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-				if ( rs_catchar ( temp->text,text[pos] ) != RS_OK )
+				if ( rs_catc ( temp->text,text[pos] ) != RS_OK )
 					goto error;
 				pos++;
 				if ( pos >= length )
@@ -876,7 +876,7 @@ case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': 
 				break;
 
 		case 'e': case 'E':
-				if ( rs_catchar ( temp->text,text[pos] ) != RS_OK )
+				if ( rs_catc ( temp->text,text[pos] ) != RS_OK )
 					goto error;
 				pos++;
 				if ( pos >= length )
@@ -905,7 +905,7 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
 			case '+':
 			case '-':
 case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-				if ( rs_catchar ( temp->text,text[pos] ) != RS_OK )
+				if ( rs_catc ( temp->text,text[pos] ) != RS_OK )
 					goto error;
 				pos++;
 				if ( pos >= length )
@@ -922,7 +922,7 @@ case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': 
 		switch ( text[pos] )
 		{
 case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-				if ( rs_catchar ( temp->text,text[pos] ) != RS_OK )
+				if ( rs_catc ( temp->text,text[pos] ) != RS_OK )
 					goto error;
 				pos++;
 				if ( pos >= length )
@@ -1314,7 +1314,7 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 				break;
 
 			case '\"':	//open string
-				if ( rs_catchar ( output,text->s[pos] ) != RS_OK )
+				if ( rs_catc ( output,text->s[pos] ) != RS_OK )
 					return NULL;
 				pos++;
 				char loop = 1;	// inner string loop trigger
@@ -1322,13 +1322,13 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 				{
 					if ( text->s[pos] == L'\\' )	// escaped sequence
 					{
-						if ( rs_catchar ( output,text->s[pos] ) != RS_OK )
+						if ( rs_catc ( output,text->s[pos] ) != RS_OK )
 							return NULL;
 						pos++;
 						if ( text->s[pos] == L'\"' )	// don't consider a \" escaped sequence as an end of string
 						{
 
-							if ( rs_catchar ( output,text->s[pos] ) != RS_OK )
+							if ( rs_catc ( output,text->s[pos] ) != RS_OK )
 								return NULL;
 							pos++;
 						}
@@ -1338,7 +1338,7 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 						loop = 0;
 					}
 
-					if ( rs_catchar ( output,text->s[pos] ) != RS_OK )
+					if ( rs_catc ( output,text->s[pos] ) != RS_OK )
 						return NULL;
 					pos++;
 					if ( pos >= text->length )
@@ -1347,7 +1347,7 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 				break;
 
 			default:
-				if ( rs_catchar ( output,text->s[pos] ) != RS_OK )
+				if ( rs_catc ( output,text->s[pos] ) != RS_OK )
 					return NULL;
 				pos++;
 				break;
@@ -1378,20 +1378,20 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 				indentation++;
 				for ( i = 0; i < indentation; i++ )
 				{
-					rs_catchar ( output,L'\t' );
+					rs_catwc ( output,L'\t' );
 				}
 				break;
 
 			case '}':
-				if ( rs_catchar ( output, L'\n' ) != RS_OK )
+				if ( rs_catwc ( output, L'\n' ) != RS_OK )
 					return NULL;
 				pos++;
 				indentation--;
 				for ( i = 0; i < indentation; i++ )
 				{
-					rs_catchar ( output,L'\t' );
+					rs_catwc ( output,L'\t' );
 				}
-				if ( rs_catchar ( output, L'}' ) != RS_OK )
+				if ( rs_catwc ( output, L'}' ) != RS_OK )
 					return NULL;
 				break;
 
@@ -1407,12 +1407,12 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 				pos++;
 				for ( i = 0; i < indentation; i++ )
 				{
-					rs_catchar ( output,L'\t' );
+					rs_catwc ( output,L'\t' );
 				}
 				break;
 
 			case '\"':	//open string
-				if ( rs_catchar ( output,text->s[pos] ) != RS_OK )
+				if ( rs_catc ( output,text->s[pos] ) != RS_OK )
 					return NULL;
 				pos++;
 				char loop = 1;	// inner string loop trigger
@@ -1420,13 +1420,13 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 				{
 					if ( text->s[pos] == L'\\' )	// escaped sequence
 					{
-						if ( rs_catchar ( output,text->s[pos] ) != RS_OK )
+						if ( rs_catc ( output,text->s[pos] ) != RS_OK )
 							return NULL;
 						pos++;
 						if ( text->s[pos] == L'\"' )	// don't consider a \" escaped sequence as an end of string
 						{
 
-							if ( rs_catchar ( output,text->s[pos] ) != RS_OK )
+							if ( rs_catc ( output,text->s[pos] ) != RS_OK )
 								return NULL;
 							pos++;
 						}
@@ -1436,7 +1436,7 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 						loop = 0;
 					}
 
-					if ( rs_catchar ( output,text->s[pos] ) != RS_OK )
+					if ( rs_catc ( output,text->s[pos] ) != RS_OK )
 						return NULL;
 					pos++;
 					if ( pos >= text->length )
@@ -1445,7 +1445,7 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 				break;
 
 			default:
-				if ( rs_catchar ( output,text->s[pos] ) != RS_OK )
+				if ( rs_catc ( output,text->s[pos] ) != RS_OK )
 					return NULL;
 				pos++;
 				break;
