@@ -392,21 +392,21 @@ state1:	// open value
 
 			case JSON_TRUE:
 				// must not have any children
-				if ( rs_catcs ( output,L"true",4 ) != RS_OK )
+				if ( rs_catwcs ( output,L"true",4 ) != RS_OK )
 					goto error;
 				goto state2;	// close value
 				break;
 
 			case JSON_FALSE:
 				// must not have any children
-				if ( rs_catcs ( output,L"false",5 ) != RS_OK )
+				if ( rs_catwcs ( output,L"false",5 ) != RS_OK )
 					goto error;
 				goto state2;	// close value
 				break;
 
 			case JSON_NULL:
 				// must not have any children
-				if ( rs_catcs ( output,L"null",5 ) != RS_OK )
+				if ( rs_catwcs ( output,L"null",5 ) != RS_OK )
 					goto error;
 				goto state2;	// close value
 				break;
@@ -1372,7 +1372,7 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 				break;
 
 			case '{':
-				if ( rs_catcs ( output, L"{\n",2 ) != RS_OK )
+				if ( rs_catwcs ( output, L"{\n",2 ) != RS_OK )
 					return NULL;
 				pos++;
 				indentation++;
@@ -1396,13 +1396,13 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 				break;
 
 			case ':':
-				if ( rs_catcs ( output,  L": ",2 ) != RS_OK )
+				if ( rs_catwcs ( output,  L": ",2 ) != RS_OK )
 					return NULL;
 				pos++;
 				break;
 
 			case ',':
-				if ( rs_catcs ( output,  L",\n",2 ) != RS_OK )
+				if ( rs_catwcs ( output,  L",\n",2 ) != RS_OK )
 					return NULL;
 				pos++;
 				for ( i = 0; i < indentation; i++ )

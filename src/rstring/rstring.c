@@ -112,7 +112,7 @@ int rs_copyrs(rstring *to, const rstring *from)
 }
 
 
-int rs_copycs(rstring *to, const wchar_t *from, const size_t length)
+int rs_copywcs(rstring *to, const wchar_t *from, const size_t length)
 {
 	assert(to != NULL);
 
@@ -159,7 +159,7 @@ int rs_catrs(rstring *pre, const rstring *pos)
 	return RS_OK;
 }
 
-int rs_catcs(rstring *pre, const wchar_t *pos, const size_t length)
+int rs_catwcs(rstring *pre, const wchar_t *pos, const size_t length)
 {
 	assert(pre != NULL);
 	if(pos == NULL)
@@ -182,7 +182,7 @@ int rs_catcs(rstring *pre, const wchar_t *pos, const size_t length)
 }
 
 
-int rs_catwc(rstring *pre, const wchar_t c)	///todo rename function to rs_catwc
+int rs_catwc(rstring *pre, const wchar_t c)
 {
 	assert(pre != NULL);
 	if(pre->max <= pre->length )
@@ -210,4 +210,16 @@ int rs_catc(rstring *pre, const char c)
 	return rs_catwc(pre,newc);
 }
 
+
+rstring* rs_wrap(wchar_t *wcs)
+{
+	if(wcs == NULL)
+		return NULL;
+	rstring *wrapper = malloc(sizeof(rstring));
+	if(wrapper == NULL)
+		return NULL;
+	wrapper->max = wrapper->length = wcslen(wcs);
+	wrapper->s = wcs;
+	return wrapper;
+}
 
