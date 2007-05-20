@@ -35,7 +35,7 @@
 int test_json_file ( char *filename )
 {
 	FILE *file;
-	printf ( "%s: ",filename );
+	printf ( "%s:\n",filename );
 	file = fopen ( filename,"r" );
 	if ( file == NULL )
 		return 0;
@@ -47,7 +47,7 @@ int test_json_file ( char *filename )
 			rs_catc ( text,c );
 	}
 
-	printf("%ls",text->s);
+	printf("%ls\n",text->s);
 
 	struct json_value *root = json_string_to_tree ( text->s );
 	if ( root != NULL )
@@ -61,7 +61,6 @@ int test_json_file ( char *filename )
 		}
 	}
 	rs_destroy ( &text );
-// 	json_free_value ( &root );
 	printf ( "failed.\n" );
 	return 0;
 }
