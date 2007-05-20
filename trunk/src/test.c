@@ -47,6 +47,8 @@ int test_json_file ( char *filename )
 			rs_catchar ( text,c );
 	}
 
+	printf("%ls",text->s);
+
 	struct json_value *root = json_string_to_tree ( text->s );
 	if ( root != NULL )
 	{
@@ -59,7 +61,7 @@ int test_json_file ( char *filename )
 		}
 	}
 	rs_destroy ( &text );
-	json_free_value ( &root );
+// 	json_free_value ( &root );
 	printf ( "failed.\n" );
 	return 0;
 }
@@ -70,35 +72,30 @@ int main ( )
 {
 	setlocale(LC_CTYPE,"");
 	// tests the example JSON document taken from the JSON site
-// 	if ( !test_json_file ( "test/test1.json" ) )
-// 	{
-// 		printf ( "error\n" );
-// 		return EXIT_SUCCESS;
-// 	}
-// 	if ( !test_json_file ( "test/test2.json" ) )
-// 	{
-// 		printf ( "error\n" );
-// 		return EXIT_SUCCESS;
-// 	}
-// 	if ( !test_json_file ( "test/test3.json" ) )
-// 	{
-// 		printf ( "error\n" );
-// 		return EXIT_SUCCESS;
-// 	}
-// 	if ( !test_json_file ( "test/test4.json" ) )
-// 	{
-// 		printf ( "error\n" );
-// 		return EXIT_SUCCESS;
-// 	}
-// 	if ( !test_json_file ( "test/test5.json" ) )
-// 	{
-// 		printf ( "error\n" );
-// 		return EXIT_SUCCESS;
-// 	}
-
-// 	rstring *test = rs_create(L"test");
-
-	wchar_t *test = L"test";
-	wprintf(L"%ls %i\n",test, wcslen(test));
+	if ( !test_json_file ( "test/test1.json" ) )
+	{
+		printf ( "error\n" );
+		return EXIT_SUCCESS;
+	}
+	if ( !test_json_file ( "test/test2.json" ) )
+	{
+		printf ( "error\n" );
+		return EXIT_SUCCESS;
+	}
+	if ( !test_json_file ( "test/test3.json" ) )
+	{
+		printf ( "error\n" );
+		return EXIT_SUCCESS;
+	}
+	if ( !test_json_file ( "test/test4.json" ) )
+	{
+		printf ( "error\n" );
+		return EXIT_SUCCESS;
+	}
+	if ( !test_json_file ( "test/test5.json" ) )
+	{
+		printf ( "error\n" );
+		return EXIT_SUCCESS;
+	}
 	return EXIT_SUCCESS;
 }

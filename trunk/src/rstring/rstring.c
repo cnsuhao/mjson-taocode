@@ -21,6 +21,7 @@
 #include "rstring.h"
 
 #include <stdlib.h>
+#include <stdio.h> // printf
 #include <assert.h>
 #include <wchar.h>
 
@@ -32,10 +33,10 @@ rstring *rs_create(const wchar_t *cstring)
 	if(rs == NULL)
 		return NULL;
 
-	rs->length = rs->max = wcslen(cstring)+sizeof(wchar_t);
+	rs->length = rs->max = wcslen(cstring);
 
 // 	rs->s = NULL;
-	rs->s = calloc(rs->length, sizeof(wchar_t));
+	rs->s = calloc(rs->length+1, sizeof(wchar_t));
 	if(rs->s == NULL)
 		return NULL;
 
@@ -181,13 +182,12 @@ int rs_catcs(rstring *pre, const wchar_t *pos, const size_t length)
 }
 
 
-int rs_catchar(rstring *pre, const wchar_t c)
+int rs_catchar(rstring *pre, const wchar_t c)	///todo rename function to rs_catwc
 {
 	assert(pre != NULL);
-
-	if(pre->max < pre->length + 1)
+	if(pre->max <= pre->length )
 	{
-		pre->s = realloc(pre->s,(pre->length + 2)*sizeof(wchar_t));
+		pre->s = realloc(pre->s,(pre->length + 2)*sizeof(wchar_t));	// 2 = new character + null character
 		if(pre->s == NULL)
 		{
 			return RS_MEMORY;
@@ -195,11 +195,19 @@ int rs_catchar(rstring *pre, const wchar_t c)
 
 		pre->max = pre->length + 1;
 	}
-	wcsncpy(pre->s+pre->length, &c, 1);
-	pre->s[pre->length+1] = 0;
-	pre->length++;	//is this the correct value?
+	pre->s[pre->length] = c;
+	pre->s[pre->length+1] = L'\0';
+	pre->length++;
 	return RS_OK;
 }
 
+
+int rs_catc(rstring *pre, const char c)
+{
+// 	assert(pre != NULL);
+	wchar_t newc;
+	mbtowc(&newc, &c, 1);
+	return rs_catchar(pre,newc);
+}
 
 

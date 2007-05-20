@@ -100,4 +100,11 @@ int rs_catcs(rstring *pre, const wchar_t *pos, const size_t length);
 **/
 int rs_catchar(rstring *pre, const wchar_t c);
 
+/** Concatenates a single char onto the end of a rstring
+\param pre rstring where to append to
+\param c char to be appended
+\return result
+**/
+int rs_catc(rstring *pre, const char c);
+
 #endif
