@@ -107,10 +107,17 @@ int rs_catwc(rstring *pre, const wchar_t c);
 **/
 int rs_catc(rstring *pre, const char c);
 
-/** Wraps a wchar_t string with a rstring structure
+/** Wraps a wchar_t string with a rstring structure, in order to offer a higher level string handling
 \param wcs wchar_t structure which will be wrapped
 \return a rstring structure with the s pointer pointing towards wcs
 **/
 rstring *rs_wrap(wchar_t *wcs);
+
+/** Unwraps a rstring from it's wchar_t string. Returns a pointer to the wchar_t string and frees everything else
+\param rs the rstring structure to be unwrapped and freed
+\return a wchar_t string containing the text
+**/
+wchar_t *rs_unwrap(rstring *rs);
+
 
 #endif
