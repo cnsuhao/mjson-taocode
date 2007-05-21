@@ -70,11 +70,11 @@ int main ( )
 {
 	setlocale(LC_CTYPE,"");
 	// tests the example JSON document taken from the JSON site
-	if ( !test_json_file ( "test/test1.json" ) )
-	{
-		printf ( "error\n" );
-		return EXIT_SUCCESS;
-	}
+// 	if ( !test_json_file ( "test/test1.json" ) )
+// 	{
+// 		printf ( "error\n" );
+// 		return EXIT_SUCCESS;
+// 	}
 // 	if ( !test_json_file ( "test/test2.json" ) )
 // 	{
 // 		printf ( "error\n" );
@@ -95,5 +95,9 @@ int main ( )
 // 		printf ( "error\n" );
 // 		return EXIT_SUCCESS;
 // 	}
+
+	rstring *foo = rs_create(L"goody");
+	wchar_t *bar = rs_unwrap(foo);
+	free(bar);
 	return EXIT_SUCCESS;
 }

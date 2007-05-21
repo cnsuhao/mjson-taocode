@@ -291,7 +291,7 @@ void json_render_tree ( struct json_value *root )
 }
 
 
-wchar_t *json_tree_to_string ( struct json_value* root )
+wchar_t *json_tree_to_string ( struct json_value* root )	///fixme this function leaks memory
 {
 	assert ( root != NULL );
 	struct json_value* cursor = root;

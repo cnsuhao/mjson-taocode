@@ -91,6 +91,7 @@ size_t rs_length(rstring *rs)
 int rs_copyrs(rstring *to, const rstring *from)
 {
 	assert(to != NULL);
+	
 	if(from == NULL)
 		return RS_OK;	// nothing to copy
 
@@ -119,7 +120,6 @@ int rs_copywcs(rstring *to, const wchar_t *from, const size_t length)
 	if(from == NULL)
 		return RS_OK;
 	
-
 	//TODO implement intelligent memory allocation
 	if(to->max < length)
 	{
@@ -221,5 +221,16 @@ rstring* rs_wrap(wchar_t *wcs)
 	wrapper->max = wrapper->length = wcslen(wcs);
 	wrapper->s = wcs;
 	return wrapper;
+}
+
+
+wchar_t *rs_unwrap(rstring *rs)
+{
+	if(rs == NULL)
+		return NULL;
+	wchar_t *out = rs->s;
+
+	free(rs);
+	return out;
 }
 
