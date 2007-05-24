@@ -477,7 +477,7 @@ error:
 	}
 
 end:
-	return output->s;
+	return rs_unwrap(output);
 }
 
 
@@ -1296,8 +1296,9 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':
 }
 
 
-rstring *json_strip_white_spaces ( const rstring *text )
+rstring *json_strip_white_spaces ( const rstring *text )	///fixit this function should not strip white spaces from JSON strings
 {
+	///TODO ignore white spaces contained in JSON text strings
 	assert ( text != NULL );
 	// declaring the variables
 	size_t pos = 0;

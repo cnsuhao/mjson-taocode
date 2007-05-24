@@ -65,39 +65,38 @@ int test_json_file ( char *filename )
 }
 
 
+///TODO implement a standard and nice looking method to format the source code
+
 
 int main ( )
 {
 	setlocale(LC_CTYPE,"");
 	// tests the example JSON document taken from the JSON site
-// 	if ( !test_json_file ( "test/test1.json" ) )
-// 	{
-// 		printf ( "error\n" );
-// 		return EXIT_SUCCESS;
-// 	}
-// 	if ( !test_json_file ( "test/test2.json" ) )
-// 	{
-// 		printf ( "error\n" );
-// 		return EXIT_SUCCESS;
-// 	}
-// 	if ( !test_json_file ( "test/test3.json" ) )
-// 	{
-// 		printf ( "error\n" );
-// 		return EXIT_SUCCESS;
-// 	}
-// 	if ( !test_json_file ( "test/test4.json" ) )
-// 	{
-// 		printf ( "error\n" );
-// 		return EXIT_SUCCESS;
-// 	}
-// 	if ( !test_json_file ( "test/test5.json" ) )
-// 	{
-// 		printf ( "error\n" );
-// 		return EXIT_SUCCESS;
-// 	}
-
-	rstring *foo = rs_create(L"goody");
-	wchar_t *bar = rs_unwrap(foo);
-	free(bar);
+	if ( !test_json_file ( "test/test1.json" ) )
+	{
+		printf ( "error\n" );
+		return EXIT_SUCCESS;
+	}
+	if ( !test_json_file ( "test/test2.json" ) )
+	{
+		printf ( "error\n" );
+		return EXIT_SUCCESS;
+	}
+	if ( !test_json_file ( "test/test3.json" ) )
+	{
+		printf ( "error\n" );
+		return EXIT_SUCCESS;
+	}
+	if ( !test_json_file ( "test/test4.json" ) )
+	{
+		printf ( "error\n" );
+		return EXIT_SUCCESS;
+	}
+	if ( !test_json_file ( "test/test5.json" ) )
+	{
+		printf ( "error\n" );
+		return EXIT_SUCCESS;
+	}
+	
 	return EXIT_SUCCESS;
 }
