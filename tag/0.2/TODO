@@ -1,0 +1,5 @@
+* finish the json_free_value function so that it really frees all allocated memory 
+* implement decent error handling on the parsing functions
+* support parsing incomplete documents (streaming, stdin)
+* test the library's hability to handle Unicode characters
+

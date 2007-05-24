@@ -1,0 +1,10 @@
+Version 0.2
+* added functions to identify and strip white spaces
+* implemented all remaining json_new_* functions
+* implemented json_format_string(), a basic formatting function
+* rstring: switched from char to wchar_t, to better support Unicode
+* switched the library to wchar_t
+
+Version 0.1
+* The starting point
+
