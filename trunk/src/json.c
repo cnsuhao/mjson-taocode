@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <memory.h>
+#include <wchar.h>
 
 
 struct json_value* json_new_value ( enum json_value_type type )
@@ -49,7 +50,7 @@ struct json_value* json_new_value ( enum json_value_type type )
 struct json_value* json_new_string ( wchar_t *text )
 {
 	assert ( text != NULL );
-
+	///TODO escape all characters enclosed in text
 	struct json_value *new_object;
 	// allocate memory to the new object
 	new_object = malloc ( sizeof ( struct json_value ) );
@@ -1456,5 +1457,55 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 	return output;
 }
 
+wchar_t *json_escape_string(wchar_t *text)
+{
+	rstring *output = rs_create(L"");
+	if(output == NULL)
+		return NULL;
+
+	size_t i;
+	for (i = 0; i < wcslen(text); i++)
+	{
+
+		if(text[i] == L'\\')
+			rs_catwcs(output, L"\\\\", 2);
+		else
+			if(text[i] == '\"')
+			rs_catwcs(output, L"\\\"", 2);
+		else
+			if(text[i] == L'/')
+				rs_catwcs(output, L"\\/", 2);
+		else
+			if(text[i] == L'\b')
+				rs_catwcs(output, L"\\b", 2);
+		else
+			if(text[i] == L'\f')
+				rs_catwcs(output, L"\\f", 2);
+		else
+			if(text[i] == L'\n')
+				rs_catwcs(output, L"\\n", 2);
+		else
+			if(text[i] == L'\r')
+				rs_catwcs(output, L"\\r", 2);
+		else
+			if(text[i] == L'\t')
+				rs_catwcs(output, L"\\t", 2);
+		else
+
+		if(   (text[i] >= 0x20) && (text[i] <= 0x7E) )	// ascii printable characters
+		{
+			rs_catwc(output, text[i]);
+		}
+		else	// beyond ascii characters?
+		{
+			wchar_t *temp = malloc(7*sizeof(wchar_t));
+			swprintf(temp,7,L"\\u%.4x\t",text[i]);
+			rs_catwcs(output, temp, 6);
+			free(temp);
+		}
+	}
+
+	return rs_unwrap(output);
+}
 
 
