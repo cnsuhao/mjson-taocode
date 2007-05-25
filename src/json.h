@@ -195,5 +195,12 @@ Formats a JSON markup text contained in the given string
 @return a rstring holding the formated document
 **/
 rstring * json_format_string ( const rstring *text );
+
+/**
+Outputs a new wchar_t string which holds the same characters as the given string but eplaces all escapable characters the respective escape sequence
+@param text a wchar_t text string
+@return a rstring holding the same text string but with escaped characters
+**/
+wchar_t *json_escape_string(wchar_t *text);
 #endif
 
