@@ -183,24 +183,27 @@ int json_white_space ( const wchar_t c );
 
 /**
 Strips all JSON white spaces from the given string
-@param text a JSON formatted document or document node
-@return a rstring holding the stripped down document
+@param text a wchar_t string holding a JSON formatted document
+@return a wchar_t string holding the stripped down document
 **/
-rstring *json_strip_white_spaces ( const rstring *text );
+wchar_t *json_strip_white_spaces ( wchar_t *text );
 
 
 /**
 Formats a JSON markup text contained in the given string
 @param text a JSON formatted document
-@return a rstring holding the formated document
+@return a wchar_t string holding the formated document
 **/
-rstring * json_format_string ( const rstring *text );
+wchar_t * json_format_string ( wchar_t *text );
+
 
 /**
-Outputs a new wchar_t string which holds the same characters as the given string but eplaces all escapable characters the respective escape sequence
+Outputs a new wchar_t string which holds the same characters as the given string but replaces all escapable characters the respective escape sequence.
+Please notice that this function produces a new string separate from wchar_t *text which, if unaccounted for, may contribute to memory leaks.
 @param text a wchar_t text string
-@return a rstring holding the same text string but with escaped characters
+@return a wchar_t string holding the same text string but with escaped characters
 **/
 wchar_t *json_escape_string(wchar_t *text);
+
 #endif
 
