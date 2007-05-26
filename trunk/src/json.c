@@ -50,7 +50,7 @@ struct json_value* json_new_value ( enum json_value_type type )
 struct json_value* json_new_string ( wchar_t *text )
 {
 	assert ( text != NULL );
-	///TODO escape all characters enclosed in text
+
 	struct json_value *new_object;
 	// allocate memory to the new object
 	new_object = malloc ( sizeof ( struct json_value ) );
@@ -132,10 +132,6 @@ void json_free_value ( struct json_value **value )
 	{
 		///fixme write function to free entire subtree recursively
 		struct json_value *i, *j;
-// 		for ( i = ( *value )->child_end; i != NULL; i = i->previous )
-// 		{
-// 			json_free_value ( &i );
-// 		}
 		i = (*value)->child_end;
 		while(i != NULL)
 		{
@@ -145,7 +141,7 @@ void json_free_value ( struct json_value **value )
 		}
 	}
 
-	// fix sibling linked list connections
+	// fixing sibling linked list connections
 	if ( ( *value )->previous && ( *value )->next )
 	{
 		( *value )->previous->next = ( *value )->next;
@@ -160,7 +156,7 @@ void json_free_value ( struct json_value **value )
 		( *value )->next->previous = NULL;
 	}
 
-	//fix parent node connections
+	//fixing parent node connections
 	if ( ( *value )->parent )
 	{
 		if ( ( *value )->parent->child == ( *value ) )
@@ -178,7 +174,7 @@ void json_free_value ( struct json_value **value )
 		}
 	}
 
-	//finally, free the memory allocated for this value
+	//finally, freeing the memory allocated for this value
 	if ( ( *value )->text != NULL )
 	{
 		rs_destroy ( & ( *value )->text );	// the string
@@ -295,10 +291,8 @@ void json_render_tree ( struct json_value *root )
 wchar_t *json_tree_to_string ( struct json_value* root )	///fixme this function leaks memory
 {
 	assert ( root != NULL );
+	
 	struct json_value* cursor = root;
-// 	if ( cursor == NULL )	// must try to render an existing tree
-// 		goto end;
-
 	// set up the output string
 	rstring *output = rs_create ( L"" );
 	if ( output == NULL )
@@ -495,31 +489,31 @@ state1:	// start value
 
 		switch ( text[pos] )
 		{
-case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
+case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
 				pos++;
 				if ( pos >= length )
 					goto state20;	//end tree
 				goto state1;
 				break;
-		case '{': case '[':
+		case L'{': case L'[':
 				goto state2;	// start structure
 
-		case '}': case ']':
+		case L'}': case L']':
 				goto state3;	// end structure
 
-			case '\"':
+			case L'\"':
 				goto state4;	// string
 
-case '-': case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+case L'-': case L'0': case L'1': case L'2': case L'3': case L'4': case L'5': case L'6': case L'7': case L'8': case L'9':
 				goto state5;	// number
 
-			case 't':
+			case L't':
 				goto state6;	// true
-			case 'f':
+			case L'f':
 				goto state7;	// false
-			case 'n':
+			case L'n':
 				goto state8;	// null
-			case ',':
+			case L',':
 				goto state10;	// sibling
 
 			default:
@@ -606,14 +600,14 @@ state3:	// end structure
 					goto endstructure1;
 					break;
 
-				case '}':
-				case ']':
+				case L'}':
+				case L']':
 					pos++;
 					if ( pos >= length )
 						goto state20;	//end tree
 					goto state3;	// end structure
 
-				case ',':
+				case L',':
 					pos++;
 					if ( pos >= length )
 						goto state20;	//end tree
@@ -660,7 +654,7 @@ state4:	// process string
 	str1:
 		switch ( text[pos] )
 		{
-			case '\\':	// escaped characters
+			case L'\\':	// escaped characters
 				if ( rs_catwc ( temp->text,L'\\' ) != RS_OK )
 					goto error;
 
@@ -669,9 +663,9 @@ state4:	// process string
 					goto state20;	//end tree
 				switch ( text[pos] )
 				{
-					case '\"':
-					case '\\':
-case '/': case 'b': case 'f': case 'n': case 'r': case 't':
+					case L'\"':
+					case L'\\':
+case L'/': case L'b': case L'f': case L'n': case L'r': case L't':
 						if ( rs_catwc ( temp->text, text[pos] ) != RS_OK )
 							goto error;
 						pos++;
@@ -680,14 +674,38 @@ case '/': case 'b': case 'f': case 'n': case 'r': case 't':
 						goto str1;
 						break;
 						//TODO implement hexadecimal part
+					case L'u':
+						if ( rs_catwc ( temp->text, text[pos] ) != RS_OK )
+							goto error;
+						pos++;
+						int u;
+						for(u=0; u<4;u++)
+						{
+							switch( text[pos] )
+							{
+								case L'0': case L'1': case L'2': case L'3': case L'4': case L'5': case L'6': case L'7': case L'8': case L'9':
+								case L'a': case L'b': case L'c': case L'd': case L'e': case L'f':
+								case L'A': case L'B': case L'C': case L'D': case L'E': case L'F':
+									if ( rs_catwc ( temp->text, text[pos] ) != RS_OK )
+										goto error;
+									break;
+								
+								default:
+									printf ( "Step 4 unicode: illegal character (%c) at position %i\n",text[pos], pos );
+									goto error;
+							}
+							pos++;
+						}
+						break;
 
 					default:
 						printf ( "Step 4: illegal character (%c) at position %i\n",text[pos], pos );
 						goto error;
 
 				}
+				break;
 
-			case '"':	// closing string
+			case L'"':	// closing string
 				if ( cursor == NULL )
 					cursor = temp;
 				else
@@ -746,7 +764,7 @@ state5: 	// process number
 		// start number
 		switch ( text[pos] )
 		{
-			case '-':
+			case L'-':
 				if ( rs_catwc ( temp->text,L'-' ) != RS_OK )
 					goto error;
 				pos++;
@@ -754,7 +772,7 @@ state5: 	// process number
 					goto state20;	//end tree
 				goto number3;	//decimal part
 				break;
-			case '0':
+			case L'0':
 				if ( rs_catwc ( temp->text,L'0' ) != RS_OK )
 					goto error;
 				pos++;
@@ -762,7 +780,7 @@ state5: 	// process number
 					goto state20;	//end tree
 				goto number2;	// leading zero
 				break;
-case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+case L'1': case L'2': case L'3': case L'4': case L'5': case L'6': case L'7': case L'8': case L'9':
 				if ( rs_catwc ( temp->text,text[pos] ) != RS_OK )
 					goto error;
 				pos++;
@@ -779,7 +797,7 @@ case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': 
 	number2:	// leading zero
 		switch ( text[pos] )
 		{
-			case '.':
+			case L'.':
 				if ( rs_catwc ( temp->text,L'.' ) != RS_OK )
 					goto error;
 				pos++;
@@ -787,14 +805,14 @@ case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': 
 					goto state20;	//end tree
 				goto number4;	// start fractional part
 
-case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
+case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
 				pos++;
 				if ( pos >= length )
 					goto state20;	//end tree
 				goto numberend;
 				break;
 
-	case ',': case '}': case ']':
+	case L',': case L'}': case L']':
 				goto numberend;
 				break;
 
@@ -806,7 +824,7 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
 	number3:	// decimal part
 		switch ( text[pos] )
 		{
-case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+case L'0': case L'1': case L'2': case L'3': case L'4': case L'5': case L'6': case L'7': case L'8': case L'9':
 				if ( rs_catwc ( temp->text,text[pos] ) != RS_OK )
 					goto error;
 				pos++;
@@ -815,7 +833,7 @@ case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': 
 				goto number3;	// decimal part
 				break;
 
-			case '.':
+			case L'.':
 				if ( rs_catwc ( temp->text,L'.' ) != RS_OK )
 					goto error;
 				pos++;
@@ -823,7 +841,7 @@ case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': 
 					goto state20;	//end tree
 				goto number4;	// fractional part
 
-		case 'e': case 'E':
+		case L'e': case L'E':
 				if ( rs_catwc ( temp->text,text[pos] ) != RS_OK )
 					goto error;
 				pos++;
@@ -831,14 +849,14 @@ case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': 
 					goto state20;	//end tree
 				goto number6;	// start exponential
 
-case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
+case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
 				pos++;
 				if ( pos >= length )
 					goto state20;	//end tree
 				goto numberend;
 				break;
 
-	case ',': case '}': case ']':
+	case L',': case L'}': case L']':
 				goto numberend;
 				break;
 
@@ -850,7 +868,7 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
 	number4:	// start fractional part
 		switch ( text[pos] )
 		{
-case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+case L'0': case L'1': case L'2': case L'3': case L'4': case L'5': case L'6': case L'7': case L'8': case L'9':
 				if ( rs_catwc ( temp->text,text[pos] ) != RS_OK )
 					goto error;
 				pos++;
@@ -867,7 +885,7 @@ case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': 
 	number5:	// fractional part
 		switch ( text[pos] )
 		{
-case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+case L'0': case L'1': case L'2': case L'3': case L'4': case L'5': case L'6': case L'7': case L'8': case L'9':
 				if ( rs_catwc ( temp->text,text[pos] ) != RS_OK )
 					goto error;
 				pos++;
@@ -876,7 +894,7 @@ case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': 
 				goto number5;	// decimal part
 				break;
 
-		case 'e': case 'E':
+		case L'e': case L'E':
 				if ( rs_catwc ( temp->text,text[pos] ) != RS_OK )
 					goto error;
 				pos++;
@@ -884,14 +902,14 @@ case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': 
 					goto state20;	//end tree
 				goto number6;	// start exponential
 
-case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
+case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
 				pos++;
 				if ( pos >= length )
 					goto state20;	//end tree
 				goto numberend;
 				break;
 
-	case ',': case '}': case ']':
+	case L',': case L'}': case L']':
 				goto numberend;
 				break;
 
@@ -903,9 +921,9 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
 	number6:	// start exponential part
 		switch ( text[pos] )
 		{
-			case '+':
-			case '-':
-case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+			case L'+':
+			case L'-':
+case L'0': case L'1': case L'2': case L'3': case L'4': case L'5': case L'6': case L'7': case L'8': case L'9':
 				if ( rs_catwc ( temp->text,text[pos] ) != RS_OK )
 					goto error;
 				pos++;
@@ -922,7 +940,7 @@ case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': 
 	number7:	// start exponential part
 		switch ( text[pos] )
 		{
-case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+case L'0': case L'1': case L'2': case L'3': case L'4': case L'5': case L'6': case L'7': case L'8': case L'9':
 				if ( rs_catwc ( temp->text,text[pos] ) != RS_OK )
 					goto error;
 				pos++;
@@ -931,14 +949,14 @@ case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': 
 				goto number7;	// exponential part
 				break;
 
-case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
+case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
 				pos++;
 				if ( pos >= length )
 					goto state20;	//end tree
 				goto numberend;
 				break;
 
-	case ',': case '}': case ']':
+	case L',': case L'}': case L']':
 				goto numberend;
 				break;
 
@@ -964,20 +982,20 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
 	numberendloop:
 		switch ( text[pos] )
 		{
-case  '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
+case  '\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
 				pos++;
 				if ( pos >= length )
 					goto state20;	//end tree
 				goto numberendloop;	// clear up all whitespaces until a decent character is found.
 				break;
-			case ',':
+			case L',':
 				pos++;
 				if ( pos >= length )
 					goto state20;	//end tree
 				goto state10;	// sibling
 				break;
 
-		case '}': case ']':
+		case L'}': case L']':
 				pos++;
 				if ( pos >= length )
 					goto state20;	//end tree
@@ -1000,7 +1018,7 @@ state6:	// true
 	statetrue:
 		switch ( text[++pos] )
 		{
-			case ',':
+			case L',':
 				json_insert_child ( cursor,json_new_value ( JSON_TRUE ) );
 				pos++;
 				if ( pos >= length )
@@ -1008,8 +1026,8 @@ state6:	// true
 				goto state10;	// sibling
 				break;
 
-			case '}':
-			case ']':
+			case L'}':
+			case L']':
 				json_insert_child ( cursor,json_new_value ( JSON_TRUE ) );
 				pos++;
 				if ( pos >= length )
@@ -1017,7 +1035,7 @@ state6:	// true
 				goto state3;	// end structure
 				break;
 
-case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
+case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
 				json_insert_child ( cursor,json_new_value ( JSON_TRUE ) );
 				//TODO implement a new state: close literal
 				goto statetrue;	// loop to get rid of the white spaces
@@ -1053,21 +1071,21 @@ state7:	// false
 	false1:
 		switch ( text[pos] )
 		{
-case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
+case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
 				pos++;	// ignore white spaces
 				if ( pos >= length )
 					goto state20;	//end tree
 				goto false1;
 				break;
 
-		case '}': case ']':
+		case L'}': case L']':
 				pos++;
 				if ( pos >= length )
 					goto state20;	//end tree
 				goto state3;	// end structure
 				break;
 
-			case ',':
+			case L',':
 				pos++;
 				if ( pos >= length )
 					goto state20;	//end tree
@@ -1106,22 +1124,22 @@ state8:	// null
 		pos++;
 		switch ( text[pos] )
 		{
-			case ',':
+			case L',':
 				pos++;
 				if ( pos >= length )
 					goto state20;	//end tree
 				goto state10;	// sibling
 				break;
 
-			case '}':
-			case ']':
+			case L'}':
+			case L']':
 				pos++;
 				if ( pos >= length )
 					goto state20;	//end tree
 				goto state3;	// end structure
 				break;
 
-case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
+case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
 				goto null1;	// start structure
 
 			default:
@@ -1133,27 +1151,27 @@ state9:	// pair
 	{
 		switch ( text[pos] )
 		{
-case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
+case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
 				pos++;
 				if ( pos >= length )
 					goto state20;	//end tree
 				goto state9;	// restart loop
 				break;
-		case '{': case '[':
+		case L'{': case L'[':
 				goto state2;	// start structure
 
-			case '\"':
+			case L'\"':
 				goto state4;	// string
 
-case '-': case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+case L'-': case L'0': case L'1': case L'2': case L'3': case L'4': case L'5': case L'6': case L'7': case L'8': case L'9':
 				goto state5;	// number
 				break;
 
-			case 't':
+			case L't':
 				goto state6;	// true
-			case 'f':
+			case L'f':
 				goto state7;	// false
-			case 'n':
+			case L'n':
 				goto state8;
 
 			default:
@@ -1171,25 +1189,25 @@ state10:	// sibling
 	sibling1:
 		switch ( text[pos] )
 		{
-case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
+case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
 				pos++;
 				if ( pos >= length )
 					goto state20;	//end tree
 				goto sibling1;
 				break;
-		case '{': case '[':
+		case L'{': case L'[':
 				goto state2;	// start structure
 
-			case '\"':
+			case L'\"':
 				goto state4;	// string
 
-case '-': case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+case L'-': case L'0': case L'1': case L'2': case L'3': case L'4': case L'5': case L'6': case L'7': case L'8': case L'9':
 				goto state5;	// number
-			case 't':
+			case L't':
 				goto state6;	// true
-			case 'f':
+			case L'f':
 				goto state7;	// false
-			case 'n':
+			case L'n':
 				goto state8;
 
 			default:
@@ -1202,28 +1220,28 @@ state11:	// string followup
 	{
 		switch ( text[pos] )
 		{
-case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
+case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
 				pos++;
 				if ( pos >= length )
 					goto state20;	//end tree
 				goto state11;
 				break;
 
-		case '}': case ']':
+		case L'}': case L']':
 				pos++;
 				if ( pos >= length )
 					goto state20;	//end tree
 				goto state3;	// end structure
 				break;
 
-			case ':':
+			case L':':
 				pos++;
 				if ( pos >= length )
 					goto state20;	//end tree
 				goto state9;	// pair
 				break;
 
-			case ',':
+			case L',':
 				pos++;
 				if ( pos >= length )
 					goto state20;	//end tree
@@ -1252,7 +1270,7 @@ state20:	// end tree
 				switch ( text[pos] )
 				{
 
-		case '\x20': case '\x09': case '\x0A': case '\x0D':	// white spaces
+		case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
 						pos++;
 						if ( pos >= length )
 							goto state20;	//end tree
@@ -1289,7 +1307,7 @@ int json_white_space ( const wchar_t c )
 {
 	switch ( c )
 	{
-case '\x20': case '\x09': case '\x0A': case '\x0D':
+case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':
 			return 1;
 		default:
 			return 0;
