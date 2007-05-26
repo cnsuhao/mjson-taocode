@@ -45,6 +45,7 @@ int test_json_file ( char *filename )
 	{
 		rs_catc ( text,c );
 	}
+	fclose(file);
 
 	struct json_value *root = json_string_to_tree ( text->s );
 	if ( root != NULL )
