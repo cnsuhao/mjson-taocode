@@ -1297,115 +1297,178 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':
 }
 
 
-rstring *json_strip_white_spaces ( const rstring *text )	///fixit this function should not strip white spaces from JSON strings
+wchar_t *json_strip_white_spaces ( wchar_t *text )	///fixit this function should not strip white spaces from JSON strings
 {
-	///TODO ignore white spaces contained in JSON text strings
 	assert ( text != NULL );
 	// declaring the variables
+ 	rstring *txt = rs_wrap(text);
+	if(txt == NULL)
+		return NULL;	// failed memory allocation
 	size_t pos = 0;
 	rstring *output = rs_create ( L"" );
-	if ( output == NULL )
-		return NULL;
-
-	while ( pos < text->length )
+	if(output == NULL)
 	{
-		switch ( text->s[pos] )
+		rs_unwrap(txt);
+		return NULL;
+	}
+
+	while ( pos < txt->length )
+	{
+		switch ( txt->s[pos] )
 		{
-case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
+case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// JSON white spaces
 				pos++;
 				break;
 
-			case '\"':	//open string
-				if ( rs_catwc ( output,text->s[pos] ) != RS_OK )
+			case L'\"':	//open string
+				if ( rs_catwc ( output,txt->s[pos] ) != RS_OK )
+				{
+					rs_unwrap(txt);
+					rs_destroy(&output);
 					return NULL;
+				}
 				pos++;
 				char loop = 1;	// inner string loop trigger
 				while ( loop )	// parse the inner part of the string
 				{
-					if ( text->s[pos] == L'\\' )	// escaped sequence
+					if ( txt->s[pos] == L'\\' )	// escaped sequence
 					{
-						if ( rs_catwc ( output,text->s[pos] ) != RS_OK )
+						if ( rs_catwc ( output,txt->s[pos] ) != RS_OK )
+						{
+							rs_unwrap(txt);
+							rs_destroy(&output);
 							return NULL;
+						}
 						pos++;
-						if ( text->s[pos] == L'\"' )	// don't consider a \" escaped sequence as an end of string
+						if ( txt->s[pos] == L'\"' )	// don't consider a \" escaped sequence as an end of string
 						{
 
-							if ( rs_catwc ( output,text->s[pos] ) != RS_OK )
+							if ( rs_catwc ( output,txt->s[pos] ) != RS_OK )
+							{
+								rs_unwrap(txt);
+								rs_destroy(&output);
 								return NULL;
+							}
 							pos++;
 						}
 					}
-					else if ( text->s[pos] == L'\"' )	// reached end of string
+					else if ( txt->s[pos] == L'\"' )	// reached end of string
 					{
 						loop = 0;
 					}
 
-					if ( rs_catwc ( output,text->s[pos] ) != RS_OK )
+					if ( rs_catwc ( output,txt->s[pos] ) != RS_OK )
+					{
+						rs_unwrap(txt);
+						rs_destroy(&output);
 						return NULL;
+					}
 					pos++;
-					if ( pos >= text->length )
+					if ( pos >= txt->length )
 						loop = 0;
 				}
 				break;
 
 			default:
-				if ( rs_catwc ( output,text->s[pos] ) != RS_OK )
+				if ( rs_catwc ( output,txt->s[pos] ) != RS_OK )
+				{
+					rs_unwrap(txt);
+					rs_destroy(&output);
 					return NULL;
+				}
 				pos++;
 				break;
 		}
 	}
-
-	return output;
+	rs_unwrap(txt);	// free memory allocated to wrapper
+	return rs_unwrap(output);
 }
 
 
-rstring * json_format_string ( const rstring *text )
+wchar_t * json_format_string ( wchar_t *text )
 {
 	size_t pos = 0;
 	unsigned int indentation = 0, i;
+	rstring *txt = rs_wrap(text);
+	if (txt == NULL)
+  		return NULL;
 	rstring *output = rs_create ( L"" );
-	while ( pos < text->length )
+	if(output == NULL)
 	{
-		switch ( text->s[pos] )
+		rs_unwrap(txt);
+		return NULL;
+	}
+	while ( pos < txt->length )
+	{
+		switch ( txt->s[pos] )
 		{
-case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
+			case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// JSON white spaces
 				pos++;
 				break;
 
-			case '{':
+			case L'{':
 				if ( rs_catwcs ( output, L"{\n",2 ) != RS_OK )
+				{
+					rs_unwrap(txt);
+					rs_destroy(&output);
 					return NULL;
+				}
 				pos++;
 				indentation++;
 				for ( i = 0; i < indentation; i++ )
 				{
-					rs_catwc ( output,L'\t' );
+					if ( rs_catwc ( output, L'\t') != RS_OK )
+					{
+						rs_unwrap(txt);
+						rs_destroy(&output);
+						return NULL;
+					}
 				}
 				break;
 
-			case '}':
+			case L'}':
 				if ( rs_catwc ( output, L'\n' ) != RS_OK )
+				{
+					rs_unwrap(txt);
+					rs_destroy(&output);
 					return NULL;
+				}
 				pos++;
 				indentation--;
 				for ( i = 0; i < indentation; i++ )
 				{
-					rs_catwc ( output,L'\t' );
+					if( rs_catwc ( output, L'\t' ) != RS_OK)
+					{
+						rs_unwrap(txt);
+						rs_destroy(&output);
+						return NULL;
+					}
 				}
 				if ( rs_catwc ( output, L'}' ) != RS_OK )
+				{
+					rs_unwrap(txt);
+					rs_destroy(&output);
 					return NULL;
+				}
 				break;
 
-			case ':':
+			case L':':
 				if ( rs_catwcs ( output,  L": ",2 ) != RS_OK )
+				{
+					rs_unwrap(txt);
+					rs_destroy(&output);
 					return NULL;
+				}
 				pos++;
 				break;
 
-			case ',':
+			case L',':
 				if ( rs_catwcs ( output,  L",\n",2 ) != RS_OK )
+				{
+					rs_unwrap(txt);
+					rs_destroy(&output);
 					return NULL;
+				}
 				pos++;
 				for ( i = 0; i < indentation; i++ )
 				{
@@ -1413,49 +1476,71 @@ case '\x20': case '\x09': case '\x0A': case '\x0D':	// JSON white spaces
 				}
 				break;
 
-			case '\"':	//open string
-				if ( rs_catwc ( output,text->s[pos] ) != RS_OK )
+			case L'\"':	//open string
+				if ( rs_catwc ( output,txt->s[pos] ) != RS_OK )
+				{
+					rs_unwrap(txt);
+					rs_destroy(&output);
 					return NULL;
+				}
 				pos++;
 				char loop = 1;	// inner string loop trigger
 				while ( loop )	// parse the inner part of the string
 				{
-					if ( text->s[pos] == L'\\' )	// escaped sequence
+					if ( txt->s[pos] == L'\\' )	// escaped sequence
 					{
-						if ( rs_catwc ( output,text->s[pos] ) != RS_OK )
+						if ( rs_catwc ( output,txt->s[pos] ) != RS_OK )
+						{
+							rs_unwrap(txt);
+							rs_destroy(&output);
 							return NULL;
+						}
 						pos++;
-						if ( text->s[pos] == L'\"' )	// don't consider a \" escaped sequence as an end of string
+						if ( txt->s[pos] == L'\"' )	// don't consider a \" escaped sequence as an end of string
 						{
 
-							if ( rs_catwc ( output,text->s[pos] ) != RS_OK )
+							if ( rs_catwc ( output,txt->s[pos] ) != RS_OK )
+							{
+								rs_unwrap(txt);
+								rs_destroy(&output);
 								return NULL;
+							}
 							pos++;
 						}
 					}
-					else if ( text->s[pos] == L'\"' )	// reached end of string
+					else if ( txt->s[pos] == L'\"' )	// reached end of string
 					{
 						loop = 0;
 					}
 
-					if ( rs_catwc ( output,text->s[pos] ) != RS_OK )
+					if ( rs_catwc ( output,txt->s[pos] ) != RS_OK )
+					{
+						rs_unwrap(txt);
+						rs_destroy(&output);
 						return NULL;
+					}
 					pos++;
-					if ( pos >= text->length )
+					if ( pos >= txt->length )
 						loop = 0;
 				}
 				break;
 
 			default:
-				if ( rs_catwc ( output,text->s[pos] ) != RS_OK )
+				if ( rs_catwc ( output,txt->s[pos] ) != RS_OK )
+				{
+					rs_unwrap(txt);
+					rs_destroy(&output);
 					return NULL;
+				}
 				pos++;
 				break;
 		}
 	}
 
-	return output;
+ 	rs_unwrap(txt);
+	return rs_unwrap(output);
 }
+
 
 wchar_t *json_escape_string(wchar_t *text)
 {
