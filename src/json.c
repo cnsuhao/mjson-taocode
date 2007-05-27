@@ -27,12 +27,13 @@
 #include <wchar.h>
 
 
-struct json_value* json_new_value ( enum json_value_type type )
+struct json_value *
+json_new_value (enum json_value_type type)
 {
 	struct json_value *new_object;
 	// allocate memory to the new object
-	new_object = malloc ( sizeof ( struct json_value ) );
-	if ( new_object == NULL )
+	new_object = malloc (sizeof (struct json_value));
+	if (new_object == NULL)
 		return NULL;
 
 	// initialize members
@@ -41,160 +42,169 @@ struct json_value* json_new_value ( enum json_value_type type )
 	new_object->child = NULL;
 	new_object->child_end = NULL;
 	new_object->previous = NULL;
-	new_object->next =NULL;
+	new_object->next = NULL;
 	new_object->type = type;
 	return new_object;
 }
 
 
-struct json_value* json_new_string ( wchar_t *text )
+struct json_value *
+json_new_string (wchar_t * text)
 {
-	assert ( text != NULL );
+	assert (text != NULL);
 
 	struct json_value *new_object;
 	// allocate memory to the new object
-	new_object = malloc ( sizeof ( struct json_value ) );
-	if ( new_object == NULL )
+	new_object = malloc (sizeof (struct json_value));
+	if (new_object == NULL)
 		return NULL;
 
 	// initialize members
-	new_object->text = rs_create ( text );
+	new_object->text = rs_create (text);
 	new_object->parent = NULL;
 	new_object->child = NULL;
 	new_object->child_end = NULL;
 	new_object->previous = NULL;
-	new_object->next =NULL;
+	new_object->next = NULL;
 	new_object->type = JSON_STRING;
 	return new_object;
 }
 
 
-struct json_value* json_new_number ( wchar_t *text )
+struct json_value *
+json_new_number (wchar_t * text)
 {
-	assert ( text != NULL );
+	assert (text != NULL);
 
 	//TODO enforce number string correctness or leave it to the user?
 
 	struct json_value *new_object;
 	// allocate memory to the new object
-	new_object = malloc ( sizeof ( struct json_value ) );
-	if ( new_object == NULL )
+	new_object = malloc (sizeof (struct json_value));
+	if (new_object == NULL)
 		return NULL;
 
 	// initialize members
-	new_object->text = rs_create ( text );
+	new_object->text = rs_create (text);
 	new_object->parent = NULL;
 	new_object->child = NULL;
 	new_object->child_end = NULL;
 	new_object->previous = NULL;
-	new_object->next =NULL;
+	new_object->next = NULL;
 	new_object->type = JSON_NUMBER;
 	return new_object;
 }
 
 
-struct json_value* json_new_object ( void )
+struct json_value *
+json_new_object (void)
 {
-	return json_new_value ( JSON_OBJECT );
+	return json_new_value (JSON_OBJECT);
 }
 
 
-struct json_value* json_new_array ( void )
+struct json_value *
+json_new_array (void)
 {
-	return json_new_value ( JSON_ARRAY );
+	return json_new_value (JSON_ARRAY);
 }
 
 
-struct json_value* json_new_null ( void )
+struct json_value *
+json_new_null (void)
 {
-	return json_new_value ( JSON_NULL );
+	return json_new_value (JSON_NULL);
 }
 
 
-struct json_value* json_new_true ( void )
+struct json_value *
+json_new_true (void)
 {
-	return json_new_value ( JSON_TRUE );
+	return json_new_value (JSON_TRUE);
 }
 
 
-struct json_value* json_new_false ( void )
+struct json_value *
+json_new_false (void)
 {
-	return json_new_value ( JSON_FALSE );
+	return json_new_value (JSON_FALSE);
 }
 
 
-void json_free_value ( struct json_value **value )
+void
+json_free_value (struct json_value **value)
 {
-	assert ( ( *value ) != NULL );
+	assert ((*value) != NULL);
 
 	// free each and every child nodes
-	if ( ( *value )->child != NULL )
+	if ((*value)->child != NULL)
 	{
 		///fixme write function to free entire subtree recursively
 		struct json_value *i, *j;
 		i = (*value)->child_end;
-		while(i != NULL)
+		while (i != NULL)
 		{
 			j = i->previous;
-			json_free_value(&i);
+			json_free_value (&i);
 			i = j;
 		}
 	}
 
 	// fixing sibling linked list connections
-	if ( ( *value )->previous && ( *value )->next )
+	if ((*value)->previous && (*value)->next)
 	{
-		( *value )->previous->next = ( *value )->next;
-		( *value )->next->previous = ( *value )->previous;
+		(*value)->previous->next = (*value)->next;
+		(*value)->next->previous = (*value)->previous;
 	}
-	if ( ( *value )->previous )
+	if ((*value)->previous)
 	{
-		( *value )->previous->next = NULL;
+		(*value)->previous->next = NULL;
 	}
-	if ( ( *value )->next )
+	if ((*value)->next)
 	{
-		( *value )->next->previous = NULL;
+		(*value)->next->previous = NULL;
 	}
 
 	//fixing parent node connections
-	if ( ( *value )->parent )
+	if ((*value)->parent)
 	{
-		if ( ( *value )->parent->child == ( *value ) )
+		if ((*value)->parent->child == (*value))
 		{
-			if ( ( *value )->next )
+			if ((*value)->next)
 			{
-				( *value )->parent->child = ( *value )->next;	// the parent node always points to the first node
+				(*value)->parent->child = (*value)->next;	// the parent node always points to the first node
 			}
 			else
 			{
-				if ( ( *value )->previous )
-					( *value )->parent->child = ( *value )->next;	// the parent node always points to the first node
-				( *value )->parent->child = NULL;
+				if ((*value)->previous)
+					(*value)->parent->child = (*value)->next;	// the parent node always points to the first node
+				(*value)->parent->child = NULL;
 			}
 		}
 	}
 
 	//finally, freeing the memory allocated for this value
-	if ( ( *value )->text != NULL )
+	if ((*value)->text != NULL)
 	{
-		rs_destroy ( & ( *value )->text );	// the string
+		rs_destroy (&(*value)->text);	// the string
 	}
-	free ( ( *value ) );	// the json value
-	( *value ) = NULL;
+	free ((*value));	// the json value
+	(*value) = NULL;
 }
 
 
-enum json_errors json_insert_child ( struct json_value *parent, struct json_value *child )
+enum json_errors
+json_insert_child (struct json_value *parent, struct json_value *child)
 {
 	///fixme: when the same value is inserted as a child the json_tree_to_string function enters a infinite loop
-	assert ( parent != NULL );	// the parent must exist
-	assert ( child != NULL );	// the child must exist
-	assert ( ( parent->type == JSON_OBJECT ) || ( parent->type == JSON_ARRAY ) || ( parent->type == JSON_STRING ) );	// must be a valid parent type
+	assert (parent != NULL);	// the parent must exist
+	assert (child != NULL);	// the child must exist
+	assert ((parent->type == JSON_OBJECT) || (parent->type == JSON_ARRAY) || (parent->type == JSON_STRING));	// must be a valid parent type
 	///todo implement a way to enforce object->text->value sequence
-	assert ( ! ( parent->type == JSON_OBJECT && child->type == JSON_OBJECT ) );
+	assert (!(parent->type == JSON_OBJECT && child->type == JSON_OBJECT));
 
 	child->parent = parent;
-	if ( parent->child )
+	if (parent->child)
 	{
 		child->previous = parent->child_end;
 		parent->child_end->next = child;
@@ -210,71 +220,75 @@ enum json_errors json_insert_child ( struct json_value *parent, struct json_valu
 }
 
 
-enum json_errors json_insert_pair_into_object ( struct json_value *parent, struct json_value *label, struct json_value *value )
+enum json_errors
+json_insert_pair_into_object (struct json_value *parent,
+			      struct json_value *label,
+			      struct json_value *value)
 {
 	// verify if the parameters are valid
-	assert ( parent != NULL );
-	assert ( label != NULL );
-	assert ( value != NULL );
+	assert (parent != NULL);
+	assert (label != NULL);
+	assert (value != NULL);
 	// enforce type coherence
-	assert ( parent->type == JSON_OBJECT );
-	assert ( label->type == JSON_STRING );
+	assert (parent->type == JSON_OBJECT);
+	assert (label->type == JSON_STRING);
 
 	enum json_errors error;
 
 	//insert value and check for error
-	error = json_insert_child ( label,value );
-	if ( error != JSON_OK )
+	error = json_insert_child (label, value);
+	if (error != JSON_OK)
 		return error;
 	//insert value and check for error
-	error = json_insert_child ( parent,label );
-	if ( error != JSON_OK )
+	error = json_insert_child (parent, label);
+	if (error != JSON_OK)
 		return error;
 
 	return JSON_OK;
 }
 
 
-void json_render_tree_indented ( struct json_value *root, int level )
+void
+json_render_tree_indented (struct json_value *root, int level)
 {
-	assert ( root != NULL );
+	assert (root != NULL);
 	int tab;
-	for ( tab = 0; tab < level; tab++ )
+	for (tab = 0; tab < level; tab++)
 	{
-		printf ( "> " );
+		printf ("> ");
 	}
-	switch ( root->type )
+	switch (root->type)
 	{
-		case JSON_STRING:
-			printf ( "STRING: %ls\n",root->text->s );
-			break;
-		case JSON_NUMBER:
-			printf ( "NUMBER: %ls\n",root->text->s );
-			break;
-		case JSON_OBJECT:
-			printf ( "OBJECT: \n" );
-			break;
-		case JSON_ARRAY:
-			printf ( "ARRAY: \n" );
-			break;
-		case JSON_TRUE:
-			printf ( "TRUE:\n" );
-			break;
-		case JSON_FALSE:
-			printf ( "FALSE:\n" );
-			break;
-		case JSON_NULL:
-			printf ( "NULL:\n" );
-			break;
+	case JSON_STRING:
+		printf ("STRING: %ls\n", root->text->s);
+		break;
+	case JSON_NUMBER:
+		printf ("NUMBER: %ls\n", root->text->s);
+		break;
+	case JSON_OBJECT:
+		printf ("OBJECT: \n");
+		break;
+	case JSON_ARRAY:
+		printf ("ARRAY: \n");
+		break;
+	case JSON_TRUE:
+		printf ("TRUE:\n");
+		break;
+	case JSON_FALSE:
+		printf ("FALSE:\n");
+		break;
+	case JSON_NULL:
+		printf ("NULL:\n");
+		break;
 	}
 	//iterate through children
-	if ( root->child != NULL )
+	if (root->child != NULL)
 	{
 		struct json_value *ita, *itb;
 		ita = root->child;
-		while ( ita != NULL )
+		while (ita != NULL)
 		{
-			json_render_tree_indented ( ita,level+1 );
+			json_render_tree_indented (ita, level + 1);
 			itb = ita->next;
 			ita = itb;
 		}
@@ -282,134 +296,137 @@ void json_render_tree_indented ( struct json_value *root, int level )
 }
 
 
-void json_render_tree ( struct json_value *root )
+void
+json_render_tree (struct json_value *root)
 {
-	json_render_tree_indented ( root, 0 );
+	json_render_tree_indented (root, 0);
 }
 
 
-wchar_t *json_tree_to_string ( struct json_value* root )	///fixme this function leaks memory
+wchar_t *
+json_tree_to_string (struct json_value *root)	///fixme this function leaks memory
 {
-	assert ( root != NULL );
-	
-	struct json_value* cursor = root;
+	assert (root != NULL);
+
+	struct json_value *cursor = root;
 	// set up the output string
-	rstring *output = rs_create ( L"" );
-	if ( output == NULL )
+	rstring *output = rs_create (L"");
+	if (output == NULL)
 		return NULL;
 
 	// start the convoluted fun
-state1:	// open value
+      state1:			// open value
 	{
-		if ( ( cursor->previous ) && ( cursor != root ) )	//if cursor is children and not root than it is a followup sibling
+		if ((cursor->previous) && (cursor != root))	//if cursor is children and not root than it is a followup sibling
 		{
-			if ( rs_catwc ( output,L',' ) != RS_OK )
+			if (rs_catwc (output, L',') != RS_OK)
 				goto error;
 		}
-		switch ( cursor->type )
+		switch (cursor->type)
 		{
-			case JSON_STRING:
-				if ( rs_catwc ( output,L'\"' ) != RS_OK )
-					goto error;
-				if ( rs_catrs ( output,cursor->text ) != RS_OK )
-					goto error;
-				if ( rs_catwc ( output,L'\"' ) != RS_OK )
-					goto error;
+		case JSON_STRING:
+			if (rs_catwc (output, L'\"') != RS_OK)
+				goto error;
+			if (rs_catrs (output, cursor->text) != RS_OK)
+				goto error;
+			if (rs_catwc (output, L'\"') != RS_OK)
+				goto error;
 
-				if ( cursor->parent != NULL )
+			if (cursor->parent != NULL)
+			{
+				if (cursor->parent->type == JSON_OBJECT)	// cursor is label in label:value pair
 				{
-					if ( cursor->parent->type == JSON_OBJECT )	// cursor is label in label:value pair
+					// error checking: if parent is object and cursor is string then cursor must have a single child
+					if (cursor->child != NULL)
 					{
-						// error checking: if parent is object and cursor is string then cursor must have a single child
-						if ( cursor->child != NULL )
-						{
-							if ( rs_catwc ( output,L':' ) != RS_OK )
-								goto error;
-						}
-						else
-						{
-							// malformed document tree: label without value in label:value pair
-							printf ( "Tree integrity error: string as object children must be label:value pair\n" );
-							goto error;
-						}
-					}
-				}
-				else	// does not have a parent
-				{
-					if ( cursor->child != NULL )	// is root label in label:value pair
-					{
-						if ( rs_catwc ( output,L':' ) != RS_OK )
+						if (rs_catwc (output, L':') !=
+						    RS_OK)
 							goto error;
 					}
 					else
 					{
 						// malformed document tree: label without value in label:value pair
-						goto error;	// no root but siblings
+						printf ("Tree integrity error: string as object children must be label:value pair\n");
+						goto error;
 					}
 				}
-				break;
-
-			case JSON_NUMBER:
-				// must not have any children
-				if ( rs_catrs ( output,cursor->text ) != RS_OK )
-					goto error;
-				goto state2;	// close value
-				break;
-
-			case JSON_OBJECT:
-				if ( rs_catwc ( output,L'{' ) != RS_OK )
-					goto error;
-
-				if ( cursor->child )
+			}
+			else	// does not have a parent
+			{
+				if (cursor->child != NULL)	// is root label in label:value pair
 				{
-					cursor = cursor->child;
-					goto state1;
+					if (rs_catwc (output, L':') != RS_OK)
+						goto error;
 				}
 				else
 				{
-					goto state2;	// close value
+					// malformed document tree: label without value in label:value pair
+					goto error;	// no root but siblings
 				}
-				break;
+			}
+			break;
 
-			case JSON_ARRAY:
-				if ( rs_catwc ( output,L'[' ) != RS_OK )
-					goto error;
-				if ( cursor->child != NULL )
-				{
-					cursor = cursor->child;
-					goto state1;
-				}
-				else
-				{
-					goto state2;	// close value
-				}
-				break;
-
-			case JSON_TRUE:
-				// must not have any children
-				if ( rs_catwcs ( output,L"true",4 ) != RS_OK )
-					goto error;
-				goto state2;	// close value
-				break;
-
-			case JSON_FALSE:
-				// must not have any children
-				if ( rs_catwcs ( output,L"false",5 ) != RS_OK )
-					goto error;
-				goto state2;	// close value
-				break;
-
-			case JSON_NULL:
-				// must not have any children
-				if ( rs_catwcs ( output,L"null",5 ) != RS_OK )
-					goto error;
-				goto state2;	// close value
-				break;
-
-			default:
+		case JSON_NUMBER:
+			// must not have any children
+			if (rs_catrs (output, cursor->text) != RS_OK)
 				goto error;
+			goto state2;	// close value
+			break;
+
+		case JSON_OBJECT:
+			if (rs_catwc (output, L'{') != RS_OK)
+				goto error;
+
+			if (cursor->child)
+			{
+				cursor = cursor->child;
+				goto state1;
+			}
+			else
+			{
+				goto state2;	// close value
+			}
+			break;
+
+		case JSON_ARRAY:
+			if (rs_catwc (output, L'[') != RS_OK)
+				goto error;
+			if (cursor->child != NULL)
+			{
+				cursor = cursor->child;
+				goto state1;
+			}
+			else
+			{
+				goto state2;	// close value
+			}
+			break;
+
+		case JSON_TRUE:
+			// must not have any children
+			if (rs_catwcs (output, L"true", 4) != RS_OK)
+				goto error;
+			goto state2;	// close value
+			break;
+
+		case JSON_FALSE:
+			// must not have any children
+			if (rs_catwcs (output, L"false", 5) != RS_OK)
+				goto error;
+			goto state2;	// close value
+			break;
+
+		case JSON_NULL:
+			// must not have any children
+			if (rs_catwcs (output, L"null", 5) != RS_OK)
+				goto error;
+			goto state2;	// close value
+			break;
+
+		default:
+			goto error;
 		}
-		if ( cursor->child )
+		if (cursor->child)
 		{
 			cursor = cursor->child;
 			goto state1;
@@ -421,38 +438,38 @@ state1:	// open value
 		}
 	}
 
-state2:	// close value
+      state2:			// close value
 	{
-		switch ( cursor->type )
+		switch (cursor->type)
 		{
-			case JSON_OBJECT:
-				if ( rs_catwc ( output,L'}' ) != RS_OK )
-					goto error;
-				break;
-
-			case JSON_ARRAY:
-				if ( rs_catwc ( output,L']' ) != RS_OK )
-					goto error;
-				break;
-
-			case JSON_STRING:
-				break;
-			case JSON_NUMBER:
-				break;
-			case JSON_TRUE:
-				break;
-			case JSON_FALSE:
-				break;
-			case JSON_NULL:
-				break;
-			default:
+		case JSON_OBJECT:
+			if (rs_catwc (output, L'}') != RS_OK)
 				goto error;
+			break;
+
+		case JSON_ARRAY:
+			if (rs_catwc (output, L']') != RS_OK)
+				goto error;
+			break;
+
+		case JSON_STRING:
+			break;
+		case JSON_NUMBER:
+			break;
+		case JSON_TRUE:
+			break;
+		case JSON_FALSE:
+			break;
+		case JSON_NULL:
+			break;
+		default:
+			goto error;
 		}
-		if ( ( cursor->parent == NULL ) || ( cursor == root ) )
+		if ((cursor->parent == NULL) || (cursor == root))
 		{
 			goto end;
 		}
-		else if ( cursor->next )
+		else if (cursor->next)
 		{
 			cursor = cursor->next;
 			goto state1;
@@ -464,94 +481,110 @@ state2:	// close value
 		}
 	}
 
-error:
+      error:
 	{
-		printf ( "ERROR!" );
-		rs_destroy ( &output );
+		printf ("ERROR!");
+		rs_destroy (&output);
 		return NULL;	///todo implement better, usable error handling
 	}
 
-end:
-	return rs_unwrap(output);
+      end:
+	return rs_unwrap (output);
 }
 
 
-struct json_value * json_string_to_tree ( wchar_t * text )
+struct json_value *
+json_string_to_tree (wchar_t * text)
 {
 	size_t pos = 0;
-	size_t length = wcslen ( text );
+	size_t length = wcslen (text);
 	struct json_value *cursor = NULL, *temp = NULL;
 
-state1:	// start value
+      state1:			// start value
 	{
-		if ( pos >= length )
+		if (pos >= length)
 			goto state20;	//end tree
 
-		switch ( text[pos] )
+		switch (text[pos])
 		{
-case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto state1;
-				break;
-		case L'{': case L'[':
-				goto state2;	// start structure
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto state1;
+			break;
+		case L'{':
+		case L'[':
+			goto state2;	// start structure
 
-		case L'}': case L']':
-				goto state3;	// end structure
+		case L'}':
+		case L']':
+			goto state3;	// end structure
 
-			case L'\"':
-				goto state4;	// string
+		case L'\"':
+			goto state4;	// string
 
-case L'-': case L'0': case L'1': case L'2': case L'3': case L'4': case L'5': case L'6': case L'7': case L'8': case L'9':
-				goto state5;	// number
+		case L'-':
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			goto state5;	// number
 
-			case L't':
-				goto state6;	// true
-			case L'f':
-				goto state7;	// false
-			case L'n':
-				goto state8;	// null
-			case L',':
-				goto state10;	// sibling
+		case L't':
+			goto state6;	// true
+		case L'f':
+			goto state7;	// false
+		case L'n':
+			goto state8;	// null
+		case L',':
+			goto state10;	// sibling
 
-			default:
-				printf ( "Step 1: illegal character (%c) at position %i\n",text[pos], pos );
-				goto error;
+		default:
+			printf ("Step 1: illegal character (%c) at position %i\n", text[pos], pos);
+			goto error;
 		}
 	}
 
-state2:	// start structure
+      state2:			// start structure
 	{
 		// tree coherency checking
-		if ( cursor )	// cursor will be the parent node of this structure
+		if (cursor)	// cursor will be the parent node of this structure
 		{
-			switch ( cursor->type )	//make sure that the parent node can be the parent of a structure node
+			switch (cursor->type)	//make sure that the parent node can be the parent of a structure node
 			{
-				case JSON_ARRAY:	// types allowed
-				case JSON_STRING:
-					break;
-				default:
-					printf ( "state 2: dissallowed parent type\n" );
-					goto error;
+			case JSON_ARRAY:	// types allowed
+			case JSON_STRING:
+				break;
+			default:
+				printf ("state 2: dissallowed parent type\n");
+				goto error;
 			}
 		}
 
 		// create the new children objects
-		if ( text[pos] == L'[' )
-			temp = json_new_array();
+		if (text[pos] == L'[')
+			temp = json_new_array ();
 		else
-			temp = json_new_object();
+			temp = json_new_object ();
 
 		pos++;
-		if ( pos >= length )
+		if (pos >= length)
 			goto state20;	//end tree
 
 		// create new tree node and add as child
-		if ( cursor != NULL )
+		if (cursor != NULL)
 		{
-			json_insert_child ( cursor,temp );
+			json_insert_child (cursor, temp);
 		}
 		// traverse cursor up child node
 		cursor = temp;
@@ -559,9 +592,9 @@ state2:	// start structure
 		goto state1;	// start value
 	}
 
-state3:	// end structure
+      state3:			// end structure
 	{
-		if ( cursor->parent == NULL )	// if current node is already the root node then we have ended.
+		if (cursor->parent == NULL)	// if current node is already the root node then we have ended.
 		{
 			goto state20;	// end tree
 		}
@@ -569,716 +602,876 @@ state3:	// end structure
 		{
 			cursor = cursor->parent;
 
-			switch ( cursor->type )
+			switch (cursor->type)
 			{
-				case JSON_STRING:	// cursor is label in label:value pair
-				case JSON_OBJECT:
-					if ( cursor->parent == NULL )
-					{
-						goto state20;	//end tree
-					}
-					else
-					{
-						cursor = cursor->parent;
-					}
-					break;
-				case JSON_ARRAY:
-					break;
+			case JSON_STRING:	// cursor is label in label:value pair
+			case JSON_OBJECT:
+				if (cursor->parent == NULL)
+				{
+					goto state20;	//end tree
+				}
+				else
+				{
+					cursor = cursor->parent;
+				}
+				break;
+			case JSON_ARRAY:
+				break;
 
-				default:
-					goto error;
+			default:
+				goto error;
 			}
 
 			// check following characters
-		endstructure1:
-			switch ( text[pos] )
+		      endstructure1:
+			switch (text[pos])
 			{
-	case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
-					pos++;
-					if ( pos >= length )
-						goto state20;	//end tree
-					goto endstructure1;
-					break;
+			case L'\x20':
+			case L'\x09':
+			case L'\x0A':
+			case L'\x0D':	// white spaces
+				pos++;
+				if (pos >= length)
+					goto state20;	//end tree
+				goto endstructure1;
+				break;
 
-				case L'}':
-				case L']':
-					pos++;
-					if ( pos >= length )
-						goto state20;	//end tree
-					goto state3;	// end structure
+			case L'}':
+			case L']':
+				pos++;
+				if (pos >= length)
+					goto state20;	//end tree
+				goto state3;	// end structure
 
-				case L',':
-					pos++;
-					if ( pos >= length )
-						goto state20;	//end tree
-					goto state10;	//sibling
+			case L',':
+				pos++;
+				if (pos >= length)
+					goto state20;	//end tree
+				goto state10;	//sibling
 
-				default:
-					printf ( "Step 3: illegal character (%c) at position %i\n",text[pos], pos );
-					goto error;
+			default:
+				printf ("Step 3: illegal character (%c) at position %i\n", text[pos], pos);
+				goto error;
 
 			}
 			goto state1;
 		}
 	}
 
-state4:	// process string
+      state4:			// process string
 	{
-		pos++;	//TODO the "enter string" state must receive the cursor past the \" character
-		if ( pos >= length )
+		pos++;		//TODO the "enter string" state must receive the cursor past the \" character
+		if (pos >= length)
 			goto state20;	//end tree
-		temp = json_new_string ( L"" );
+		temp = json_new_string (L"");
 
 		// tree structure integrity check
-		if ( cursor )
+		if (cursor)
 		{
-			switch ( cursor->type )
+			switch (cursor->type)
 			{
-				case JSON_OBJECT:
-				case JSON_ARRAY:
-					break;
-				case JSON_STRING:
-					if ( cursor->parent )
-					{
-						if ( cursor->parent->type != JSON_OBJECT )	//a parent of a parent string must be an object
-							goto error;
-					}
-					break;
+			case JSON_OBJECT:
+			case JSON_ARRAY:
+				break;
+			case JSON_STRING:
+				if (cursor->parent)
+				{
+					if (cursor->parent->type != JSON_OBJECT)	//a parent of a parent string must be an object
+						goto error;
+				}
+				break;
 
-				default:	// a string can't be a child of other values besides object, array and string
-					goto error;
+			default:	// a string can't be a child of other values besides object, array and string
+				goto error;
 			}
 		}
 
 		// extract string
-	str1:
-		switch ( text[pos] )
+	      str1:
+		switch (text[pos])
 		{
-			case L'\\':	// escaped characters
-				if ( rs_catwc ( temp->text,L'\\' ) != RS_OK )
-					goto error;
+		case L'\\':	// escaped characters
+			if (rs_catwc (temp->text, L'\\') != RS_OK)
+				goto error;
 
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			switch (text[pos])
+			{
+			case L'\"':
+			case L'\\':
+			case L'/':
+			case L'b':
+			case L'f':
+			case L'n':
+			case L'r':
+			case L't':
+				if (rs_catwc (temp->text, text[pos]) != RS_OK)
+					goto error;
 				pos++;
-				if ( pos >= length )
+				if (pos >= length)
 					goto state20;	//end tree
-				switch ( text[pos] )
+				goto str1;
+				break;
+
+			case L'u':
+				if (rs_catwc (temp->text, text[pos]) != RS_OK)
+					goto error;
+				pos++;
+				int u;
+				for (u = 0; u < 4; u++)
 				{
-					case L'\"':
-					case L'\\':
-case L'/': case L'b': case L'f': case L'n': case L'r': case L't':
-						if ( rs_catwc ( temp->text, text[pos] ) != RS_OK )
+					switch (text[pos])
+					{
+					case L'0':
+					case L'1':
+					case L'2':
+					case L'3':
+					case L'4':
+					case L'5':
+					case L'6':
+					case L'7':
+					case L'8':
+					case L'9':
+					case L'a':
+					case L'b':
+					case L'c':
+					case L'd':
+					case L'e':
+					case L'f':
+					case L'A':
+					case L'B':
+					case L'C':
+					case L'D':
+					case L'E':
+					case L'F':
+						if (rs_catwc
+						    (temp->text,
+						     text[pos]) != RS_OK)
 							goto error;
-						pos++;
-						if ( pos >= length )
-							goto state20;	//end tree
-						goto str1;
-						break;
-						//TODO implement hexadecimal part
-					case L'u':
-						if ( rs_catwc ( temp->text, text[pos] ) != RS_OK )
-							goto error;
-						pos++;
-						int u;
-						for(u=0; u<4;u++)
-						{
-							switch( text[pos] )
-							{
-								case L'0': case L'1': case L'2': case L'3': case L'4': case L'5': case L'6': case L'7': case L'8': case L'9':
-								case L'a': case L'b': case L'c': case L'd': case L'e': case L'f':
-								case L'A': case L'B': case L'C': case L'D': case L'E': case L'F':
-									if ( rs_catwc ( temp->text, text[pos] ) != RS_OK )
-										goto error;
-									break;
-								
-								default:
-									printf ( "Step 4 unicode: illegal character (%c) at position %i\n",text[pos], pos );
-									goto error;
-							}
-							pos++;
-						}
 						break;
 
 					default:
-						printf ( "Step 4: illegal character (%c) at position %i\n",text[pos], pos );
+						printf ("Step 4 unicode: illegal character (%c) at position %i\n", text[pos], pos);
 						goto error;
-
-				}
-				break;
-
-			case L'"':	// closing string
-				if ( cursor == NULL )
-					cursor = temp;
-				else
-				{
-					json_insert_child ( cursor,temp );
-					temp = NULL;
-					switch ( cursor->type )
-					{
-						case JSON_ARRAY:
-							break;
-						case JSON_STRING:
-							if ( cursor->parent )
-							{
-								if ( cursor->parent->type == JSON_OBJECT )
-								{
-									cursor = cursor->parent;	// point cursor at child label
-								}
-								else
-								{
-									printf ( "quack!\n" );
-									goto error;
-								}
-							}
-							break;
-						case JSON_OBJECT:
-							cursor = cursor->child_end;	// point cursor at inserted child label
-							break;
-						case JSON_NUMBER:
-						case JSON_TRUE:
-						case JSON_FALSE:
-						case JSON_NULL:
-						default:
-							goto error;
 					}
+					pos++;
 				}
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto state11;	// goto string followup
 				break;
-
 
 			default:
-				if ( rs_catwc ( temp->text,text[pos] ) != RS_OK )
+				printf ("Step 4: illegal character (%c) at position %i\n", text[pos], pos);
+				goto error;
+
+			}
+			break;
+
+		case L'"':	// closing string
+			if (cursor == NULL)
+				cursor = temp;
+			else
+			{
+				json_insert_child (cursor, temp);
+				temp = NULL;
+				switch (cursor->type)
+				{
+				case JSON_ARRAY:
+					break;
+				case JSON_STRING:
+					if (cursor->parent)
+					{
+						if (cursor->parent->type ==
+						    JSON_OBJECT)
+						{
+							cursor = cursor->parent;	// point cursor at child label
+						}
+						else
+						{
+							printf ("quack!\n");
+							goto error;
+						}
+					}
+					break;
+				case JSON_OBJECT:
+					cursor = cursor->child_end;	// point cursor at inserted child label
+					break;
+				case JSON_NUMBER:
+				case JSON_TRUE:
+				case JSON_FALSE:
+				case JSON_NULL:
+				default:
 					goto error;
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
+				}
+			}
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto state11;	// goto string followup
+			break;
+
+
+		default:
+			if (rs_catwc (temp->text, text[pos]) != RS_OK)
+				goto error;
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
 		}
 		goto str1;
 	}
 
-state5: 	// process number
+      state5:			// process number
 	{
-		temp = json_new_number ( L"" );
+		temp = json_new_number (L"");
 		// start number
-		switch ( text[pos] )
+		switch (text[pos])
 		{
-			case L'-':
-				if ( rs_catwc ( temp->text,L'-' ) != RS_OK )
-					goto error;
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto number3;	//decimal part
-				break;
-			case L'0':
-				if ( rs_catwc ( temp->text,L'0' ) != RS_OK )
-					goto error;
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto number2;	// leading zero
-				break;
-case L'1': case L'2': case L'3': case L'4': case L'5': case L'6': case L'7': case L'8': case L'9':
-				if ( rs_catwc ( temp->text,text[pos] ) != RS_OK )
-					goto error;
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto number3;	// decimal part
-				break;
-
-			default:
-				printf ( "Step 5: illegal character (%c) at position %i\n",text[pos], pos );
+		case L'-':
+			if (rs_catwc (temp->text, L'-') != RS_OK)
 				goto error;
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto number3;	//decimal part
+			break;
+
+		case L'0':
+			if (rs_catwc (temp->text, L'0') != RS_OK)
+				goto error;
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto number2;	// leading zero
+			break;
+
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			if (rs_catwc (temp->text, text[pos]) != RS_OK)
+				goto error;
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto number3;	// decimal part
+			break;
+
+		default:
+			printf ("Step 5: illegal character (%c) at position %i\n", text[pos], pos);
+			goto error;
 		}
 
-	number2:	// leading zero
-		switch ( text[pos] )
+	      number2:		// leading zero
+		switch (text[pos])
 		{
-			case L'.':
-				if ( rs_catwc ( temp->text,L'.' ) != RS_OK )
-					goto error;
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto number4;	// start fractional part
-
-case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto numberend;
-				break;
-
-	case L',': case L'}': case L']':
-				goto numberend;
-				break;
-
-			default:
-				printf ( "Step 5: illegal character (%c) at position %i\n",text[pos], pos );
+		case L'.':
+			if (rs_catwc (temp->text, L'.') != RS_OK)
 				goto error;
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto number4;	// start fractional part
+
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto numberend;
+			break;
+
+		case L',':
+		case L'}':
+		case L']':
+			goto numberend;
+			break;
+
+		default:
+			printf ("Step 5: illegal character (%c) at position %i\n", text[pos], pos);
+			goto error;
 		}
 
-	number3:	// decimal part
-		switch ( text[pos] )
+	      number3:		// decimal part
+		switch (text[pos])
 		{
-case L'0': case L'1': case L'2': case L'3': case L'4': case L'5': case L'6': case L'7': case L'8': case L'9':
-				if ( rs_catwc ( temp->text,text[pos] ) != RS_OK )
-					goto error;
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto number3;	// decimal part
-				break;
-
-			case L'.':
-				if ( rs_catwc ( temp->text,L'.' ) != RS_OK )
-					goto error;
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto number4;	// fractional part
-
-		case L'e': case L'E':
-				if ( rs_catwc ( temp->text,text[pos] ) != RS_OK )
-					goto error;
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto number6;	// start exponential
-
-case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto numberend;
-				break;
-
-	case L',': case L'}': case L']':
-				goto numberend;
-				break;
-
-			default:
-				printf ( "Step 5: illegal character (%c) at position %i\n",text[pos], pos );
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			if (rs_catwc (temp->text, text[pos]) != RS_OK)
 				goto error;
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto number3;	// decimal part
+			break;
+
+		case L'.':
+			if (rs_catwc (temp->text, L'.') != RS_OK)
+				goto error;
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto number4;	// fractional part
+
+		case L'e':
+		case L'E':
+			if (rs_catwc (temp->text, text[pos]) != RS_OK)
+				goto error;
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto number6;	// start exponential
+
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto numberend;
+			break;
+
+		case L',':
+		case L'}':
+		case L']':
+			goto numberend;
+			break;
+
+		default:
+			printf ("Step 5: illegal character (%c) at position %i\n", text[pos], pos);
+			goto error;
 		}
 
-	number4:	// start fractional part
-		switch ( text[pos] )
+	      number4:		// start fractional part
+		switch (text[pos])
 		{
-case L'0': case L'1': case L'2': case L'3': case L'4': case L'5': case L'6': case L'7': case L'8': case L'9':
-				if ( rs_catwc ( temp->text,text[pos] ) != RS_OK )
-					goto error;
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto number5;	// decimal part
-				break;
-
-			default:
-				printf ( "Step 5: illegal character (%c) at position %i\n",text[pos], pos );
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			if (rs_catwc (temp->text, text[pos]) != RS_OK)
 				goto error;
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto number5;	// decimal part
+			break;
+
+		default:
+			printf ("Step 5: illegal character (%c) at position %i\n", text[pos], pos);
+			goto error;
 		}
 
-	number5:	// fractional part
-		switch ( text[pos] )
+	      number5:		// fractional part
+		switch (text[pos])
 		{
-case L'0': case L'1': case L'2': case L'3': case L'4': case L'5': case L'6': case L'7': case L'8': case L'9':
-				if ( rs_catwc ( temp->text,text[pos] ) != RS_OK )
-					goto error;
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto number5;	// decimal part
-				break;
-
-		case L'e': case L'E':
-				if ( rs_catwc ( temp->text,text[pos] ) != RS_OK )
-					goto error;
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto number6;	// start exponential
-
-case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto numberend;
-				break;
-
-	case L',': case L'}': case L']':
-				goto numberend;
-				break;
-
-			default:
-				printf ( "Step 5: illegal character (%c) at position %i\n",text[pos], pos );
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			if (rs_catwc (temp->text, text[pos]) != RS_OK)
 				goto error;
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto number5;	// decimal part
+			break;
+
+		case L'e':
+		case L'E':
+			if (rs_catwc (temp->text, text[pos]) != RS_OK)
+				goto error;
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto number6;	// start exponential
+
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto numberend;
+			break;
+
+		case L',':
+		case L'}':
+		case L']':
+			goto numberend;
+			break;
+
+		default:
+			printf ("Step 5: illegal character (%c) at position %i\n", text[pos], pos);
+			goto error;
 		}
 
-	number6:	// start exponential part
-		switch ( text[pos] )
+	      number6:		// start exponential part
+		switch (text[pos])
 		{
-			case L'+':
-			case L'-':
-case L'0': case L'1': case L'2': case L'3': case L'4': case L'5': case L'6': case L'7': case L'8': case L'9':
-				if ( rs_catwc ( temp->text,text[pos] ) != RS_OK )
-					goto error;
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto number7;	// exponential part
-				break;
-
-			default:
-				printf ( "Step 5: illegal character (%c) at position %i\n",text[pos], pos );
+		case L'+':
+		case L'-':
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			if (rs_catwc (temp->text, text[pos]) != RS_OK)
 				goto error;
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto number7;	// exponential part
+			break;
+
+		default:
+			printf ("Step 5: illegal character (%c) at position %i\n", text[pos], pos);
+			goto error;
 		}
 
-	number7:	// start exponential part
-		switch ( text[pos] )
+	      number7:		// start exponential part
+		switch (text[pos])
 		{
-case L'0': case L'1': case L'2': case L'3': case L'4': case L'5': case L'6': case L'7': case L'8': case L'9':
-				if ( rs_catwc ( temp->text,text[pos] ) != RS_OK )
-					goto error;
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto number7;	// exponential part
-				break;
-
-case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto numberend;
-				break;
-
-	case L',': case L'}': case L']':
-				goto numberend;
-				break;
-
-			default:
-				printf ( "Step 5: illegal character (%c) at position %i\n",text[pos], pos );
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			if (rs_catwc (temp->text, text[pos]) != RS_OK)
 				goto error;
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto number7;	// exponential part
+			break;
+
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto numberend;
+			break;
+
+		case L',':
+		case L'}':
+		case L']':
+			goto numberend;
+			break;
+
+		default:
+			printf ("Step 5: illegal character (%c) at position %i\n", text[pos], pos);
+			goto error;
 		}
 
 
-	numberend:	// number end
+	      numberend:	// number end
 		// where to go now?
-		json_insert_child ( cursor, temp );
+		json_insert_child (cursor, temp);
 		temp = NULL;
-		if ( cursor->type == JSON_STRING )
+		if (cursor->type == JSON_STRING)
 			cursor = cursor->parent;
 		/* TODO potential error on:
-		-> JSON malformed text
-		-> started parsing child node on JSON text snippet
+		   -> JSON malformed text
+		   -> started parsing child node on JSON text snippet
 
-		needs to:
-		-> perform error checking
-		*/
-	numberendloop:
-		switch ( text[pos] )
+		   needs to:
+		   -> perform error checking
+		 */
+	      numberendloop:
+		switch (text[pos])
 		{
-case  '\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto numberendloop;	// clear up all whitespaces until a decent character is found.
-				break;
-			case L',':
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto state10;	// sibling
-				break;
+		case '\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto numberendloop;	// clear up all whitespaces until a decent character is found.
+			break;
+		case L',':
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto state10;	// sibling
+			break;
 
-		case L'}': case L']':
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto state3;	// end structure
+		case L'}':
+		case L']':
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto state3;	// end structure
 
-			default:
-				printf ( "Step 5: illegal character (%c) at position %i\n",text[pos], pos );
-				goto error;
+		default:
+			printf ("Step 5: illegal character (%c) at position %i\n", text[pos], pos);
+			goto error;
 		}
 	}
 
-state6:	// true
+      state6:			// true
 	{
-		if ( text[++pos] != L'r' )
+		if (text[++pos] != L'r')
 			goto error;
-		if ( text[++pos] != L'u' )
+		if (text[++pos] != L'u')
 			goto error;
-		if ( text[++pos] != L'e' )
+		if (text[++pos] != L'e')
 			goto error;
-	statetrue:
-		switch ( text[++pos] )
+	      statetrue:
+		switch (text[++pos])
 		{
-			case L',':
-				json_insert_child ( cursor,json_new_value ( JSON_TRUE ) );
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto state10;	// sibling
-				break;
+		case L',':
+			json_insert_child (cursor,
+					   json_new_value (JSON_TRUE));
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto state10;	// sibling
+			break;
 
-			case L'}':
-			case L']':
-				json_insert_child ( cursor,json_new_value ( JSON_TRUE ) );
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto state3;	// end structure
-				break;
+		case L'}':
+		case L']':
+			json_insert_child (cursor,
+					   json_new_value (JSON_TRUE));
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto state3;	// end structure
+			break;
 
-case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
-				json_insert_child ( cursor,json_new_value ( JSON_TRUE ) );
-				//TODO implement a new state: close literal
-				goto statetrue;	// loop to get rid of the white spaces
-				break;
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			json_insert_child (cursor,
+					   json_new_value (JSON_TRUE));
+			//TODO implement a new state: close literal
+			goto statetrue;	// loop to get rid of the white spaces
+			break;
 
-			default:
-				printf ( "Step 6: illegal character (%c) at position %i\n",text[pos], pos );
-				goto error;
+		default:
+			printf ("Step 6: illegal character (%c) at position %i\n", text[pos], pos);
+			goto error;
 		}
 	}
 
-state7:	// false
+      state7:			// false
 	{
-		if ( text[++pos] != L'a' )
+		if (text[++pos] != L'a')
 			goto error;
-		if ( text[++pos] != L'l' )
+		if (text[++pos] != L'l')
 			goto error;
-		if ( text[++pos] != L's' )
+		if (text[++pos] != L's')
 			goto error;
-		if ( text[++pos] != L'e' )
+		if (text[++pos] != L'e')
 			goto error;
 		pos++;
-		if ( pos >= length )
+		if (pos >= length)
 			goto state20;	//end tree
-		json_insert_child ( cursor,json_new_value ( JSON_FALSE ) );
+		json_insert_child (cursor, json_new_value (JSON_FALSE));
 
-		if ( cursor->type == JSON_STRING )
+		if (cursor->type == JSON_STRING)
 		{
-			if ( cursor->parent )
+			if (cursor->parent)
 				cursor = cursor->parent;
 		}
 
-	false1:
-		switch ( text[pos] )
+	      false1:
+		switch (text[pos])
 		{
-case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
-				pos++;	// ignore white spaces
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto false1;
-				break;
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			pos++;	// ignore white spaces
+			if (pos >= length)
+				goto state20;	//end tree
+			goto false1;
+			break;
 
-		case L'}': case L']':
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto state3;	// end structure
-				break;
+		case L'}':
+		case L']':
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto state3;	// end structure
+			break;
 
-			case L',':
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto state10;	// sibling
-				break;
+		case L',':
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto state10;	// sibling
+			break;
 
-			default:
-				printf ( "Step 7: illegal character (%c) at position %i\n",text[pos], pos );
-				goto error;
+		default:
+			printf ("Step 7: illegal character (%c) at position %i\n", text[pos], pos);
+			goto error;
 		}
 	}
 
-state8:	// null
+      state8:			// null
 	{
 		pos++;
-		if ( text[pos] != L'u' )
+		if (text[pos] != L'u')
 		{
 			goto error;
 		}
 
 		pos++;
-		if ( text[pos] != L'l' )
+		if (text[pos] != L'l')
 		{
 			goto error;
 		}
 
 		pos++;
-		if ( text[pos] != L'l' )
+		if (text[pos] != L'l')
 		{
 			goto error;
 		}
 
-		json_insert_child ( cursor,json_new_value ( JSON_NULL ) );
+		json_insert_child (cursor, json_new_value (JSON_NULL));
 
-	null1:
+	      null1:
 		pos++;
-		switch ( text[pos] )
+		switch (text[pos])
 		{
-			case L',':
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto state10;	// sibling
-				break;
+		case L',':
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto state10;	// sibling
+			break;
 
-			case L'}':
-			case L']':
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto state3;	// end structure
-				break;
+		case L'}':
+		case L']':
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto state3;	// end structure
+			break;
 
-case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
-				goto null1;	// start structure
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			goto null1;	// start structure
 
-			default:
-				goto error;
+		default:
+			goto error;
 		}
 	}
 
-state9:	// pair
+      state9:			// pair
 	{
-		switch ( text[pos] )
+		switch (text[pos])
 		{
-case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto state9;	// restart loop
-				break;
-		case L'{': case L'[':
-				goto state2;	// start structure
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto state9;	// restart loop
+			break;
+		case L'{':
+		case L'[':
+			goto state2;	// start structure
 
-			case L'\"':
-				goto state4;	// string
+		case L'\"':
+			goto state4;	// string
 
-case L'-': case L'0': case L'1': case L'2': case L'3': case L'4': case L'5': case L'6': case L'7': case L'8': case L'9':
-				goto state5;	// number
-				break;
+		case L'-':
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			goto state5;	// number
+			break;
 
-			case L't':
-				goto state6;	// true
-			case L'f':
-				goto state7;	// false
-			case L'n':
-				goto state8;
+		case L't':
+			goto state6;	// true
+		case L'f':
+			goto state7;	// false
+		case L'n':
+			goto state8;
 
-			default:
-				printf ( "Step 9: illegal character (%c) at position %i\n",text[pos], pos );
-				goto error;
+		default:
+			printf ("Step 9: illegal character (%c) at position %i\n", text[pos], pos);
+			goto error;
 		}
 	}
 
-state10:	// sibling
+      state10:			// sibling
 	{
 		//TODO perform tree integrity checks
-		if ( cursor == NULL )	// a new root must not be a root
+		if (cursor == NULL)	// a new root must not be a root
 			goto error;
 
-	sibling1:
-		switch ( text[pos] )
+	      sibling1:
+		switch (text[pos])
 		{
-case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto sibling1;
-				break;
-		case L'{': case L'[':
-				goto state2;	// start structure
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto sibling1;
+			break;
+		case L'{':
+		case L'[':
+			goto state2;	// start structure
 
-			case L'\"':
-				goto state4;	// string
+		case L'\"':
+			goto state4;	// string
 
-case L'-': case L'0': case L'1': case L'2': case L'3': case L'4': case L'5': case L'6': case L'7': case L'8': case L'9':
-				goto state5;	// number
-			case L't':
-				goto state6;	// true
-			case L'f':
-				goto state7;	// false
-			case L'n':
-				goto state8;
+		case L'-':
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			goto state5;	// number
+		case L't':
+			goto state6;	// true
+		case L'f':
+			goto state7;	// false
+		case L'n':
+			goto state8;
 
-			default:
-				printf ( "Step 10: illegal character (%c) at position %i\n",text[pos], pos );
-				goto error;
+		default:
+			printf ("Step 10: illegal character (%c) at position %i\n", text[pos], pos);
+			goto error;
 		}
 	}
 
-state11:	// string followup
+      state11:			// string followup
 	{
-		switch ( text[pos] )
+		switch (text[pos])
 		{
-case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto state11;
-				break;
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto state11;
+			break;
 
-		case L'}': case L']':
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto state3;	// end structure
-				break;
+		case L'}':
+		case L']':
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto state3;	// end structure
+			break;
 
-			case L':':
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto state9;	// pair
-				break;
+		case L':':
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto state9;	// pair
+			break;
 
-			case L',':
-				pos++;
-				if ( pos >= length )
-					goto state20;	//end tree
-				goto state10;	// sibling
-				break;
+		case L',':
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto state10;	// sibling
+			break;
 
-			default:
-				printf ( "Step 11: illegal character (%c) at position %i\n",text[pos], pos );
-				goto error;
+		default:
+			printf ("Step 11: illegal character (%c) at position %i\n", text[pos], pos);
+			goto error;
 		}
 	}
 
-state20:	// end tree
+      state20:			// end tree
 	{
-		if ( cursor == NULL ) goto end;	// only whitespaces. no tree.
-		if ( cursor->parent != NULL )
+		if (cursor == NULL)
+			goto end;	// only whitespaces. no tree.
+		if (cursor->parent != NULL)
 		{
 			pos++;
 			goto error;
 		}
 		else
 		{
-		state20clean:
-			if ( pos < length )
+		      state20clean:
+			if (pos < length)
 			{
-				switch ( text[pos] )
+				switch (text[pos])
 				{
 
-		case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// white spaces
-						pos++;
-						if ( pos >= length )
-							goto state20;	//end tree
-						goto state20clean;
-						break;
-					default:
-						printf ( "Step 20: illegal character (%c) at position %i\n",text[pos], pos );
-						goto error;
+				case L'\x20':
+				case L'\x09':
+				case L'\x0A':
+				case L'\x0D':	// white spaces
+					pos++;
+					if (pos >= length)
+						goto state20;	//end tree
+					goto state20clean;
+					break;
+				default:
+					printf ("Step 20: illegal character (%c) at position %i\n", text[pos], pos);
+					goto error;
 
 				}
 			}
@@ -1286,329 +1479,337 @@ state20:	// end tree
 		}
 	}
 
-error:
+      error:
 	{
-		printf ( "ERROR!\n" );
-		if ( cursor != NULL )
+		printf ("ERROR!\n");
+		if (cursor != NULL)
 		{
-			json_free_value ( &cursor );
+			json_free_value (&cursor);
 		}
-// 		return NULL;
+//              return NULL;
 		cursor = NULL;	// with this even when an error is called the temp variables are cleaned in the end state
 	}
 
-end:
+      end:
 	{
 		return cursor;
 	}
 }
 
-int json_white_space ( const wchar_t c )
+int
+json_white_space (const wchar_t c)
 {
-	switch ( c )
+	switch (c)
 	{
-case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':
-			return 1;
-		default:
-			return 0;
+	case L'\x20':
+	case L'\x09':
+	case L'\x0A':
+	case L'\x0D':
+		return 1;
+	default:
+		return 0;
 	}
 }
 
 
-wchar_t *json_strip_white_spaces ( wchar_t *text )	///fixit this function should not strip white spaces from JSON strings
+wchar_t *
+json_strip_white_spaces (wchar_t * text)	///fixit this function should not strip white spaces from JSON strings
 {
-	assert ( text != NULL );
+	assert (text != NULL);
 	// declaring the variables
- 	rstring *txt = rs_wrap(text);
-	if(txt == NULL)
+	rstring *txt = rs_wrap (text);
+	if (txt == NULL)
 		return NULL;	// failed memory allocation
 	size_t pos = 0;
-	rstring *output = rs_create ( L"" );
-	if(output == NULL)
+	rstring *output = rs_create (L"");
+	if (output == NULL)
 	{
-		rs_unwrap(txt);
+		rs_unwrap (txt);
 		return NULL;
 	}
 
-	while ( pos < txt->length )
+	while (pos < txt->length)
 	{
-		switch ( txt->s[pos] )
+		switch (txt->s[pos])
 		{
-case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// JSON white spaces
-				pos++;
-				break;
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// JSON white spaces
+			pos++;
+			break;
 
-			case L'\"':	//open string
-				if ( rs_catwc ( output,txt->s[pos] ) != RS_OK )
+		case L'\"':	//open string
+			if (rs_catwc (output, txt->s[pos]) != RS_OK)
+			{
+				rs_unwrap (txt);
+				rs_destroy (&output);
+				return NULL;
+			}
+			pos++;
+			char loop = 1;	// inner string loop trigger
+			while (loop)	// parse the inner part of the string
+			{
+				if (txt->s[pos] == L'\\')	// escaped sequence
 				{
-					rs_unwrap(txt);
-					rs_destroy(&output);
-					return NULL;
-				}
-				pos++;
-				char loop = 1;	// inner string loop trigger
-				while ( loop )	// parse the inner part of the string
-				{
-					if ( txt->s[pos] == L'\\' )	// escaped sequence
+					if (rs_catwc (output, txt->s[pos]) !=
+					    RS_OK)
 					{
-						if ( rs_catwc ( output,txt->s[pos] ) != RS_OK )
-						{
-							rs_unwrap(txt);
-							rs_destroy(&output);
-							return NULL;
-						}
-						pos++;
-						if ( txt->s[pos] == L'\"' )	// don't consider a \" escaped sequence as an end of string
-						{
-
-							if ( rs_catwc ( output,txt->s[pos] ) != RS_OK )
-							{
-								rs_unwrap(txt);
-								rs_destroy(&output);
-								return NULL;
-							}
-							pos++;
-						}
-					}
-					else if ( txt->s[pos] == L'\"' )	// reached end of string
-					{
-						loop = 0;
-					}
-
-					if ( rs_catwc ( output,txt->s[pos] ) != RS_OK )
-					{
-						rs_unwrap(txt);
-						rs_destroy(&output);
+						rs_unwrap (txt);
+						rs_destroy (&output);
 						return NULL;
 					}
 					pos++;
-					if ( pos >= txt->length )
-						loop = 0;
-				}
-				break;
+					if (txt->s[pos] == L'\"')	// don't consider a \" escaped sequence as an end of string
+					{
 
-			default:
-				if ( rs_catwc ( output,txt->s[pos] ) != RS_OK )
+						if (rs_catwc
+						    (output,
+						     txt->s[pos]) != RS_OK)
+						{
+							rs_unwrap (txt);
+							rs_destroy (&output);
+							return NULL;
+						}
+						pos++;
+					}
+				}
+				else if (txt->s[pos] == L'\"')	// reached end of string
 				{
-					rs_unwrap(txt);
-					rs_destroy(&output);
+					loop = 0;
+				}
+
+				if (rs_catwc (output, txt->s[pos]) != RS_OK)
+				{
+					rs_unwrap (txt);
+					rs_destroy (&output);
 					return NULL;
 				}
 				pos++;
-				break;
+				if (pos >= txt->length)
+					loop = 0;
+			}
+			break;
+
+		default:
+			if (rs_catwc (output, txt->s[pos]) != RS_OK)
+			{
+				rs_unwrap (txt);
+				rs_destroy (&output);
+				return NULL;
+			}
+			pos++;
+			break;
 		}
 	}
-	rs_unwrap(txt);	// free memory allocated to wrapper
-	return rs_unwrap(output);
+	rs_unwrap (txt);	// free memory allocated to wrapper
+	return rs_unwrap (output);
 }
 
 
-wchar_t * json_format_string ( wchar_t *text )
+wchar_t *
+json_format_string (wchar_t * text)
 {
 	size_t pos = 0;
 	unsigned int indentation = 0, i;
-	rstring *txt = rs_wrap(text);
+	rstring *txt = rs_wrap (text);
 	if (txt == NULL)
-  		return NULL;
-	rstring *output = rs_create ( L"" );
-	if(output == NULL)
+		return NULL;
+	rstring *output = rs_create (L"");
+	if (output == NULL)
 	{
-		rs_unwrap(txt);
+		rs_unwrap (txt);
 		return NULL;
 	}
-	while ( pos < txt->length )
+	while (pos < txt->length)
 	{
-		switch ( txt->s[pos] )
+		switch (txt->s[pos])
 		{
-			case L'\x20': case L'\x09': case L'\x0A': case L'\x0D':	// JSON white spaces
-				pos++;
-				break;
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// JSON white spaces
+			pos++;
+			break;
 
-			case L'{':
-				if ( rs_catwcs ( output, L"{\n",2 ) != RS_OK )
+		case L'{':
+			if (rs_catwcs (output, L"{\n", 2) != RS_OK)
+			{
+				rs_unwrap (txt);
+				rs_destroy (&output);
+				return NULL;
+			}
+			pos++;
+			indentation++;
+			for (i = 0; i < indentation; i++)
+			{
+				if (rs_catwc (output, L'\t') != RS_OK)
 				{
-					rs_unwrap(txt);
-					rs_destroy(&output);
+					rs_unwrap (txt);
+					rs_destroy (&output);
 					return NULL;
 				}
-				pos++;
-				indentation++;
-				for ( i = 0; i < indentation; i++ )
+			}
+			break;
+
+		case L'}':
+			if (rs_catwc (output, L'\n') != RS_OK)
+			{
+				rs_unwrap (txt);
+				rs_destroy (&output);
+				return NULL;
+			}
+			pos++;
+			indentation--;
+			for (i = 0; i < indentation; i++)
+			{
+				if (rs_catwc (output, L'\t') != RS_OK)
 				{
-					if ( rs_catwc ( output, L'\t') != RS_OK )
+					rs_unwrap (txt);
+					rs_destroy (&output);
+					return NULL;
+				}
+			}
+			if (rs_catwc (output, L'}') != RS_OK)
+			{
+				rs_unwrap (txt);
+				rs_destroy (&output);
+				return NULL;
+			}
+			break;
+
+		case L':':
+			if (rs_catwcs (output, L": ", 2) != RS_OK)
+			{
+				rs_unwrap (txt);
+				rs_destroy (&output);
+				return NULL;
+			}
+			pos++;
+			break;
+
+		case L',':
+			if (rs_catwcs (output, L",\n", 2) != RS_OK)
+			{
+				rs_unwrap (txt);
+				rs_destroy (&output);
+				return NULL;
+			}
+			pos++;
+			for (i = 0; i < indentation; i++)
+			{
+				rs_catwc (output, L'\t');
+			}
+			break;
+
+		case L'\"':	//open string
+			if (rs_catwc (output, txt->s[pos]) != RS_OK)
+			{
+				rs_unwrap (txt);
+				rs_destroy (&output);
+				return NULL;
+			}
+			pos++;
+			char loop = 1;	// inner string loop trigger
+			while (loop)	// parse the inner part of the string
+			{
+				if (txt->s[pos] == L'\\')	// escaped sequence
+				{
+					if (rs_catwc (output, txt->s[pos]) !=
+					    RS_OK)
 					{
-						rs_unwrap(txt);
-						rs_destroy(&output);
-						return NULL;
-					}
-				}
-				break;
-
-			case L'}':
-				if ( rs_catwc ( output, L'\n' ) != RS_OK )
-				{
-					rs_unwrap(txt);
-					rs_destroy(&output);
-					return NULL;
-				}
-				pos++;
-				indentation--;
-				for ( i = 0; i < indentation; i++ )
-				{
-					if( rs_catwc ( output, L'\t' ) != RS_OK)
-					{
-						rs_unwrap(txt);
-						rs_destroy(&output);
-						return NULL;
-					}
-				}
-				if ( rs_catwc ( output, L'}' ) != RS_OK )
-				{
-					rs_unwrap(txt);
-					rs_destroy(&output);
-					return NULL;
-				}
-				break;
-
-			case L':':
-				if ( rs_catwcs ( output,  L": ",2 ) != RS_OK )
-				{
-					rs_unwrap(txt);
-					rs_destroy(&output);
-					return NULL;
-				}
-				pos++;
-				break;
-
-			case L',':
-				if ( rs_catwcs ( output,  L",\n",2 ) != RS_OK )
-				{
-					rs_unwrap(txt);
-					rs_destroy(&output);
-					return NULL;
-				}
-				pos++;
-				for ( i = 0; i < indentation; i++ )
-				{
-					rs_catwc ( output,L'\t' );
-				}
-				break;
-
-			case L'\"':	//open string
-				if ( rs_catwc ( output,txt->s[pos] ) != RS_OK )
-				{
-					rs_unwrap(txt);
-					rs_destroy(&output);
-					return NULL;
-				}
-				pos++;
-				char loop = 1;	// inner string loop trigger
-				while ( loop )	// parse the inner part of the string
-				{
-					if ( txt->s[pos] == L'\\' )	// escaped sequence
-					{
-						if ( rs_catwc ( output,txt->s[pos] ) != RS_OK )
-						{
-							rs_unwrap(txt);
-							rs_destroy(&output);
-							return NULL;
-						}
-						pos++;
-						if ( txt->s[pos] == L'\"' )	// don't consider a \" escaped sequence as an end of string
-						{
-
-							if ( rs_catwc ( output,txt->s[pos] ) != RS_OK )
-							{
-								rs_unwrap(txt);
-								rs_destroy(&output);
-								return NULL;
-							}
-							pos++;
-						}
-					}
-					else if ( txt->s[pos] == L'\"' )	// reached end of string
-					{
-						loop = 0;
-					}
-
-					if ( rs_catwc ( output,txt->s[pos] ) != RS_OK )
-					{
-						rs_unwrap(txt);
-						rs_destroy(&output);
+						rs_unwrap (txt);
+						rs_destroy (&output);
 						return NULL;
 					}
 					pos++;
-					if ( pos >= txt->length )
-						loop = 0;
-				}
-				break;
+					if (txt->s[pos] == L'\"')	// don't consider a \" escaped sequence as an end of string
+					{
 
-			default:
-				if ( rs_catwc ( output,txt->s[pos] ) != RS_OK )
+						if (rs_catwc
+						    (output,
+						     txt->s[pos]) != RS_OK)
+						{
+							rs_unwrap (txt);
+							rs_destroy (&output);
+							return NULL;
+						}
+						pos++;
+					}
+				}
+				else if (txt->s[pos] == L'\"')	// reached end of string
 				{
-					rs_unwrap(txt);
-					rs_destroy(&output);
+					loop = 0;
+				}
+
+				if (rs_catwc (output, txt->s[pos]) != RS_OK)
+				{
+					rs_unwrap (txt);
+					rs_destroy (&output);
 					return NULL;
 				}
 				pos++;
-				break;
+				if (pos >= txt->length)
+					loop = 0;
+			}
+			break;
+
+		default:
+			if (rs_catwc (output, txt->s[pos]) != RS_OK)
+			{
+				rs_unwrap (txt);
+				rs_destroy (&output);
+				return NULL;
+			}
+			pos++;
+			break;
 		}
 	}
 
- 	rs_unwrap(txt);
-	return rs_unwrap(output);
+	rs_unwrap (txt);
+	return rs_unwrap (output);
 }
 
 
-wchar_t *json_escape_string(wchar_t *text)
+wchar_t *
+json_escape_string (wchar_t * text)
 {
-	rstring *output = rs_create(L"");
-	if(output == NULL)
+	rstring *output = rs_create (L"");
+	if (output == NULL)
 		return NULL;
 
 	size_t i;
-	for (i = 0; i < wcslen(text); i++)
+	for (i = 0; i < wcslen (text); i++)
 	{
 
-		if(text[i] == L'\\')
-			rs_catwcs(output, L"\\\\", 2);
-		else
-			if(text[i] == '\"')
-			rs_catwcs(output, L"\\\"", 2);
-		else
-			if(text[i] == L'/')
-				rs_catwcs(output, L"\\/", 2);
-		else
-			if(text[i] == L'\b')
-				rs_catwcs(output, L"\\b", 2);
-		else
-			if(text[i] == L'\f')
-				rs_catwcs(output, L"\\f", 2);
-		else
-			if(text[i] == L'\n')
-				rs_catwcs(output, L"\\n", 2);
-		else
-			if(text[i] == L'\r')
-				rs_catwcs(output, L"\\r", 2);
-		else
-			if(text[i] == L'\t')
-				rs_catwcs(output, L"\\t", 2);
-		else
-
-		if(   (text[i] >= 0x20) && (text[i] <= 0x7E) )	// ascii printable characters
+		if (text[i] == L'\\')
+			rs_catwcs (output, L"\\\\", 2);
+		else if (text[i] == '\"')
+			rs_catwcs (output, L"\\\"", 2);
+		else if (text[i] == L'/')
+			rs_catwcs (output, L"\\/", 2);
+		else if (text[i] == L'\b')
+			rs_catwcs (output, L"\\b", 2);
+		else if (text[i] == L'\f')
+			rs_catwcs (output, L"\\f", 2);
+		else if (text[i] == L'\n')
+			rs_catwcs (output, L"\\n", 2);
+		else if (text[i] == L'\r')
+			rs_catwcs (output, L"\\r", 2);
+		else if (text[i] == L'\t')
+			rs_catwcs (output, L"\\t", 2);
+		else if ((text[i] >= 0x20) && (text[i] <= 0x7E))	// ascii printable characters
 		{
-			rs_catwc(output, text[i]);
+			rs_catwc (output, text[i]);
 		}
-		else	// beyond ascii characters?
+		else		// beyond ascii characters?
 		{
-			wchar_t *temp = malloc(7*sizeof(wchar_t));
-			swprintf(temp,7,L"\\u%.4x\t",text[i]);
-			rs_catwcs(output, temp, 6);
-			free(temp);
+			wchar_t *temp = malloc (7 * sizeof (wchar_t));
+			swprintf (temp, 7, L"\\u%.4x\t", text[i]);
+			rs_catwcs (output, temp, 6);
+			free (temp);
 		}
 	}
 
-	return rs_unwrap(output);
+	return rs_unwrap (output);
 }
-
-
