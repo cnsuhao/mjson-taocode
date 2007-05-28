@@ -33,73 +33,10 @@
 
 
 int
-test_json_file (char *filename)
-{
-	FILE *file;
-	printf ("%s:\n", filename);
-	file = fopen (filename, "r");
-	if (file == NULL)
-		return 0;
-	rstring *text = rs_create (L"");
-	char c;
-	while ((c = getc (file)) != EOF)
-	{
-		rs_catc (text, c);
-	}
-	fclose (file);
-
-	struct json_value *root = json_string_to_tree (text->s);
-	if (root != NULL)
-	{
-		rs_destroy (&text);
-		text = rs_wrap (json_tree_to_string (root));
-		json_free_value (&root);
-		if (text != NULL)
-		{
-			printf ("pass.\n%ls\n", text->s);
-			rs_destroy (&text);
-			return 1;
-		}
-	}
-//      rs_destroy ( &text );
-	printf ("failed.\n");
-	return 0;
-}
-
-
-///TODO implement a standard and nice looking method to format the source code
-
-
-int
 main ()
 {
 	setlocale (LC_CTYPE, "");
-	// tests the example JSON document taken from the JSON site
-	if (!test_json_file ("test/test1.json"))
-	{
-		printf ("error\n");
-		return EXIT_SUCCESS;
-	}
-	if (!test_json_file ("test/test2.json"))
-	{
-		printf ("error\n");
-		return EXIT_SUCCESS;
-	}
-	if (!test_json_file ("test/test3.json"))
-	{
-		printf ("error\n");
-		return EXIT_SUCCESS;
-	}
-	if (!test_json_file ("test/test4.json"))
-	{
-		printf ("error\n");
-		return EXIT_SUCCESS;
-	}
-	if (!test_json_file ("test/test5.json"))
-	{
-		printf ("error\n");
-		return EXIT_SUCCESS;
-	}
+
 
 	return EXIT_SUCCESS;
 }
