@@ -41,8 +41,8 @@ enum json_value_type
 /**
 The error messages produced by the JSON parsers
 **/
-enum json_errors
-{ JSON_OK, JSON_INCOMPATIBLE_TYPE, JSON_MEMORY, JSON_INCOMPLETE_DOCUMENT };
+enum json_error
+{ JSON_INCOMPLETE_DOCUMENT = 0, JSON_OK = 1, JSON_INCOMPATIBLE_TYPE, JSON_MEMORY, JSON_ILLEGAL_CHARACTER, JSON_BAD_TREE_STRUCTURE };	///TODO rethink error codes
 
 /**
 The JSON document tree node, which is a basic JSON type
@@ -58,6 +58,15 @@ struct json_value
 	struct json_value *parent;	//!< The pointer pointing to the parent node in the document tree
 	struct json_value *child;	//!< The pointer pointing to the first child node in the document tree
 	struct json_value *child_end;	//!< The pointer pointing to the last child node in the document tree
+};
+
+/**
+The structure holding all information needed to resume parsing
+**/
+struct json_parsing_info
+{
+	unsigned int state;	//!< the state where the parsing was left on the last run
+	struct json_value *cursor, *temp;
 };
 
 
@@ -133,8 +142,7 @@ Inserts a child node into a parent node, as well as performs some document tree 
 @param child the node being added as a child to parent
 @return the error code corresponding to the operation state
 **/
-enum json_errors json_insert_child (struct json_value *parent,
-				    struct json_value *child);
+enum json_error json_insert_child (struct json_value *parent, struct json_value *child);
 
 
 /**
@@ -144,9 +152,7 @@ Inserts a label:value pair into a parent node, as well as performs some document
 @param value the value in the label:value pair
 @return the error code corresponding to the operation state
 **/
-enum json_errors json_insert_pair_into_object (struct json_value *parent,
-					       struct json_value *label,
-					       struct json_value *value);
+enum json_error json_insert_pair_into_object (struct json_value *parent, struct json_value *label, struct json_value *value);
 
 
 /**
@@ -170,14 +176,6 @@ Produces a JSON markup text document from a document tree
 @return The JSON text document, or NULL if some problem is encountered while traversing the tree.
 **/
 wchar_t *json_tree_to_string (struct json_value *root);
-
-
-/**
-Produces a document tree from a JSON markup text string
-@param text the JSON document text string
-@return the document's root node or NULL if some problem is encountered while parsing the JSON text
-**/
-struct json_value *json_string_to_tree (wchar_t * text);
 
 
 /**
@@ -211,5 +209,16 @@ Please notice that this function produces a new string separate from wchar_t *te
 @return a wchar_t string holding the same text string but with escaped characters
 **/
 wchar_t *json_escape_string (wchar_t * text);
+
+
+/**
+Produces a document tree from a JSON markup text string
+@param info the information necessary to resume parsing any incomplete document
+@param text a text string containing information described by the JSON language, partial or complete.
+@return a code describing how the operation ended up
+**/
+enum json_error json_parse_string (struct json_parsing_info *info, wchar_t * text);
+
+
 
 #endif

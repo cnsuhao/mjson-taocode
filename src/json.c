@@ -193,7 +193,7 @@ json_free_value (struct json_value **value)
 }
 
 
-enum json_errors
+enum json_error
 json_insert_child (struct json_value *parent, struct json_value *child)
 {
 	///fixme: when the same value is inserted as a child the json_tree_to_string function enters a infinite loop
@@ -220,10 +220,8 @@ json_insert_child (struct json_value *parent, struct json_value *child)
 }
 
 
-enum json_errors
-json_insert_pair_into_object (struct json_value *parent,
-			      struct json_value *label,
-			      struct json_value *value)
+enum json_error
+json_insert_pair_into_object (struct json_value *parent, struct json_value *label, struct json_value *value)
 {
 	// verify if the parameters are valid
 	assert (parent != NULL);
@@ -233,7 +231,7 @@ json_insert_pair_into_object (struct json_value *parent,
 	assert (parent->type == JSON_OBJECT);
 	assert (label->type == JSON_STRING);
 
-	enum json_errors error;
+	enum json_error error;
 
 	//insert value and check for error
 	error = json_insert_child (label, value);
@@ -339,8 +337,7 @@ json_tree_to_string (struct json_value *root)	///fixme this function leaks memor
 					// error checking: if parent is object and cursor is string then cursor must have a single child
 					if (cursor->child != NULL)
 					{
-						if (rs_catwc (output, L':') !=
-						    RS_OK)
+						if (rs_catwc (output, L':') != RS_OK)
 							goto error;
 					}
 					else
@@ -493,1009 +490,6 @@ json_tree_to_string (struct json_value *root)	///fixme this function leaks memor
 }
 
 
-struct json_value *
-json_string_to_tree (wchar_t * text)
-{
-	size_t pos = 0;
-	size_t length = wcslen (text);
-	struct json_value *cursor = NULL, *temp = NULL;
-
-      state1:			// start value
-	{
-		if (pos >= length)
-			goto state20;	//end tree
-
-		switch (text[pos])
-		{
-		case L'\x20':
-		case L'\x09':
-		case L'\x0A':
-		case L'\x0D':	// white spaces
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto state1;
-			break;
-		case L'{':
-		case L'[':
-			goto state2;	// start structure
-
-		case L'}':
-		case L']':
-			goto state3;	// end structure
-
-		case L'\"':
-			goto state4;	// string
-
-		case L'-':
-		case L'0':
-		case L'1':
-		case L'2':
-		case L'3':
-		case L'4':
-		case L'5':
-		case L'6':
-		case L'7':
-		case L'8':
-		case L'9':
-			goto state5;	// number
-
-		case L't':
-			goto state6;	// true
-		case L'f':
-			goto state7;	// false
-		case L'n':
-			goto state8;	// null
-		case L',':
-			goto state10;	// sibling
-
-		default:
-			printf ("Step 1: illegal character (%c) at position %i\n", text[pos], pos);
-			goto error;
-		}
-	}
-
-      state2:			// start structure
-	{
-		// tree coherency checking
-		if (cursor)	// cursor will be the parent node of this structure
-		{
-			switch (cursor->type)	//make sure that the parent node can be the parent of a structure node
-			{
-			case JSON_ARRAY:	// types allowed
-			case JSON_STRING:
-				break;
-			default:
-				printf ("state 2: dissallowed parent type\n");
-				goto error;
-			}
-		}
-
-		// create the new children objects
-		if (text[pos] == L'[')
-			temp = json_new_array ();
-		else
-			temp = json_new_object ();
-
-		pos++;
-		if (pos >= length)
-			goto state20;	//end tree
-
-		// create new tree node and add as child
-		if (cursor != NULL)
-		{
-			json_insert_child (cursor, temp);
-		}
-		// traverse cursor up child node
-		cursor = temp;
-		temp = NULL;
-		goto state1;	// start value
-	}
-
-      state3:			// end structure
-	{
-		if (cursor->parent == NULL)	// if current node is already the root node then we have ended.
-		{
-			goto state20;	// end tree
-		}
-		else
-		{
-			cursor = cursor->parent;
-
-			switch (cursor->type)
-			{
-			case JSON_STRING:	// cursor is label in label:value pair
-			case JSON_OBJECT:
-				if (cursor->parent == NULL)
-				{
-					goto state20;	//end tree
-				}
-				else
-				{
-					cursor = cursor->parent;
-				}
-				break;
-			case JSON_ARRAY:
-				break;
-
-			default:
-				goto error;
-			}
-
-			// check following characters
-		      endstructure1:
-			switch (text[pos])
-			{
-			case L'\x20':
-			case L'\x09':
-			case L'\x0A':
-			case L'\x0D':	// white spaces
-				pos++;
-				if (pos >= length)
-					goto state20;	//end tree
-				goto endstructure1;
-				break;
-
-			case L'}':
-			case L']':
-				pos++;
-				if (pos >= length)
-					goto state20;	//end tree
-				goto state3;	// end structure
-
-			case L',':
-				pos++;
-				if (pos >= length)
-					goto state20;	//end tree
-				goto state10;	//sibling
-
-			default:
-				printf ("Step 3: illegal character (%c) at position %i\n", text[pos], pos);
-				goto error;
-
-			}
-			goto state1;
-		}
-	}
-
-      state4:			// process string
-	{
-		pos++;		//TODO the "enter string" state must receive the cursor past the \" character
-		if (pos >= length)
-			goto state20;	//end tree
-		temp = json_new_string (L"");
-
-		// tree structure integrity check
-		if (cursor)
-		{
-			switch (cursor->type)
-			{
-			case JSON_OBJECT:
-			case JSON_ARRAY:
-				break;
-			case JSON_STRING:
-				if (cursor->parent)
-				{
-					if (cursor->parent->type != JSON_OBJECT)	//a parent of a parent string must be an object
-						goto error;
-				}
-				break;
-
-			default:	// a string can't be a child of other values besides object, array and string
-				goto error;
-			}
-		}
-
-		// extract string
-	      str1:
-		switch (text[pos])
-		{
-		case L'\\':	// escaped characters
-			if (rs_catwc (temp->text, L'\\') != RS_OK)
-				goto error;
-
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			switch (text[pos])
-			{
-			case L'\"':
-			case L'\\':
-			case L'/':
-			case L'b':
-			case L'f':
-			case L'n':
-			case L'r':
-			case L't':
-				if (rs_catwc (temp->text, text[pos]) != RS_OK)
-					goto error;
-				pos++;
-				if (pos >= length)
-					goto state20;	//end tree
-				goto str1;
-				break;
-
-			case L'u':
-				if (rs_catwc (temp->text, text[pos]) != RS_OK)
-					goto error;
-				pos++;
-				int u;
-				for (u = 0; u < 4; u++)
-				{
-					switch (text[pos])
-					{
-					case L'0':
-					case L'1':
-					case L'2':
-					case L'3':
-					case L'4':
-					case L'5':
-					case L'6':
-					case L'7':
-					case L'8':
-					case L'9':
-					case L'a':
-					case L'b':
-					case L'c':
-					case L'd':
-					case L'e':
-					case L'f':
-					case L'A':
-					case L'B':
-					case L'C':
-					case L'D':
-					case L'E':
-					case L'F':
-						if (rs_catwc
-						    (temp->text,
-						     text[pos]) != RS_OK)
-							goto error;
-						break;
-
-					default:
-						printf ("Step 4 unicode: illegal character (%c) at position %i\n", text[pos], pos);
-						goto error;
-					}
-					pos++;
-				}
-				break;
-
-			default:
-				printf ("Step 4: illegal character (%c) at position %i\n", text[pos], pos);
-				goto error;
-
-			}
-			break;
-
-		case L'"':	// closing string
-			if (cursor == NULL)
-				cursor = temp;
-			else
-			{
-				json_insert_child (cursor, temp);
-				temp = NULL;
-				switch (cursor->type)
-				{
-				case JSON_ARRAY:
-					break;
-				case JSON_STRING:
-					if (cursor->parent)
-					{
-						if (cursor->parent->type ==
-						    JSON_OBJECT)
-						{
-							cursor = cursor->parent;	// point cursor at child label
-						}
-						else
-						{
-							printf ("quack!\n");
-							goto error;
-						}
-					}
-					break;
-				case JSON_OBJECT:
-					cursor = cursor->child_end;	// point cursor at inserted child label
-					break;
-				case JSON_NUMBER:
-				case JSON_TRUE:
-				case JSON_FALSE:
-				case JSON_NULL:
-				default:
-					goto error;
-				}
-			}
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto state11;	// goto string followup
-			break;
-
-
-		default:
-			if (rs_catwc (temp->text, text[pos]) != RS_OK)
-				goto error;
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-		}
-		goto str1;
-	}
-
-      state5:			// process number
-	{
-		temp = json_new_number (L"");
-		// start number
-		switch (text[pos])
-		{
-		case L'-':
-			if (rs_catwc (temp->text, L'-') != RS_OK)
-				goto error;
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto number3;	//decimal part
-			break;
-
-		case L'0':
-			if (rs_catwc (temp->text, L'0') != RS_OK)
-				goto error;
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto number2;	// leading zero
-			break;
-
-		case L'1':
-		case L'2':
-		case L'3':
-		case L'4':
-		case L'5':
-		case L'6':
-		case L'7':
-		case L'8':
-		case L'9':
-			if (rs_catwc (temp->text, text[pos]) != RS_OK)
-				goto error;
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto number3;	// decimal part
-			break;
-
-		default:
-			printf ("Step 5: illegal character (%c) at position %i\n", text[pos], pos);
-			goto error;
-		}
-
-	      number2:		// leading zero
-		switch (text[pos])
-		{
-		case L'.':
-			if (rs_catwc (temp->text, L'.') != RS_OK)
-				goto error;
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto number4;	// start fractional part
-
-		case L'\x20':
-		case L'\x09':
-		case L'\x0A':
-		case L'\x0D':	// white spaces
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto numberend;
-			break;
-
-		case L',':
-		case L'}':
-		case L']':
-			goto numberend;
-			break;
-
-		default:
-			printf ("Step 5: illegal character (%c) at position %i\n", text[pos], pos);
-			goto error;
-		}
-
-	      number3:		// decimal part
-		switch (text[pos])
-		{
-		case L'0':
-		case L'1':
-		case L'2':
-		case L'3':
-		case L'4':
-		case L'5':
-		case L'6':
-		case L'7':
-		case L'8':
-		case L'9':
-			if (rs_catwc (temp->text, text[pos]) != RS_OK)
-				goto error;
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto number3;	// decimal part
-			break;
-
-		case L'.':
-			if (rs_catwc (temp->text, L'.') != RS_OK)
-				goto error;
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto number4;	// fractional part
-
-		case L'e':
-		case L'E':
-			if (rs_catwc (temp->text, text[pos]) != RS_OK)
-				goto error;
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto number6;	// start exponential
-
-		case L'\x20':
-		case L'\x09':
-		case L'\x0A':
-		case L'\x0D':	// white spaces
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto numberend;
-			break;
-
-		case L',':
-		case L'}':
-		case L']':
-			goto numberend;
-			break;
-
-		default:
-			printf ("Step 5: illegal character (%c) at position %i\n", text[pos], pos);
-			goto error;
-		}
-
-	      number4:		// start fractional part
-		switch (text[pos])
-		{
-		case L'0':
-		case L'1':
-		case L'2':
-		case L'3':
-		case L'4':
-		case L'5':
-		case L'6':
-		case L'7':
-		case L'8':
-		case L'9':
-			if (rs_catwc (temp->text, text[pos]) != RS_OK)
-				goto error;
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto number5;	// decimal part
-			break;
-
-		default:
-			printf ("Step 5: illegal character (%c) at position %i\n", text[pos], pos);
-			goto error;
-		}
-
-	      number5:		// fractional part
-		switch (text[pos])
-		{
-		case L'0':
-		case L'1':
-		case L'2':
-		case L'3':
-		case L'4':
-		case L'5':
-		case L'6':
-		case L'7':
-		case L'8':
-		case L'9':
-			if (rs_catwc (temp->text, text[pos]) != RS_OK)
-				goto error;
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto number5;	// decimal part
-			break;
-
-		case L'e':
-		case L'E':
-			if (rs_catwc (temp->text, text[pos]) != RS_OK)
-				goto error;
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto number6;	// start exponential
-
-		case L'\x20':
-		case L'\x09':
-		case L'\x0A':
-		case L'\x0D':	// white spaces
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto numberend;
-			break;
-
-		case L',':
-		case L'}':
-		case L']':
-			goto numberend;
-			break;
-
-		default:
-			printf ("Step 5: illegal character (%c) at position %i\n", text[pos], pos);
-			goto error;
-		}
-
-	      number6:		// start exponential part
-		switch (text[pos])
-		{
-		case L'+':
-		case L'-':
-		case L'0':
-		case L'1':
-		case L'2':
-		case L'3':
-		case L'4':
-		case L'5':
-		case L'6':
-		case L'7':
-		case L'8':
-		case L'9':
-			if (rs_catwc (temp->text, text[pos]) != RS_OK)
-				goto error;
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto number7;	// exponential part
-			break;
-
-		default:
-			printf ("Step 5: illegal character (%c) at position %i\n", text[pos], pos);
-			goto error;
-		}
-
-	      number7:		// start exponential part
-		switch (text[pos])
-		{
-		case L'0':
-		case L'1':
-		case L'2':
-		case L'3':
-		case L'4':
-		case L'5':
-		case L'6':
-		case L'7':
-		case L'8':
-		case L'9':
-			if (rs_catwc (temp->text, text[pos]) != RS_OK)
-				goto error;
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto number7;	// exponential part
-			break;
-
-		case L'\x20':
-		case L'\x09':
-		case L'\x0A':
-		case L'\x0D':	// white spaces
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto numberend;
-			break;
-
-		case L',':
-		case L'}':
-		case L']':
-			goto numberend;
-			break;
-
-		default:
-			printf ("Step 5: illegal character (%c) at position %i\n", text[pos], pos);
-			goto error;
-		}
-
-
-	      numberend:	// number end
-		// where to go now?
-		json_insert_child (cursor, temp);
-		temp = NULL;
-		if (cursor->type == JSON_STRING)
-			cursor = cursor->parent;
-		/* TODO potential error on:
-		   -> JSON malformed text
-		   -> started parsing child node on JSON text snippet
-
-		   needs to:
-		   -> perform error checking
-		 */
-	      numberendloop:
-		switch (text[pos])
-		{
-		case '\x20':
-		case L'\x09':
-		case L'\x0A':
-		case L'\x0D':	// white spaces
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto numberendloop;	// clear up all whitespaces until a decent character is found.
-			break;
-		case L',':
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto state10;	// sibling
-			break;
-
-		case L'}':
-		case L']':
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto state3;	// end structure
-
-		default:
-			printf ("Step 5: illegal character (%c) at position %i\n", text[pos], pos);
-			goto error;
-		}
-	}
-
-      state6:			// true
-	{
-		if (text[++pos] != L'r')
-			goto error;
-		if (text[++pos] != L'u')
-			goto error;
-		if (text[++pos] != L'e')
-			goto error;
-	      statetrue:
-		switch (text[++pos])
-		{
-		case L',':
-			json_insert_child (cursor,
-					   json_new_value (JSON_TRUE));
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto state10;	// sibling
-			break;
-
-		case L'}':
-		case L']':
-			json_insert_child (cursor,
-					   json_new_value (JSON_TRUE));
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto state3;	// end structure
-			break;
-
-		case L'\x20':
-		case L'\x09':
-		case L'\x0A':
-		case L'\x0D':	// white spaces
-			json_insert_child (cursor,
-					   json_new_value (JSON_TRUE));
-			//TODO implement a new state: close literal
-			goto statetrue;	// loop to get rid of the white spaces
-			break;
-
-		default:
-			printf ("Step 6: illegal character (%c) at position %i\n", text[pos], pos);
-			goto error;
-		}
-	}
-
-      state7:			// false
-	{
-		if (text[++pos] != L'a')
-			goto error;
-		if (text[++pos] != L'l')
-			goto error;
-		if (text[++pos] != L's')
-			goto error;
-		if (text[++pos] != L'e')
-			goto error;
-		pos++;
-		if (pos >= length)
-			goto state20;	//end tree
-		json_insert_child (cursor, json_new_value (JSON_FALSE));
-
-		if (cursor->type == JSON_STRING)
-		{
-			if (cursor->parent)
-				cursor = cursor->parent;
-		}
-
-	      false1:
-		switch (text[pos])
-		{
-		case L'\x20':
-		case L'\x09':
-		case L'\x0A':
-		case L'\x0D':	// white spaces
-			pos++;	// ignore white spaces
-			if (pos >= length)
-				goto state20;	//end tree
-			goto false1;
-			break;
-
-		case L'}':
-		case L']':
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto state3;	// end structure
-			break;
-
-		case L',':
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto state10;	// sibling
-			break;
-
-		default:
-			printf ("Step 7: illegal character (%c) at position %i\n", text[pos], pos);
-			goto error;
-		}
-	}
-
-      state8:			// null
-	{
-		pos++;
-		if (text[pos] != L'u')
-		{
-			goto error;
-		}
-
-		pos++;
-		if (text[pos] != L'l')
-		{
-			goto error;
-		}
-
-		pos++;
-		if (text[pos] != L'l')
-		{
-			goto error;
-		}
-
-		json_insert_child (cursor, json_new_value (JSON_NULL));
-
-	      null1:
-		pos++;
-		switch (text[pos])
-		{
-		case L',':
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto state10;	// sibling
-			break;
-
-		case L'}':
-		case L']':
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto state3;	// end structure
-			break;
-
-		case L'\x20':
-		case L'\x09':
-		case L'\x0A':
-		case L'\x0D':	// white spaces
-			goto null1;	// start structure
-
-		default:
-			goto error;
-		}
-	}
-
-      state9:			// pair
-	{
-		switch (text[pos])
-		{
-		case L'\x20':
-		case L'\x09':
-		case L'\x0A':
-		case L'\x0D':	// white spaces
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto state9;	// restart loop
-			break;
-		case L'{':
-		case L'[':
-			goto state2;	// start structure
-
-		case L'\"':
-			goto state4;	// string
-
-		case L'-':
-		case L'0':
-		case L'1':
-		case L'2':
-		case L'3':
-		case L'4':
-		case L'5':
-		case L'6':
-		case L'7':
-		case L'8':
-		case L'9':
-			goto state5;	// number
-			break;
-
-		case L't':
-			goto state6;	// true
-		case L'f':
-			goto state7;	// false
-		case L'n':
-			goto state8;
-
-		default:
-			printf ("Step 9: illegal character (%c) at position %i\n", text[pos], pos);
-			goto error;
-		}
-	}
-
-      state10:			// sibling
-	{
-		//TODO perform tree integrity checks
-		if (cursor == NULL)	// a new root must not be a root
-			goto error;
-
-	      sibling1:
-		switch (text[pos])
-		{
-		case L'\x20':
-		case L'\x09':
-		case L'\x0A':
-		case L'\x0D':	// white spaces
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto sibling1;
-			break;
-		case L'{':
-		case L'[':
-			goto state2;	// start structure
-
-		case L'\"':
-			goto state4;	// string
-
-		case L'-':
-		case L'0':
-		case L'1':
-		case L'2':
-		case L'3':
-		case L'4':
-		case L'5':
-		case L'6':
-		case L'7':
-		case L'8':
-		case L'9':
-			goto state5;	// number
-		case L't':
-			goto state6;	// true
-		case L'f':
-			goto state7;	// false
-		case L'n':
-			goto state8;
-
-		default:
-			printf ("Step 10: illegal character (%c) at position %i\n", text[pos], pos);
-			goto error;
-		}
-	}
-
-      state11:			// string followup
-	{
-		switch (text[pos])
-		{
-		case L'\x20':
-		case L'\x09':
-		case L'\x0A':
-		case L'\x0D':	// white spaces
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto state11;
-			break;
-
-		case L'}':
-		case L']':
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto state3;	// end structure
-			break;
-
-		case L':':
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto state9;	// pair
-			break;
-
-		case L',':
-			pos++;
-			if (pos >= length)
-				goto state20;	//end tree
-			goto state10;	// sibling
-			break;
-
-		default:
-			printf ("Step 11: illegal character (%c) at position %i\n", text[pos], pos);
-			goto error;
-		}
-	}
-
-      state20:			// end tree
-	{
-		if (cursor == NULL)
-			goto end;	// only whitespaces. no tree.
-		if (cursor->parent != NULL)
-		{
-			pos++;
-			goto error;
-		}
-		else
-		{
-		      state20clean:
-			if (pos < length)
-			{
-				switch (text[pos])
-				{
-
-				case L'\x20':
-				case L'\x09':
-				case L'\x0A':
-				case L'\x0D':	// white spaces
-					pos++;
-					if (pos >= length)
-						goto state20;	//end tree
-					goto state20clean;
-					break;
-				default:
-					printf ("Step 20: illegal character (%c) at position %i\n", text[pos], pos);
-					goto error;
-
-				}
-			}
-			goto end;
-		}
-	}
-
-      error:
-	{
-		printf ("ERROR!\n");
-		if (cursor != NULL)
-		{
-			json_free_value (&cursor);
-		}
-//              return NULL;
-		cursor = NULL;	// with this even when an error is called the temp variables are cleaned in the end state
-	}
-
-      end:
-	{
-		return cursor;
-	}
-}
-
 int
 json_white_space (const wchar_t c)
 {
@@ -1552,8 +546,7 @@ json_strip_white_spaces (wchar_t * text)	///fixit this function should not strip
 			{
 				if (txt->s[pos] == L'\\')	// escaped sequence
 				{
-					if (rs_catwc (output, txt->s[pos]) !=
-					    RS_OK)
+					if (rs_catwc (output, txt->s[pos]) != RS_OK)
 					{
 						rs_unwrap (txt);
 						rs_destroy (&output);
@@ -1563,9 +556,7 @@ json_strip_white_spaces (wchar_t * text)	///fixit this function should not strip
 					if (txt->s[pos] == L'\"')	// don't consider a \" escaped sequence as an end of string
 					{
 
-						if (rs_catwc
-						    (output,
-						     txt->s[pos]) != RS_OK)
+						if (rs_catwc (output, txt->s[pos]) != RS_OK)
 						{
 							rs_unwrap (txt);
 							rs_destroy (&output);
@@ -1715,8 +706,7 @@ json_format_string (wchar_t * text)
 			{
 				if (txt->s[pos] == L'\\')	// escaped sequence
 				{
-					if (rs_catwc (output, txt->s[pos]) !=
-					    RS_OK)
+					if (rs_catwc (output, txt->s[pos]) != RS_OK)
 					{
 						rs_unwrap (txt);
 						rs_destroy (&output);
@@ -1726,9 +716,7 @@ json_format_string (wchar_t * text)
 					if (txt->s[pos] == L'\"')	// don't consider a \" escaped sequence as an end of string
 					{
 
-						if (rs_catwc
-						    (output,
-						     txt->s[pos]) != RS_OK)
+						if (rs_catwc (output, txt->s[pos]) != RS_OK)
 						{
 							rs_unwrap (txt);
 							rs_destroy (&output);
@@ -1812,4 +800,1362 @@ json_escape_string (wchar_t * text)
 	}
 
 	return rs_unwrap (output);
+}
+
+
+enum json_error
+json_parse_string (struct json_parsing_info *info, wchar_t * text)
+{
+	assert (info != NULL);
+	// setup the initial values
+	size_t pos = 0;
+	size_t length = wcslen (text);
+
+	// go to the state that we should be to resume parsing
+	switch (info->state)
+	{
+	case 1:
+		goto state1;	// start value
+	case 2:
+		goto state2;	// open object/array
+	case 3:
+		goto state3;	// end object
+	case 4:
+		goto state4;	// end array
+	case 5:
+		goto state5;	// start string
+	case 6:
+		goto state6;	// continue string
+	case 7:
+		goto state7;	// continue string: escaped character
+	case 8:
+		goto state8;	// continue string: escaped unicode character 1 of 4
+	case 9:
+		goto state9;	// continue string: escaped unicode character 2 of 4
+	case 10:
+		goto state10;	// continue string: escaped unicode character 3 of 4
+	case 11:
+		goto state11;	// continue string: escaped unicode character 4 of 4
+	case 12:
+		goto state12;	// string followup
+	case 13:
+		goto state13;	// pair
+	case 14:
+		goto state14;	// start number
+	case 15:
+		goto state15;	// number: leading zero
+	case 16:
+		goto state16;	// number: decimal part
+	case 17:
+		goto state17;	// number: start fractional part
+	case 18:
+		goto state18;	// number: fractional part
+	case 19:
+		goto state19;	// number: start exponential part
+	case 20:
+		goto state20;	// number: exponential part following signal
+	case 21:
+		goto state21;	// number: exponential part
+	case 22:
+		goto state22;	// number: end
+	case 23:
+		goto state23;	// value followup
+	case 24:
+		goto state24;	// sibling
+	case 25:
+		goto state25;	// true: t
+	case 26:
+		goto state26;	// true: r
+	case 27:
+		goto state27;	// true: u
+	case 28:
+		goto state28;	// true: e
+	case 29:
+		goto state29;	// false: f
+	case 30:
+		goto state30;	// false: a
+	case 31:
+		goto state31;	// false: l
+	case 32:
+		goto state32;	// false: s
+	case 33:
+		goto state33;	// false: e
+	case 34:
+		goto state34;	// null: n
+	case 35:
+		goto state35;	// null: u
+	case 36:
+		goto state36;	// null: l 1 of 2
+	case 37:
+		goto state37;	// null: l 2 of 2
+
+	default:
+		printf ("missing state: %i\n", info->state);
+		break;
+	}
+
+
+	// let's start the juicy bits
+      state1:			// start value
+	{
+//              if (pos >= length)
+//                      goto state20;   //end tree
+		switch (text[pos])
+		{
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			info->state = 1;
+			pos++;
+			if (pos >= length)	// current string ended
+			{
+//                              goto state20;   //end tree
+				return JSON_INCOMPLETE_DOCUMENT;
+			}
+			else
+				goto state1;
+			break;
+		case L'{':
+		case L'[':
+			info->state = 2;
+			goto state2;	// start structure
+
+		case L'}':
+			info->state = 3;
+			goto state3;	// end object
+
+		case L']':
+			info->state = 4;
+			goto state4;	// end array
+
+		case L'\"':
+			info->state = 5;
+			goto state5;	// start string
+
+//              case L'-':
+//              case L'0':
+//              case L'1':
+//              case L'2':
+//              case L'3':
+//              case L'4':
+//              case L'5':
+//              case L'6':
+//              case L'7':
+//              case L'8':
+//              case L'9':
+//                      info->state = 6;
+//                      goto state6;    // number
+// 
+//              case L't':
+//                      info->state = 7;
+//                      goto state7;    // true
+//              case L'f':
+//                      info->state = 8;
+//                      goto state8;    // false
+//              case L'n':
+//                      info->state = 9;
+//                      goto state9;    // null
+//              case L',':
+//                      info->state = 10;
+//                      goto state10;   // sibling
+
+		default:
+//                      printf ("Step 1: illegal character (%c) at position %i\n", text[pos], pos);
+			return JSON_ILLEGAL_CHARACTER;
+			break;
+		}
+	}
+
+      state2:			// open object/array
+	{
+		// tree integrity checking
+		if (info->cursor)	// cursor will be the parent node of this structure
+		{
+			if ((info->cursor->type != JSON_ARRAY) && (info->cursor->type != JSON_STRING))
+			{
+				return JSON_ILLEGAL_CHARACTER;
+			}
+		}
+
+		// create the new children objects
+		if (text[pos] == L'[')
+			info->temp = json_new_array ();
+		else
+			info->temp = json_new_object ();
+
+		// create new tree node and add as child
+		if (info->cursor != NULL)
+		{
+			json_insert_child (info->cursor, info->temp);
+		}
+		// traverse cursor up child node
+		info->cursor = info->temp;
+		info->temp = NULL;
+
+		info->state = 1;
+		pos++;
+		if (pos >= length)	// current string ended
+		{
+			return JSON_INCOMPLETE_DOCUMENT;
+		}
+		else
+			goto state1;	// start value
+	}
+
+      state3:			// end object
+	{
+		// verify tree integrity
+		if (info->cursor == NULL)
+			return JSON_ILLEGAL_CHARACTER;
+		if (info->cursor->type != JSON_OBJECT)
+			return JSON_ILLEGAL_CHARACTER;
+		if (info->cursor->parent == NULL)
+		{
+			return JSON_OK;
+		}
+		if ((info->cursor->parent->type != JSON_STRING) && (info->cursor->parent->type != JSON_ARRAY))
+		{
+			return JSON_BAD_TREE_STRUCTURE;
+		}
+		// move on down
+		info->cursor = info->cursor->parent;
+
+		// check if we descended into the root node
+		switch (info->cursor->type)
+		{
+		case JSON_STRING:
+			if (info->cursor->parent == NULL)
+				return JSON_OK;
+			else
+				info->cursor = info->cursor->parent;	///todo test this
+			break;
+
+		case JSON_ARRAY:
+			///todo finish this step
+			break;
+
+		default:
+			return JSON_BAD_TREE_STRUCTURE;
+			break;
+		}
+
+		// proceed to the next state
+		info->state = 1;
+		pos++;
+		if (pos >= length)	// current string ended
+		{
+			return JSON_INCOMPLETE_DOCUMENT;
+		}
+		else
+			goto state1;	// start value
+	}
+
+      state4:			// end array
+	{
+		// verify tree integrity
+		if (info->cursor == NULL)
+			return JSON_ILLEGAL_CHARACTER;
+		if (info->cursor->type != JSON_ARRAY)
+			return JSON_ILLEGAL_CHARACTER;
+		if (info->cursor->parent == NULL)
+		{
+			return JSON_OK;
+		}
+		if ((info->cursor->parent->type != JSON_STRING) && (info->cursor->parent->type != JSON_ARRAY))
+		{
+			return JSON_BAD_TREE_STRUCTURE;
+		}
+		// move on down
+		info->cursor = info->cursor->parent;
+
+		// proceed to the next state
+		info->state = 1;
+		pos++;
+		if (pos >= length)	// current string ended
+		{
+			return JSON_INCOMPLETE_DOCUMENT;
+		}
+		else
+			goto state1;	// start value
+	}
+
+      state5:			// start string
+	{
+		// verify tree integrity
+		if (info->cursor != NULL)
+		{
+			switch (info->cursor->type)
+			{
+			case JSON_OBJECT:
+			case JSON_ARRAY:
+				break;
+			case JSON_STRING:
+				if (info->cursor->parent)
+				{
+					if (info->cursor->parent->type != JSON_OBJECT)	//a parent of a parent string must be an object
+						return JSON_ILLEGAL_CHARACTER;
+				}
+				break;
+
+			default:	// a string can't be a child of a value type other than object, array or string
+				return JSON_ILLEGAL_CHARACTER;
+			}
+		}
+		// do your thing
+		if (info->temp == NULL)
+		{
+			info->temp = json_new_string (L"");
+			if (info->temp == NULL)
+				return JSON_MEMORY;
+		}
+
+		// move to the next state
+		info->state = 6;
+		pos++;
+		if (pos >= length)	// current string ended
+		{
+			return JSON_INCOMPLETE_DOCUMENT;
+		}
+		else
+			goto state6;	// continue string
+	}
+
+      state6:			// continue string
+	{
+		switch (text[pos])
+		{
+		case L'\\':	// escaped characters
+			if (rs_catwc (info->temp->text, L'\\') != RS_OK)
+				return JSON_MEMORY;
+
+			info->state = 7;
+			pos++;
+			if (pos >= length)
+			{
+				return JSON_INCOMPLETE_DOCUMENT;
+			}
+			else
+				goto state7;	// continue string: escaped character
+			break;
+
+		case L'"':	// closing string
+			if (info->cursor == NULL)
+				info->cursor = info->temp;	///todo perform memory check
+			else
+			{
+				json_insert_child (info->cursor, info->temp);
+				info->temp = NULL;
+				switch (info->cursor->type)	// return the cursor to a sane place
+				{
+				case JSON_ARRAY:
+					break;
+				case JSON_STRING:
+					if (info->cursor->parent)
+					{
+						if (info->cursor->parent->type == JSON_OBJECT)
+						{
+							info->cursor = info->cursor->parent;	// point cursor at child label
+						}
+						else	///TODO check if this is complete
+						{
+							printf ("quack!\n");
+							return JSON_BAD_TREE_STRUCTURE;
+						}
+					}
+					break;
+
+				case JSON_OBJECT:
+					info->cursor = info->cursor->child_end;	// point cursor at inserted child label
+					break;
+
+				case JSON_NUMBER:
+				case JSON_TRUE:
+				case JSON_FALSE:
+				case JSON_NULL:
+				default:
+					return JSON_BAD_TREE_STRUCTURE;
+				}
+			}
+			info->state = 12;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state12;	// goto string followup
+			break;
+
+
+		default:
+			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+				return JSON_MEMORY;
+			info->state = 6;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state6;
+		}
+
+	}
+
+      state7:			// continue string: escaped characters
+	{
+		switch (text[pos])
+		{
+		case L'\"':
+		case L'\\':
+		case L'/':
+		case L'b':
+		case L'f':
+		case L'n':
+		case L'r':
+		case L't':
+			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+				return JSON_MEMORY;
+			info->state = 6;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state6;	// continue string
+			break;
+
+		case L'u':
+			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+				return JSON_MEMORY;
+			info->state = 8;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state8;	// continue string: escaped unicode character 1
+			break;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+		}
+	}
+
+      state8:			// continue string: escaped unicode character 1
+	{
+		switch (text[pos])
+		{
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+		case L'a':
+		case L'b':
+		case L'c':
+		case L'd':
+		case L'e':
+		case L'f':
+		case L'A':
+		case L'B':
+		case L'C':
+		case L'D':
+		case L'E':
+		case L'F':
+			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+				return JSON_MEMORY;
+			break;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+		}
+		info->state = 9;
+		pos++;
+		if (pos >= length)
+			return JSON_INCOMPLETE_DOCUMENT;
+		else
+			goto state9;	// continue string: escaped unicode character 2
+	}
+
+      state9:			// continue string: escaped unicode character 2
+	{
+		switch (text[pos])
+		{
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+		case L'a':
+		case L'b':
+		case L'c':
+		case L'd':
+		case L'e':
+		case L'f':
+		case L'A':
+		case L'B':
+		case L'C':
+		case L'D':
+		case L'E':
+		case L'F':
+			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+				return JSON_MEMORY;
+			break;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+		}
+		info->state = 10;
+		pos++;
+		if (pos >= length)
+			return JSON_INCOMPLETE_DOCUMENT;
+		else
+			goto state10;	// continue string: escaped unicode character 3
+	}
+
+      state10:			// continue string: escaped unicode character 3
+	{
+		switch (text[pos])
+		{
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+		case L'a':
+		case L'b':
+		case L'c':
+		case L'd':
+		case L'e':
+		case L'f':
+		case L'A':
+		case L'B':
+		case L'C':
+		case L'D':
+		case L'E':
+		case L'F':
+			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+				return JSON_MEMORY;
+			break;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+		}
+		info->state = 11;
+		pos++;
+		if (pos >= length)
+			return JSON_INCOMPLETE_DOCUMENT;
+		else
+			goto state11;	// continue string: escaped unicode character 3
+	}
+
+      state11:			// continue string: escaped unicode character 4
+	{
+		switch (text[pos])
+		{
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+		case L'a':
+		case L'b':
+		case L'c':
+		case L'd':
+		case L'e':
+		case L'f':
+		case L'A':
+		case L'B':
+		case L'C':
+		case L'D':
+		case L'E':
+		case L'F':
+			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+				return JSON_MEMORY;
+			break;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+		}
+		info->state = 6;
+		pos++;
+		if (pos >= length)
+			return JSON_INCOMPLETE_DOCUMENT;
+		else
+			goto state6;	// continue string
+	}
+
+      state12:			// string followup
+	{
+		switch (text[pos])
+		{
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			info->state = 12;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state12;
+			break;
+
+		case L'}':	// end object
+			info->state = 3;
+			pos++;
+			if (pos > length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state3;	// end object
+			break;
+
+		case L']':	// end array
+			info->state = 4;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state4;	// end array
+			break;
+
+		case L':':
+			info->state = 13;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state13;	// pair
+			break;
+
+		case L',':
+			info->state = 24;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state24;	// sibling
+			break;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+		}
+	}
+
+      state13:			// pair
+	{
+		switch (text[pos])
+		{
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			info->state = 13;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state13;	// restart loop
+			break;
+
+		case L'{':
+		case L'[':
+			info->state = 2;
+			goto state2;	// start structure
+
+		case L'\"':
+			info->state = 5;
+			goto state5;	// start string
+
+		case L'-':
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			info->state = 14;
+			goto state14;	// number
+			break;
+
+		case L't':
+			goto state6;	// true
+		case L'f':
+			goto state7;	// false
+		case L'n':
+			goto state8;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+		}
+	}
+
+      state14:			// start number
+	{
+		info->temp = json_new_number (L"");
+		// start number
+		switch (text[pos])
+		{
+		case L'0':
+			if (rs_catwc (info->temp->text, L'0') != RS_OK)
+				return JSON_MEMORY;
+			info->state = 15;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state15;	// number: leading zero
+			break;
+
+		case L'-':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+				return JSON_MEMORY;
+			info->state = 16;	// number: decimal part
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state16;	// number: decimal part
+			break;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+		}
+	}
+
+      state15:			// number: leading zero
+	{
+		switch (text[pos])
+		{
+		case L'.':
+			if (rs_catwc (info->temp->text, L'.') != RS_OK)
+				return JSON_MEMORY;
+			info->state = 17;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state17;	// number: start fractional part
+
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			info->state = 22;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state22;	// number: end
+			break;
+
+		case L',':
+		case L'}':
+		case L']':
+			info->state = 22;
+			goto state22;
+			break;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+		}
+	}
+
+      state16:			// number: decimal part
+	{
+		switch (text[pos])
+		{
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+				return JSON_MEMORY;
+			info->state = 16;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state16;	// number: decimal part
+			break;
+
+		case L'.':
+			if (rs_catwc (info->temp->text, L'.') != RS_OK)
+				return JSON_INCOMPLETE_DOCUMENT;
+			info->state = 17;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state17;	// number: start fractional part
+
+		case L'e':
+		case L'E':
+			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+				return JSON_MEMORY;
+			info->state = 19;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state19;	// start exponential
+
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			info->state = 22;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state22;	// number: end
+			break;
+
+		case L',':
+		case L'}':
+		case L']':
+			info->state = 22;
+			goto state22;	// number: end
+			break;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+		}
+	}
+
+      state17:			// number: start fractional part
+	{
+		switch (text[pos])
+		{
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+				return JSON_MEMORY;
+			info->state = 18;	// decimal part
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state18;	// number: fractional part
+			break;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+		}
+	}
+
+      state18:			// number: fractional part
+	{
+		switch (text[pos])
+		{
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+				return JSON_MEMORY;
+			info->state = 18;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state18;	// number: fractional part
+			break;
+
+		case L'e':
+		case L'E':
+			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+				return JSON_MEMORY;
+			info->state = 19;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state19;	// number: start exponential part
+
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			info->state = 22;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state22;	// number: end
+			break;
+
+		case L',':
+		case L'}':
+		case L']':
+			info->state = 22;
+			goto state22;
+			break;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+		}
+	}
+
+      state19:			// number: start exponential part
+	{
+		switch (text[pos])
+		{
+		case L'+':
+		case L'-':
+			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+				return JSON_MEMORY;
+			info->state = 20;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state20;	// number: exponential part
+			break;
+
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+				return JSON_MEMORY;
+			info->state = 21;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state21;	// number: exponential part
+			break;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+		}
+	}
+
+      state20:			// number: exponential part following signal
+	{
+		switch (text[pos])
+		{
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+				return JSON_MEMORY;
+			info->state = 21;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state21;	// number: exponential part
+			break;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+		}
+	}
+
+      state21:			// number: exponential part
+	{
+		switch (text[pos])
+		{
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+				return JSON_MEMORY;
+			info->state = 21;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state21;	// exponential part
+			break;
+
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			info->state = 22;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state22;	// number: end
+			break;
+
+		case L',':
+		case L'}':
+		case L']':
+			info->state = 22;
+			goto state22;
+			break;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+		}
+	}
+
+
+      state22:			// number: end
+	{
+		// where to go now?
+		json_insert_child (info->cursor, info->temp);
+		info->temp = NULL;
+		if (info->cursor->type == JSON_STRING)
+			info->cursor = info->cursor->parent;
+		info->state = 23;
+		goto state23;
+	}
+
+      state23:			// value followup
+	{
+		switch (text[pos])
+		{
+		case '\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			info->state = 23;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state23;	// number followup
+			break;
+
+		case L',':
+			pos++;
+			if (pos >= length)
+				goto state20;	//end tree
+			goto state10;	// sibling
+			break;
+
+		case L'}':
+			info->state = 3;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state3;	// end array
+			break;
+
+		case L']':
+			info->state = 4;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state4;	// end array
+			break;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+		}
+	}
+
+
+      state24:			// sibling
+	{
+		//TODO perform tree integrity checks
+		if (info->cursor == NULL)	// a new root must not be a root
+			return JSON_BAD_TREE_STRUCTURE;
+
+		switch (text[pos])
+		{
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// white spaces
+			info->state = 24;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state24;
+			break;
+
+		case L'{':
+		case L'[':
+			info->state = 2;
+			goto state2;	// open object/array
+			break;
+
+		case L'\"':
+			info->state = 5;
+			goto state5;	// start string
+			break;
+
+		case L'-':
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			info->state = 14;
+			goto state14;	// start number
+			break;
+
+		case L't':
+			info->state = 25;
+			pos++;
+			if (pos >= length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state25;	// true
+			break;
+
+		case L'f':
+			goto state7;	// false
+		case L'n':
+			goto state8;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+		}
+	}
+
+      state25:			// true: t
+	{
+		if (text[pos] != L'r')
+			return JSON_ILLEGAL_CHARACTER;
+		info->state = 26;
+		pos++;
+		if (pos >= length)
+			return JSON_INCOMPLETE_DOCUMENT;
+		else
+			goto state26;	// true: r
+
+	}
+
+      state26:			// true: r
+	{
+		if (text[pos] != L'u')
+			return JSON_ILLEGAL_CHARACTER;
+		info->state = 27;
+		pos++;
+		if (pos >= length)
+			return JSON_INCOMPLETE_DOCUMENT;
+		else
+			goto state27;	// true: u
+
+	}
+
+      state27:			// true: u
+	{
+		if (text[pos] != L'e')
+			return JSON_ILLEGAL_CHARACTER;
+		info->state = 28;
+		pos++;
+		if (pos >= length)
+			return JSON_INCOMPLETE_DOCUMENT;
+		else
+			goto state28;	// true: e
+
+	}
+
+      state28:			// true: e
+	{
+		json_insert_child (info->cursor, json_new_value (JSON_TRUE));
+
+		info->state = 23;
+		pos++;
+		if (pos >= length)
+			return JSON_INCOMPLETE_DOCUMENT;
+		else
+			goto state23;	// value followup
+
+	}
+
+      state29:			// false: f
+	{
+		if (text[pos] != L'a')
+			return JSON_ILLEGAL_CHARACTER;
+		info->state = 30;
+		pos++;
+		if (pos >= length)
+			return JSON_INCOMPLETE_DOCUMENT;
+		else
+			goto state30;	// false: a
+
+	}
+
+      state30:			// false: a
+	{
+		if (text[pos] != L'l')
+			return JSON_ILLEGAL_CHARACTER;
+		info->state = 31;
+		pos++;
+		if (pos >= length)
+			return JSON_INCOMPLETE_DOCUMENT;
+		else
+			goto state31;	// false: l
+
+	}
+
+      state31:			// false: l
+	{
+		if (text[pos] != L'l')
+			return JSON_ILLEGAL_CHARACTER;
+		info->state = 32;
+		pos++;
+		if (pos >= length)
+			return JSON_INCOMPLETE_DOCUMENT;
+		else
+			goto state32;	// false: s
+
+	}
+
+      state32:			// false: l
+	{
+		if (text[pos] != L's')
+			return JSON_ILLEGAL_CHARACTER;
+		info->state = 33;
+		pos++;
+		if (pos >= length)
+			return JSON_INCOMPLETE_DOCUMENT;
+		else
+			goto state33;	// false: e
+
+	}
+
+      state33:			// false: e
+	{
+		json_insert_child (info->cursor, json_new_value (JSON_FALSE));
+
+		info->state = 23;
+		pos++;
+		if (pos >= length)
+			return JSON_INCOMPLETE_DOCUMENT;
+		else
+			goto state23;	// value followup
+	}
+
+      state34:			// null: n
+	{
+		if (text[pos] != L'u')
+			return JSON_ILLEGAL_CHARACTER;
+		info->state = 35;
+		pos++;
+		if (pos >= length)
+			return JSON_INCOMPLETE_DOCUMENT;
+		else
+			goto state35;	// null: u
+
+	}
+
+      state35:			// null: u
+	{
+		if (text[pos] != L'l')
+			return JSON_ILLEGAL_CHARACTER;
+		info->state = 36;
+		pos++;
+		if (pos >= length)
+			return JSON_INCOMPLETE_DOCUMENT;
+		else
+			goto state36;	// null: l 1 of 2
+	}
+
+      state36:			// null: l 1 of 2
+	{
+		if (text[pos] != L'l')
+			return JSON_ILLEGAL_CHARACTER;
+		info->state = 37;
+		pos++;
+		if (pos >= length)
+			return JSON_INCOMPLETE_DOCUMENT;
+		else
+			goto state37;	// null: l 2 of 2
+	}
+
+      state37:			// null: l 2 of 2
+	{
+		json_insert_child (info->cursor, json_new_value (JSON_NULL));
+
+		info->state = 23;
+		pos++;
+		if (pos >= length)
+			return JSON_INCOMPLETE_DOCUMENT;
+		else
+			goto state23;	// value followup
+	}
+
+
+
+
+	return 1;		///fixit return a relevant JSON error code
 }
