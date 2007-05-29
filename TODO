@@ -1,6 +1,5 @@
 * finish the json_free_value function so that it really frees all allocated memory 
 * implement decent error handling on the parsing functions
-* support parsing incomplete documents (streaming, stdin)
 * test the library's hability to handle Unicode characters
-* implement a standard and nice looking method to format the source code
 * replace all the rstring training wheel wrapper stuff with wchar_t strings (use the wrapper struct only internally?)
+
