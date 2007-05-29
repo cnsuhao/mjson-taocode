@@ -21,174 +21,183 @@
 #include "rstring.h"
 
 #include <stdlib.h>
-#include <stdio.h> // printf
+#include <stdio.h>		// printf
 #include <assert.h>
 #include <wchar.h>
 
 
-rstring *rs_create(const wchar_t *cstring)
+rstring *
+rs_create (const wchar_t * cstring)
 {
-	assert(cstring != NULL);
-	rstring *rs = malloc(sizeof(rstring));	// allocates memory for a struct rstring
-	if(rs == NULL)
+	assert (cstring != NULL);
+	rstring *rs = malloc (sizeof (rstring));	// allocates memory for a struct rstring
+	if (rs == NULL)
 		return NULL;
 
-	rs->length = rs->max = wcslen(cstring);
+	rs->length = rs->max = wcslen (cstring);
 
-// 	rs->s = NULL;
-	rs->s = calloc(rs->length+1, sizeof(wchar_t));
-	if(rs->s == NULL)
+//      rs->s = NULL;
+	rs->s = calloc (rs->length + 1, sizeof (wchar_t));
+	if (rs->s == NULL)
 		return NULL;
 
-	wcsncpy(rs->s, cstring, rs->length);
+	wcsncpy (rs->s, cstring, rs->length);
 	return rs;
 }
 
 
-void rs_destroy(rstring **rs)
+void
+rs_destroy (rstring ** rs)
 {
-	assert(rs != NULL);
-	if(*rs != NULL)
+	assert (rs != NULL);
+	if (*rs != NULL)
 	{
-		if((*rs)->s != NULL)
+		if ((*rs)->s != NULL)
 		{
-			free((*rs)->s);
+			free ((*rs)->s);
 			(*rs)->s = NULL;
 		}
-		free(*rs);
+		free (*rs);
 		*rs = NULL;
 	}
-	
+
 }
 
-rstring *rs_duplicate(rstring *copied)
+rstring *
+rs_duplicate (rstring * copied)
 {
-	assert(copied != NULL);
-	rstring *copy = malloc(sizeof(rstring));
-	if(copy == NULL)
+	assert (copied != NULL);
+	rstring *copy = malloc (sizeof (rstring));
+	if (copy == NULL)
 		return NULL;
 
-	copy->s = calloc(1,sizeof(wchar_t));
-	if(copy->s == NULL)
+	copy->s = calloc (1, sizeof (wchar_t));
+	if (copy->s == NULL)
 		return NULL;
 	copy->s[0] = 0;
 	copy->length = copy->max = 0;
-	
-	if(rs_copyrs(copy,copied) == RS_OK)
+
+	if (rs_copyrs (copy, copied) == RS_OK)
 		return copy;
 	else
-  		return NULL;
+		return NULL;
 }
 
 
-size_t rs_length(rstring *rs)
+size_t
+rs_length (rstring * rs)
 {
-	assert(rs != NULL);
+	assert (rs != NULL);
 	return rs->length;
 }
 
 
-int rs_copyrs(rstring *to, const rstring *from)
+int
+rs_copyrs (rstring * to, const rstring * from)
 {
-	assert(to != NULL);
-	
-	if(from == NULL)
+	assert (to != NULL);
+
+	if (from == NULL)
 		return RS_OK;	// nothing to copy
 
 	//TODO implement intelligent memory allocation
-	if(to->max < from->length)
+	if (to->max < from->length)
 	{
-		to->s = realloc(to->s,(from->length + 1)*sizeof(wchar_t));
-		if(to->s == NULL)
+		to->s = realloc (to->s, (from->length + 1) * sizeof (wchar_t));
+		if (to->s == NULL)
 		{
 			return RS_MEMORY;
 		}
 
 		to->max = from->length;
 	}
-	wcsncpy(to->s, from->s, from->length);
+	wcsncpy (to->s, from->s, from->length);
 	to->s[from->length] = 0;
 	to->length = from->length;
 	return RS_OK;
 }
 
 
-int rs_copywcs(rstring *to, const wchar_t *from, const size_t length)
+int
+rs_copywcs (rstring * to, const wchar_t * from, const size_t length)
 {
-	assert(to != NULL);
+	assert (to != NULL);
 
-	if(from == NULL)
+	if (from == NULL)
 		return RS_OK;
-	
+
 	//TODO implement intelligent memory allocation
-	if(to->max < length)
+	if (to->max < length)
 	{
-		to->s = realloc(to->s,(length + 1)*sizeof(wchar_t));
-		if(to->s == NULL)
+		to->s = realloc (to->s, (length + 1) * sizeof (wchar_t));
+		if (to->s == NULL)
 		{
 			return RS_MEMORY;
 		}
 
 		to->max = length;
 	}
-	wcsncpy(to->s, from, length);
+	wcsncpy (to->s, from, length);
 	to->s[length] = 0;
 	to->length = length;
 	return RS_OK;
 }
 
-int rs_catrs(rstring *pre, const rstring *pos)
+int
+rs_catrs (rstring * pre, const rstring * pos)
 {
-	assert(pre != NULL);
-	if(pos == NULL)
+	assert (pre != NULL);
+	if (pos == NULL)
 		return RS_OK;
 
-	if(pre->max < pre->length + pos->length + 1)
+	if (pre->max < pre->length + pos->length + 1)
 	{
-		pre->s = realloc(pre->s,(pre->length + pos->length + 1)*sizeof(wchar_t));
-		if(pre->s == NULL)
+		pre->s = realloc (pre->s, (pre->length + pos->length + 1) * sizeof (wchar_t));
+		if (pre->s == NULL)
 		{
 			return RS_MEMORY;
 		}
 
 		pre->max = pre->length + pos->length;
 	}
-	wcsncpy(pre->s+pre->length, pos->s, pos->length);
-	pre->s[pre->length+pos->length] = 0;
+	wcsncpy (pre->s + pre->length, pos->s, pos->length);
+	pre->s[pre->length + pos->length] = 0;
 	pre->length = pre->length + pos->length;
 	return RS_OK;
 }
 
-int rs_catwcs(rstring *pre, const wchar_t *pos, const size_t length)
+int
+rs_catwcs (rstring * pre, const wchar_t * pos, const size_t length)
 {
-	assert(pre != NULL);
-	if(pos == NULL)
+	assert (pre != NULL);
+	if (pos == NULL)
 		return RS_OK;
 
-	if(pre->max < pre->length + length)
+	if (pre->max < pre->length + length)
 	{
-		pre->s = realloc(pre->s,(pre->length + length + 1)*sizeof(wchar_t));
-		if(pre->s == NULL)
+		pre->s = realloc (pre->s, (pre->length + length + 1) * sizeof (wchar_t));
+		if (pre->s == NULL)
 		{
 			return RS_MEMORY;
 		}
 
 		pre->max = pre->length + length;
 	}
-	wcsncpy(pre->s+pre->length, pos, length);
-	pre->s[pre->length+length] = 0;
+	wcsncpy (pre->s + pre->length, pos, length);
+	pre->s[pre->length + length] = 0;
 	pre->length = pre->length + length;	//is this the correct value?
 	return RS_OK;
 }
 
 
-int rs_catwc(rstring *pre, const wchar_t c)
+int
+rs_catwc (rstring * pre, const wchar_t c)
 {
-	assert(pre != NULL);
-	if(pre->max <= pre->length )
+	assert (pre != NULL);
+	if (pre->max <= pre->length)
 	{
-		pre->s = realloc(pre->s,(pre->length + 2)*sizeof(wchar_t));	// 2 = new character + null character
-		if(pre->s == NULL)
+		pre->s = realloc (pre->s, (pre->length + 2) * sizeof (wchar_t));	// 2 = new character + null character
+		if (pre->s == NULL)
 		{
 			return RS_MEMORY;
 		}
@@ -196,41 +205,43 @@ int rs_catwc(rstring *pre, const wchar_t c)
 		pre->max = pre->length + 1;
 	}
 	pre->s[pre->length] = c;
-	pre->s[pre->length+1] = L'\0';
+	pre->s[pre->length + 1] = L'\0';
 	pre->length++;
 	return RS_OK;
 }
 
 
-int rs_catc(rstring *pre, const char c)
+int
+rs_catc (rstring * pre, const char c)
 {
-// 	assert(pre != NULL);
+//      assert(pre != NULL);
 	wchar_t newc;
-	mbtowc(&newc, &c, 1);
-	return rs_catwc(pre,newc);
+	mbtowc (&newc, &c, 1);
+	return rs_catwc (pre, newc);
 }
 
 
-rstring* rs_wrap(wchar_t *wcs)
+rstring *
+rs_wrap (wchar_t * wcs)
 {
-	if(wcs == NULL)
+	if (wcs == NULL)
 		return NULL;
-	rstring *wrapper = malloc(sizeof(rstring));
-	if(wrapper == NULL)
+	rstring *wrapper = malloc (sizeof (rstring));
+	if (wrapper == NULL)
 		return NULL;
-	wrapper->max = wrapper->length = wcslen(wcs);
+	wrapper->max = wrapper->length = wcslen (wcs);
 	wrapper->s = wcs;
 	return wrapper;
 }
 
 
-wchar_t *rs_unwrap(rstring *rs)
+wchar_t *
+rs_unwrap (rstring * rs)
 {
-	if(rs == NULL)
+	if (rs == NULL)
 		return NULL;
 	wchar_t *out = rs->s;
 
-	free(rs);
+	free (rs);
 	return out;
 }
-
