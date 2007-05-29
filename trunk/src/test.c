@@ -35,18 +35,18 @@ int
 main ()
 {
 	setlocale (LC_CTYPE, "");
-	wchar_t text[41];
+	wchar_t text[80];
 
 	struct json_parsing_info info;
 	info.cursor = NULL;
 	info.temp = NULL;
-	info.state = 1;
+	info.state = 0;
 
 	enum json_error error = 0;
 
 	while ((!feof (stdin)) && (error == 0))
 	{
-		fgetws (text, 40, stdin);
+		fgetws (text, 80, stdin);
 		printf ("%ls", text);
 		error = json_parse_string (&info, text);
 		if (error != 0)
