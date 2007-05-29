@@ -1,0 +1,18 @@
+Version 0.3
+* Implemented new and improved parser which enables sequential parsing. The old clunk json_tree_to_string() is deprecated.
+* Fixed the JSON parser's inability to parse escape character sequences contained in JSON strings
+* started replacing my pet rstrings with the wchar_t strings.
+* added json_escape_string(), a function that escapes all non-printable ASCII characters
+* rstring: renamed a bunch of functions in order to be more coherent
+* fixed a bunch of bugs and memory leaks
+
+Version 0.2
+* added functions to identify and strip white spaces
+* implemented all remaining json_new_* functions
+* implemented json_format_string(), a basic formatting function
+* rstring: switched from char to wchar_t, to better support Unicode
+* switched the library to wchar_t
+
+Version 0.1
+* The starting point
+
