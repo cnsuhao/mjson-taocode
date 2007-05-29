@@ -29,14 +29,38 @@
 #include <locale.h>
 
 #include "json.h"
-#include "rstring/rstring.h"
 
 
 int
 main ()
 {
 	setlocale (LC_CTYPE, "");
+	wchar_t text[41];
 
+	struct json_parsing_info info;
+	info.cursor = NULL;
+	info.temp = NULL;
+	info.state = 1;
+
+	enum json_error error = 0;
+
+	while ((!feof (stdin)) && (error == 0))
+	{
+		fgetws (text, 40, stdin);
+		printf ("%ls", text);
+		error = json_parse_string (&info, text);
+		if (error != 0)
+			printf ("error: %i\n", error);
+	}
+
+	if (error == 1)
+	{
+		wchar_t *output = json_tree_to_string (info.cursor);
+		wchar_t *clean = json_strip_white_spaces (output);
+		printf ("%ls\n", clean);
+		free (output);
+		free (clean);
+	}
 
 	return EXIT_SUCCESS;
 }
