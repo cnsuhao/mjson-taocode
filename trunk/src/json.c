@@ -2488,13 +2488,21 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 	case 24:		// parse number: decimal part
 		goto state24;
 		break;
+	case 25:		// open object
+		goto state25;
+		break;
+	case 26:		// close object/array
+		goto state26;
+		break;
+	case 27:		// sibling followup
+		goto state27;
+		break;
 
 	default:		// oops... this should never be reached
 		return JSON_SOME_PROBLEM;
 	}
 
-	// starting point
-      state0:
+      state0: 	// starting point
 	{
 		switch (c)
 		{
@@ -2514,21 +2522,25 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'{':
 			if (jsf->open_object != NULL)
 				jsf->open_object ();
+			jsps->state = 25;	//open object
 			break;
 
 		case L'}':
 			if (jsf->close_object != NULL)
 				jsf->close_object ();
+			jsps->state = 26; // close object/array
 			break;
 
 		case L'[':
 			if (jsf->open_array != NULL)
 				jsf->open_array ();
+// 			jsps->state = 0;	// redundant
 			break;
 
 		case L']':
 			if (jsf->close_array != NULL)
 				jsf->close_array ();
+			jsps->state = 26;	// close object/array
 			break;
 
 		case L't':
@@ -2546,14 +2558,15 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L':':
 			if (jsf->label_value_separator != NULL)
 				jsf->label_value_separator ();
+// 			jsps->state = 0;	// redundant
 			break;
 
 		case L',':
 			if (jsf->sibling_separator != NULL)
 				jsf->sibling_separator ();
+			jsps->state = 27;	// sibling followup
 			break;
-
-			///todo implement number parsing
+			
 		case L'0':
 			jsps->state = 17;	// parse number: 0
 			jsps->temp = rs_create (L"");	///TODO replace custom rstring with regular c-string handling
@@ -2581,15 +2594,14 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			break;
 
 		case L'-':
-//                      jsps->state = 7;        // number
-//                      jsps->temp = rs_create(L"");
-//                      if(jsps->temp == NULL)
-//                                      return JSON_MEMORY;
-//                      if(rs_catwc(jsps->temp, c) != RS_OK)
-//                      {
-//                                      ///TODO does this need extra cleaning?
-//                                      return JSON_MEMORY;
-//                      }
+			jsps->state = 23;        // number:
+			jsps->temp = rs_create(L"");
+			if(jsps->temp == NULL)
+				return JSON_MEMORY;
+			if(rs_catwc(jsps->temp, L'-') != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
 			break;
 
 		default:
@@ -2635,7 +2647,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		return JSON_OK;
 	}
 
-      state2:			// parse string: escaped character
+      state2:		// parse string: escaped character
 	{
 		switch (c)
 		{
@@ -2819,7 +2831,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		return JSON_OK;
 	}
 
-      state7:			// parse true: tr
+      state7:		// parse true: tr
 	{
 		if (c != L'r')
 		{
@@ -2830,7 +2842,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		return JSON_OK;
 	}
 
-      state8:			// parse true: tru
+      state8:		// parse true: tru
 	{
 		if (c != L'u')
 		{
@@ -2982,9 +2994,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				rs_destroy (&jsps->temp);
 				jsps->temp = NULL;
 			}
-			jsps->state = 0;
 			if (jsf->open_object != NULL)
 				jsf->close_object ();
+			jsps->state = 26;	// close object
 			break;
 
 		case L']':
@@ -3001,9 +3013,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				rs_destroy (&jsps->temp);
 				jsps->temp = NULL;
 			}
-			jsps->state = 0;
 			if (jsf->open_object != NULL)
 				jsf->close_array ();
+			jsps->state = 26;	// close object/array
 			break;
 
 		case L',':
@@ -3020,9 +3032,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				rs_destroy (&jsps->temp);
 				jsps->temp = NULL;
 			}
-			jsps->state = 0;
 			if (jsf->open_object != NULL)
 				jsf->label_value_separator ();
+			jsps->state = 27;	// sibling followup
 			break;
 
 		default:
@@ -3128,9 +3140,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				rs_destroy (&jsps->temp);
 				jsps->temp = NULL;
 			}
-			jsps->state = 0;
 			if (jsf->open_object != NULL)
 				jsf->close_object ();
+			jsps->state = 26;	// close object/array
 			break;
 
 		case L']':
@@ -3147,9 +3159,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				rs_destroy (&jsps->temp);
 				jsps->temp = NULL;
 			}
-			jsps->state = 0;
 			if (jsf->open_object != NULL)
 				jsf->close_array ();
+			jsps->state = 26;	// close object/array
 			break;
 
 		case L',':
@@ -3166,9 +3178,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				rs_destroy (&jsps->temp);
 				jsps->temp = NULL;
 			}
-			jsps->state = 0;
 			if (jsf->label_value_separator != NULL)
 				jsf->label_value_separator ();
+			jsps->state = 27;	// sibling followup
 			break;
 
 
@@ -3273,9 +3285,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				rs_destroy (&jsps->temp);
 				jsps->temp = NULL;
 			}
-			jsps->state = 0;
 			if (jsf->open_object != NULL)
 				jsf->close_object ();
+			jsps->state = 26;	// close object
 			break;
 
 		case L']':
@@ -3292,9 +3304,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				rs_destroy (&jsps->temp);
 				jsps->temp = NULL;
 			}
-			jsps->state = 0;
 			if (jsf->open_object != NULL)
 				jsf->close_array ();
+			jsps->state = 26;	// close object/array
 			break;
 
 		case L',':
@@ -3311,9 +3323,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				rs_destroy (&jsps->temp);
 				jsps->temp = NULL;
 			}
-			jsps->state = 0;
 			if (jsf->label_value_separator != NULL)
 				jsf->label_value_separator ();
+			jsps->state = 27;	// sibling followup
 			break;
 
 		default:
@@ -3460,9 +3472,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				rs_destroy (&jsps->temp);
 				jsps->temp = NULL;
 			}
-			jsps->state = 0;
 			if (jsf->open_object != NULL)
 				jsf->close_object ();
+			jsps->state = 26;	// close object/array
 			break;
 
 		case L']':
@@ -3479,9 +3491,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				rs_destroy (&jsps->temp);
 				jsps->temp = NULL;
 			}
-			jsps->state = 0;
 			if (jsf->open_object != NULL)
 				jsf->close_array ();
+			jsps->state = 26;	// close object/array
 			break;
 
 		case L',':
@@ -3498,9 +3510,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				rs_destroy (&jsps->temp);
 				jsps->temp = NULL;
 			}
-			jsps->state = 0;
 			if (jsf->label_value_separator != NULL)
 				jsf->label_value_separator ();
+			jsps->state = 27;	// sibling followup
 			break;
 
 		default:
@@ -3510,6 +3522,158 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		}
 		return JSON_OK;
 	}
+
+	state25:	// open object
+	{
+		switch (c)
+		{
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':
+			break;
+
+		case L'\"':
+			jsps->temp = rs_create (L"");	///TODO replace custom rstring with regular c-string handling
+			if (jsps->temp == NULL)
+				return JSON_MEMORY;
+			jsps->state = 1;
+			break;
+
+		case L'}':
+			if (jsf->close_object != NULL)
+				jsf->close_object ();
+			jsps->state = 26;	// close object
+			break;
+			
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+			break;
+		}
+		return JSON_OK;
+	}
+
+	state26:	// close object/array
+	{
+		switch (c)
+		{
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':
+			break;
+
+		case L'}':
+			if (jsf->close_object != NULL)
+				jsf->close_object ();
+// 			jsp->state = 26;	// close object
+			break;
+
+		case L']':
+			if (jsf->close_array != NULL)
+				jsf->close_array ();
+// 			jsps->state = 26;	// close object/array
+			break;
+
+		case L',':
+			if (jsf->sibling_separator != NULL)
+				jsf->sibling_separator ();
+			jsps->state = 27;	// sibling followup
+			break;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+			break;
+		}
+		return JSON_OK;
+	}
+
+      state27: 	// sibling followup
+	{
+		switch (c)
+		{
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':
+			break;
+
+		case L'\"':
+			jsps->state = 1;
+			jsps->temp = rs_create (L"");	///TODO replace custom rstring with regular c-string handling
+			if (jsps->temp == NULL)
+				return JSON_MEMORY;
+			break;
+
+		case L'{':
+			if (jsf->open_object != NULL)
+				jsf->open_object ();
+			jsps->state = 25;	//open object
+			break;
+
+		case L'[':
+			if (jsf->open_array != NULL)
+				jsf->open_array ();
+// 			jsps->state = 0;	// redundant
+			break;
+
+		case L't':
+			jsps->state = 7;	// parse true: tr
+			break;
+
+		case L'f':
+			jsps->state = 10;	// parse false: fa
+			break;
+
+		case L'n':
+			jsps->state = 14;	// parse null: nu
+			break;
+			
+		case L'0':
+			jsps->state = 17;	// parse number: 0
+			jsps->temp = rs_create (L"");	///TODO replace custom rstring with regular c-string handling
+			if (jsps->temp == NULL)
+				return JSON_MEMORY;
+			if (rs_catwc (jsps->temp, L'0') != RS_OK)
+				return JSON_MEMORY;
+			break;
+
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			jsps->state = 24;	// parse number: decimal
+			jsps->temp = rs_create (L"");	///TODO replace custom rstring with regular c-string handling
+			if (jsps->temp == NULL)
+				return JSON_MEMORY;
+			if (rs_catwc (jsps->temp, c) != RS_OK)
+				return JSON_MEMORY;
+			break;
+
+		case L'-':
+			jsps->state = 23;        // number:
+			jsps->temp = rs_create(L"");
+			if(jsps->temp == NULL)
+				return JSON_MEMORY;
+			if(rs_catwc(jsps->temp, L'-') != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
+			break;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+			break;
+		}
+		return JSON_OK;
+	}
+
+      
 
 	return JSON_SOME_PROBLEM;
 }
