@@ -92,6 +92,38 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		goto state16;
 		break;
 
+	case 17:		// parse number: 0
+		goto state17;
+		break;
+
+	case 18:		// parse number: start fraccional part
+		goto state18;
+		break;
+
+	case 19:		// parse number: fraccional part
+		goto state19;
+		break;
+
+	case 20:		// parse number: start exponent part
+		goto state20;
+		break;
+
+	case 21:		// parse number: exponent part
+		goto state21;
+		break;
+
+	case 22:		// parse number: exponent sign part
+		goto state22;
+		break;
+
+	case 23:		// parse number: start negative
+		goto state23;
+		break;
+
+	case 24:		// parse number: decimal part
+		goto state24;
+		break;
+
 	default:		// oops... this should never be reached
 		return JSON_SOME_PROBLEM;
 	}
@@ -115,19 +147,23 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			break;
 
 		case L'{':
-			jsf->open_object ();
+			if (jsf->open_object != NULL)
+				jsf->open_object ();
 			break;
 
 		case L'}':
-			jsf->close_object ();
+			if (jsf->close_object != NULL)
+				jsf->close_object ();
 			break;
 
 		case L'[':
-			jsf->open_array ();
+			if (jsf->open_array != NULL)
+				jsf->open_array ();
 			break;
 
 		case L']':
-			jsf->close_array ();
+			if (jsf->close_array != NULL)
+				jsf->close_array ();
 			break;
 
 		case L't':
@@ -143,40 +179,59 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			break;
 
 		case L':':
-			jsf->label_value_separator ();
+			if (jsf->label_value_separator != NULL)
+				jsf->label_value_separator ();
 			break;
 
 		case L',':
-			jsf->sibling_separator ();
+			if (jsf->sibling_separator != NULL)
+				jsf->sibling_separator ();
 			break;
 
 			///todo implement number parsing
-//                      case L'0':
-//                      case L'1':
-//                      case L'2':
-//                      case L'3':
-//                      case L'4':
-//                      case L'5':
-//                      case L'6':
-//                      case L'7':
-//                      case L'8':
-//                      case L'9':
-//                      case L'-':
-//                              jsps->state = 7;        // number
-//                              jsps->temp = rs_create(L"");
-//                              if(jsps->temp == NULL)
+		case L'0':
+			jsps->state = 17;	// parse number: 0
+			jsps->temp = rs_create (L"");	///TODO replace custom rstring with regular c-string handling
+			if (jsps->temp == NULL)
+				return JSON_MEMORY;
+			if (rs_catwc (jsps->temp, L'0') != RS_OK)
+				return JSON_MEMORY;
+			break;
+
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			jsps->state = 24;	// parse number: decimal
+			jsps->temp = rs_create (L"");	///TODO replace custom rstring with regular c-string handling
+			if (jsps->temp == NULL)
+				return JSON_MEMORY;
+			if (rs_catwc (jsps->temp, c) != RS_OK)
+				return JSON_MEMORY;
+			break;
+
+		case L'-':
+//                      jsps->state = 7;        // number
+//                      jsps->temp = rs_create(L"");
+//                      if(jsps->temp == NULL)
 //                                      return JSON_MEMORY;
-//                              if(rs_catwc(jsps->temp, c) != RS_OK)
-//                              {
+//                      if(rs_catwc(jsps->temp, c) != RS_OK)
+//                      {
 //                                      ///TODO does this need extra cleaning?
 //                                      return JSON_MEMORY;
-//                              }
-//                              break;
+//                      }
+			break;
 
 		default:
 			return JSON_ILLEGAL_CHARACTER;
 			break;
 		}
+		return JSON_OK;
 	}
 
       state1:			// parse string
@@ -197,7 +252,8 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			{
 				wchar_t *t = rs_unwrap (jsps->temp);
 				jsps->state = 0;	// starting point
-				jsf->new_string (t);
+				if (jsf->new_string != NULL)
+					jsf->new_string (t);
 			}
 			else
 				return JSON_SOME_PROBLEM;	///TODO find out what is the best error return code for this situation
@@ -211,6 +267,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			}
 			break;
 		}
+		return JSON_OK;
 	}
 
       state2:			// parse string: escaped character
@@ -246,6 +303,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			return JSON_ILLEGAL_CHARACTER;
 			break;
 		}
+		return JSON_OK;
 	}
 
       state3:			// parse string: escaped unicode 1
@@ -282,6 +340,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		default:
 			return JSON_ILLEGAL_CHARACTER;
 		}
+		return JSON_OK;
 	}
 
       state4:			// parse string: escaped unicode 2
@@ -318,6 +377,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		default:
 			return JSON_ILLEGAL_CHARACTER;
 		}
+		return JSON_OK;
 	}
 
       state5:			// parse string: escaped unicode 3
@@ -354,6 +414,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		default:
 			return JSON_ILLEGAL_CHARACTER;
 		}
+		return JSON_OK;
 	}
 
       state6:			// parse string: escaped unicode 4
@@ -390,6 +451,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		default:
 			return JSON_ILLEGAL_CHARACTER;
 		}
+		return JSON_OK;
 	}
 
       state7:			// parse true: tr
@@ -422,7 +484,8 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		}
 
 		jsps->state = 0;	// general state. everything goes.
-		jsf->new_true ();
+		if (jsf->new_true != NULL)
+			jsf->new_true ();
 		return JSON_OK;
 	}
 
@@ -467,7 +530,8 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		}
 
 		jsps->state = 0;	// general state. everything goes.
-		jsf->new_false ();
+		if (jsf->new_false != NULL)
+			jsf->new_false ();
 		return JSON_OK;
 	}
 
@@ -501,13 +565,588 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		}
 
 		jsps->state = 0;	// general state. everything goes.
-		jsf->new_null ();
+		if (jsf->new_null != NULL)
+			jsf->new_null ();
 		return JSON_OK;
 	}
 
+      state17:			// parse number: 0
+	{
+		switch (c)
+		{
+		case L'.':
+			if (rs_catwc (jsps->temp, L'.') != RS_OK)
+			{
+				//TODO cleanup?
+				return JSON_MEMORY;
+			}
+			jsps->state = 18;	// parse number: fraccional part
+			break;
+
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':
+			if (jsf->new_number != NULL)
+			{
+				wchar_t *text = rs_unwrap (jsps->temp);
+				jsps->temp = NULL;
+				if (text == NULL)
+					return JSON_MEMORY;
+				jsf->new_number (text);
+			}
+			else
+			{
+				rs_destroy (&jsps->temp);
+				jsps->temp = NULL;
+			}
+			jsps->state = 0;
+			break;
+
+		case L'}':
+			if (jsf->new_number != NULL)
+			{
+				wchar_t *text = rs_unwrap (jsps->temp);
+				jsps->temp = NULL;
+				if (text == NULL)
+					return JSON_MEMORY;
+				jsf->new_number (text);
+			}
+			else
+			{
+				rs_destroy (&jsps->temp);
+				jsps->temp = NULL;
+			}
+			jsps->state = 0;
+			if (jsf->open_object != NULL)
+				jsf->close_object ();
+			break;
+
+		case L']':
+			if (jsf->new_number != NULL)
+			{
+				wchar_t *text = rs_unwrap (jsps->temp);
+				jsps->temp = NULL;
+				if (text == NULL)
+					return JSON_MEMORY;
+				jsf->new_number (text);
+			}
+			else
+			{
+				rs_destroy (&jsps->temp);
+				jsps->temp = NULL;
+			}
+			jsps->state = 0;
+			if (jsf->open_object != NULL)
+				jsf->close_array ();
+			break;
+
+		case L',':
+			if (jsf->new_number != NULL)
+			{
+				wchar_t *text = rs_unwrap (jsps->temp);
+				jsps->temp = NULL;
+				if (text == NULL)
+					return JSON_MEMORY;
+				jsf->new_number (text);
+			}
+			else
+			{
+				rs_destroy (&jsps->temp);
+				jsps->temp = NULL;
+			}
+			jsps->state = 0;
+			if (jsf->open_object != NULL)
+				jsf->label_value_separator ();
+			break;
+
+		default:
+			//TODO cleanup?
+			return JSON_ILLEGAL_CHARACTER;
+			break;
+		}
+
+		return JSON_OK;
+	}
+
+      state18:			// parse number: start fraccional part
+	{
+		switch (c)
+		{
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			if (rs_catwc (jsps->temp, c) != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
+			jsps->state = 19;	// parse number: fractional part
+			break;
+
+		default:
+			//TODO cleanup?
+			return JSON_ILLEGAL_CHARACTER;
+			break;
+		}
+		return JSON_OK;
+	}
+
+      state19:			// parse number: fraccional part
+	{
+		switch (c)
+		{
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			if (rs_catwc (jsps->temp, c) != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
+//                              jsps->state = 19;       // parse number: fractional part
+			break;
+
+		case L'e':
+		case L'E':
+			if (rs_catwc (jsps->temp, c) != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
+			jsps->state = 20;	// parse number: start exponent part
+			break;
 
 
-	return JSON_OK;
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':
+			if (jsf->new_number != NULL)
+			{
+				wchar_t *text = rs_unwrap (jsps->temp);
+				jsps->temp = NULL;
+				if (text == NULL)
+					return JSON_MEMORY;
+				jsf->new_number (text);
+			}
+			else
+			{
+				rs_destroy (&jsps->temp);
+				jsps->temp = NULL;
+			}
+			jsps->state = 0;
+			break;
+
+		case L'}':
+			if (jsf->new_number != NULL)
+			{
+				wchar_t *text = rs_unwrap (jsps->temp);
+				jsps->temp = NULL;
+				if (text == NULL)
+					return JSON_MEMORY;
+				jsf->new_number (text);
+			}
+			else
+			{
+				rs_destroy (&jsps->temp);
+				jsps->temp = NULL;
+			}
+			jsps->state = 0;
+			if (jsf->open_object != NULL)
+				jsf->close_object ();
+			break;
+
+		case L']':
+			if (jsf->new_number != NULL)
+			{
+				wchar_t *text = rs_unwrap (jsps->temp);
+				jsps->temp = NULL;
+				if (text == NULL)
+					return JSON_MEMORY;
+				jsf->new_number (text);
+			}
+			else
+			{
+				rs_destroy (&jsps->temp);
+				jsps->temp = NULL;
+			}
+			jsps->state = 0;
+			if (jsf->open_object != NULL)
+				jsf->close_array ();
+			break;
+
+		case L',':
+			if (jsf->new_number != NULL)
+			{
+				wchar_t *text = rs_unwrap (jsps->temp);
+				jsps->temp = NULL;
+				if (text == NULL)
+					return JSON_MEMORY;
+				jsf->new_number (text);
+			}
+			else
+			{
+				rs_destroy (&jsps->temp);
+				jsps->temp = NULL;
+			}
+			jsps->state = 0;
+			if (jsf->label_value_separator != NULL)
+				jsf->label_value_separator ();
+			break;
+
+
+		default:
+			//TODO cleanup?
+			return JSON_ILLEGAL_CHARACTER;
+			break;
+		}
+		return JSON_OK;
+	}
+
+      state20:			// parse number: start exponent part
+	{
+		switch (c)
+		{
+		case L'+':
+		case L'-':
+			if (rs_catwc (jsps->temp, c) != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
+			jsps->state = 22;	// parse number: exponent sign part
+			break;
+
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			if (rs_catwc (jsps->temp, c) != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
+			jsps->state = 21;	// parse number: exponent part
+			break;
+
+		default:
+			//TODO cleanup?
+			return JSON_ILLEGAL_CHARACTER;
+			break;
+		}
+		return JSON_OK;
+	}
+
+      state21:			// parse number: exponent part
+	{
+		switch (c)
+		{
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			if (rs_catwc (jsps->temp, c) != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
+//                              jsps->state = 21;       // parse number: exponent part
+			break;
+
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':
+			if (jsf->new_number != NULL)
+			{
+				wchar_t *text = rs_unwrap (jsps->temp);
+				jsps->temp = NULL;
+				if (text == NULL)
+					return JSON_MEMORY;
+				jsf->new_number (text);
+			}
+			else
+			{
+				rs_destroy (&jsps->temp);
+				jsps->temp = NULL;
+			}
+			jsps->state = 0;
+			break;
+
+		case L'}':
+			if (jsf->new_number != NULL)
+			{
+				wchar_t *text = rs_unwrap (jsps->temp);
+				jsps->temp = NULL;
+				if (text == NULL)
+					return JSON_MEMORY;
+				jsf->new_number (text);
+			}
+			else
+			{
+				rs_destroy (&jsps->temp);
+				jsps->temp = NULL;
+			}
+			jsps->state = 0;
+			if (jsf->open_object != NULL)
+				jsf->close_object ();
+			break;
+
+		case L']':
+			if (jsf->new_number != NULL)
+			{
+				wchar_t *text = rs_unwrap (jsps->temp);
+				jsps->temp = NULL;
+				if (text == NULL)
+					return JSON_MEMORY;
+				jsf->new_number (text);
+			}
+			else
+			{
+				rs_destroy (&jsps->temp);
+				jsps->temp = NULL;
+			}
+			jsps->state = 0;
+			if (jsf->open_object != NULL)
+				jsf->close_array ();
+			break;
+
+		case L',':
+			if (jsf->new_number != NULL)
+			{
+				wchar_t *text = rs_unwrap (jsps->temp);
+				jsps->temp = NULL;
+				if (text == NULL)
+					return JSON_MEMORY;
+				jsf->new_number (text);
+			}
+			else
+			{
+				rs_destroy (&jsps->temp);
+				jsps->temp = NULL;
+			}
+			jsps->state = 0;
+			if (jsf->label_value_separator != NULL)
+				jsf->label_value_separator ();
+			break;
+
+		default:
+			//TODO cleanup?
+			return JSON_ILLEGAL_CHARACTER;
+			break;
+		}
+		return JSON_OK;
+	}
+
+      state22:			// parse number: start exponent part
+	{
+		switch (c)
+		{
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			if (rs_catwc (jsps->temp, c) != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
+			jsps->state = 21;	// parse number: exponent part
+			break;
+
+		default:
+			//TODO cleanup?
+			return JSON_ILLEGAL_CHARACTER;
+			break;
+		}
+		return JSON_OK;
+	}
+
+      state23:			// parse number: start negative
+	{
+		switch (c)
+		{
+		case L'0':
+			if (rs_catwc (jsps->temp, c) != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
+			jsps->state = 17;	// parse number: 0
+			break;
+
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			if (rs_catwc (jsps->temp, c) != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
+			jsps->state = 24;	// parse number: start decimal part
+			break;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+			break;
+		}
+		return JSON_OK;
+	}
+
+      state24:			// parse number: decimal part
+	{
+		switch (c)
+		{
+		case L'0':
+		case L'1':
+		case L'2':
+		case L'3':
+		case L'4':
+		case L'5':
+		case L'6':
+		case L'7':
+		case L'8':
+		case L'9':
+			if (rs_catwc (jsps->temp, c) != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
+//                              jsps->state = 24;       // parse number: decimal part
+			break;
+
+		case L'.':
+			if (rs_catwc (jsps->temp, c) != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
+			jsps->state = 18;	// parse number: start exponent part
+			break;
+
+		case L'e':
+		case L'E':
+			if (rs_catwc (jsps->temp, c) != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
+			jsps->state = 20;	// parse number: start exponent part
+			break;
+
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':
+			if (jsf->new_number != NULL)
+			{
+				wchar_t *text = rs_unwrap (jsps->temp);
+				jsps->temp = NULL;
+				if (text == NULL)
+					return JSON_MEMORY;
+				jsf->new_number (text);
+			}
+			else
+			{
+				rs_destroy (&jsps->temp);
+				jsps->temp = NULL;
+			}
+			jsps->state = 0;
+			break;
+
+		case L'}':
+			if (jsf->new_number != NULL)
+			{
+				wchar_t *text = rs_unwrap (jsps->temp);
+				jsps->temp = NULL;
+				if (text == NULL)
+					return JSON_MEMORY;
+				jsf->new_number (text);
+			}
+			else
+			{
+				rs_destroy (&jsps->temp);
+				jsps->temp = NULL;
+			}
+			jsps->state = 0;
+			if (jsf->open_object != NULL)
+				jsf->close_object ();
+			break;
+
+		case L']':
+			if (jsf->new_number != NULL)
+			{
+				wchar_t *text = rs_unwrap (jsps->temp);
+				jsps->temp = NULL;
+				if (text == NULL)
+					return JSON_MEMORY;
+				jsf->new_number (text);
+			}
+			else
+			{
+				rs_destroy (&jsps->temp);
+				jsps->temp = NULL;
+			}
+			jsps->state = 0;
+			if (jsf->open_object != NULL)
+				jsf->close_array ();
+			break;
+
+		case L',':
+			if (jsf->new_number != NULL)
+			{
+				wchar_t *text = rs_unwrap (jsps->temp);
+				jsps->temp = NULL;
+				if (text == NULL)
+					return JSON_MEMORY;
+				jsf->new_number (text);
+			}
+			else
+			{
+				rs_destroy (&jsps->temp);
+				jsps->temp = NULL;
+			}
+			jsps->state = 0;
+			if (jsf->label_value_separator != NULL)
+				jsf->label_value_separator ();
+			break;
+
+		default:
+			//TODO cleanup?
+			return JSON_ILLEGAL_CHARACTER;
+			break;
+		}
+		return JSON_OK;
+	}
+
+	return JSON_SOME_PROBLEM;
 }
 
 #include "saxy.h"
