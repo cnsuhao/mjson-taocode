@@ -103,8 +103,8 @@ main ()
 			error = json_saxy_parse (&jsps, &jsf, text[i]);
 			i++;
 		}
-		if (error != 0)
-			printf ("value returned: %i\n", error);
+		if (error != 1)
+			printf ("error code: %i\n", error);
 	}
 
 //      if (error == 1)
