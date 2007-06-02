@@ -1958,7 +1958,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 	{
 		switch (text[pos])
 		{
-		case '\x20':
+		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
 		case L'\x0D':	// white spaces

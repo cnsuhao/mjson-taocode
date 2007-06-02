@@ -42,7 +42,7 @@ enum json_value_type
 The error messages produced by the JSON parsers
 **/
 enum json_error
-{ JSON_INCOMPLETE_DOCUMENT = 0, JSON_OK = 1, JSON_INCOMPATIBLE_TYPE, JSON_MEMORY, JSON_ILLEGAL_CHARACTER, JSON_BAD_TREE_STRUCTURE };	///TODO rethink error codes
+{ JSON_INCOMPLETE_DOCUMENT = 0, JSON_OK = 1, JSON_INCOMPATIBLE_TYPE, JSON_MEMORY, JSON_ILLEGAL_CHARACTER, JSON_BAD_TREE_STRUCTURE, JSON_SOME_PROBLEM };	///TODO rethink error codes
 
 /**
 The JSON document tree node, which is a basic JSON type

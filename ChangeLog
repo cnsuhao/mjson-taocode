@@ -1,3 +1,6 @@
+Version 0.4
+* implemented a SAX-like JSON parser: json_saxy_parse
+
 Version 0.3
 * Implemented new and improved parser which enables sequential parsing. The old clunk json_tree_to_string() is deprecated.
 * Fixed the JSON parser's inability to parse escape character sequences contained in JSON strings

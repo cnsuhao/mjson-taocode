@@ -49,7 +49,7 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
-am_json_OBJECTS = json.$(OBJEXT) test.$(OBJEXT)
+am_json_OBJECTS = json.$(OBJEXT) saxy.$(OBJEXT) test.$(OBJEXT)
 json_OBJECTS = $(am_json_OBJECTS)
 json_DEPENDENCIES = $(top_builddir)/src/rstring/librstring.a
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
@@ -154,8 +154,8 @@ INCLUDES = -I$(top_srcdir)/src/rstring $(all_includes)
 
 # the library search path.
 json_LDFLAGS = $(all_libraries) 
-noinst_HEADERS = json.h
-json_SOURCES = json.c test.c
+noinst_HEADERS = json.h saxy.h
+json_SOURCES = json.c saxy.c test.c
 json_LDADD = $(top_builddir)/src/rstring/librstring.a 
 SUBDIRS = rstring
 all: all-recursive
@@ -225,6 +225,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/json.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/saxy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test.Po@am__quote@
 
 .c.o:
