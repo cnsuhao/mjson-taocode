@@ -29,7 +29,6 @@
 #include <locale.h>
 
 #include "json.h"
-#include "saxy.h"
 
 
 int
