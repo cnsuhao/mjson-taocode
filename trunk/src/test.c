@@ -35,7 +35,7 @@ int
 main ()
 {
 	setlocale (LC_CTYPE, "");
-	
+
 	wchar_t text[80];
 	struct json_parsing_info info;
 	info.cursor = NULL;
@@ -47,7 +47,7 @@ main ()
 	while ((!feof (stdin)) && (error == 0))
 	{
 		fgetws (text, 80, stdin);
-// 		printf ("%ls", text);
+//              printf ("%ls", text);
 		error = json_parse_string (&info, text);
 		if (error != 0)
 			printf ("value returned: %i\n", error);
