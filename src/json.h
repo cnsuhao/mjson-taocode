@@ -235,7 +235,16 @@ Please notice that this function produces a new string separate from wchar_t *te
 @param text a wchar_t text string
 @return a wchar_t string holding the same text string but with escaped characters
 **/
-wchar_t *json_escape_string (wchar_t * text);
+wchar_t *json_escape (wchar_t * text);
+
+
+/**
+This function performs the same tast as json_escape() but it also escapes non-ASCII characters
+As with json_escape(), the produced string, if unaccounted for, may contribute to memory leaks.
+@param text a wchar_t text string
+@return a wchar_t string holding the same text string but composed with ASCII characters
+**/
+wchar_t *json_escape_to_ascii (wchar_t * text);
 
 
 /**
