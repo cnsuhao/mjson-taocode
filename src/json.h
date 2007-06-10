@@ -34,15 +34,13 @@
 The descriptions of the json_value node type
 **/
 enum json_value_type
-{ JSON_STRING = 0, JSON_NUMBER, JSON_OBJECT, JSON_ARRAY, JSON_TRUE,
-	JSON_FALSE, JSON_NULL
-};
+{ JSON_STRING = 0, JSON_NUMBER, JSON_OBJECT, JSON_ARRAY, JSON_TRUE, JSON_FALSE, JSON_NULL };
 
 /**
 The error messages produced by the JSON parsers
 **/
 enum json_error
-{ JSON_INCOMPLETE_DOCUMENT = 0, JSON_OK = 1, JSON_INCOMPATIBLE_TYPE, JSON_MEMORY, JSON_ILLEGAL_CHARACTER, JSON_BAD_TREE_STRUCTURE, JSON_SOME_PROBLEM };	///TODO rethink error codes
+{ JSON_INCOMPLETE_DOCUMENT = 0, JSON_OK = 1, JSON_INCOMPATIBLE_TYPE, JSON_MEMORY, JSON_ILLEGAL_CHARACTER, JSON_BAD_TREE_STRUCTURE, JSON_MAXIMUM_LENGTH, JSON_SOME_PROBLEM };	///TODO rethink error codes
 
 /**
 The JSON document tree node, which is a basic JSON type
@@ -71,7 +69,7 @@ struct json_parsing_info
 
 
 /**
-The structure which holds the functions that will be used by the saxy parser whenever the evens pop up
+The structure which holds the functions that will be called by the saxy parser whenever the evens pop up
 **/
 struct json_saxy_functions
 {
@@ -257,7 +255,5 @@ Function to perform a SAX-like parsing of any JSON document
 @return a json_error code informing how the parsing went
 **/
 enum json_error json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_functions *jsf, wchar_t c);
-
-
 
 #endif

@@ -196,9 +196,9 @@ json_free_value (struct json_value **value)
 enum json_error
 json_insert_child (struct json_value *parent, struct json_value *child)
 {
-	///fixme: when the same value is inserted as a child the json_tree_to_string function enters a infinite loop
 	assert (parent != NULL);	// the parent must exist
 	assert (child != NULL);	// the child must exist
+	assert (parent != child);	// parent and child must not be the same. if they are, it will enter an infinite loop
 	assert ((parent->type == JSON_OBJECT) || (parent->type == JSON_ARRAY) || (parent->type == JSON_STRING));	// must be a valid parent type
 	///todo implement a way to enforce object->text->value sequence
 	assert (!(parent->type == JSON_OBJECT && child->type == JSON_OBJECT));
@@ -227,6 +227,10 @@ json_insert_pair_into_object (struct json_value *parent, struct json_value *labe
 	assert (parent != NULL);
 	assert (label != NULL);
 	assert (value != NULL);
+	assert (parent != label);
+	assert (parent != value);
+	assert (label != value);
+
 	// enforce type coherence
 	assert (parent->type == JSON_OBJECT);
 	assert (label->type == JSON_STRING);
@@ -900,7 +904,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		goto state39;	// start value in array
 
 	default:
-		printf ("missing state: %i\n", info->state);
+		return JSON_SOME_PROBLEM;	// IF THIS PART IS REACHED THEN THERE IS A BUG SOMEWHERE
 		break;
 	}
 
@@ -1214,7 +1218,12 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'"':	// closing string
 			if (info->cursor == NULL)
 			{
-				info->cursor = info->temp;	///todo perform memory check
+				if (info->temp == NULL)
+				{
+					///TODO does this need some memory cleanup?
+					return JSON_SOME_PROBLEM;
+				}
+				info->cursor = info->temp;
 				info->temp = NULL;
 			}
 			else
@@ -2004,9 +2013,13 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
       state24:			// sibling
 	{
-		//TODO perform tree integrity checks
 		if (info->cursor == NULL)	// a new root must not be a root
 			return JSON_BAD_TREE_STRUCTURE;
+		if ((info->cursor->type != JSON_OBJECT) && (info->cursor->type != JSON_ARRAY))
+		{
+			///TODO perform memory cleanup
+			return JSON_BAD_TREE_STRUCTURE;
+		}
 
 		switch (text[pos])
 		{
@@ -2502,7 +2515,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		return JSON_SOME_PROBLEM;
 	}
 
-      state0: 	// starting point
+      state0:			// starting point
 	{
 		switch (c)
 		{
@@ -2528,13 +2541,13 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'}':
 			if (jsf->close_object != NULL)
 				jsf->close_object ();
-			jsps->state = 26; // close object/array
+			jsps->state = 26;	// close object/array
 			break;
 
 		case L'[':
 			if (jsf->open_array != NULL)
 				jsf->open_array ();
-// 			jsps->state = 0;	// redundant
+//                      jsps->state = 0;        // redundant
 			break;
 
 		case L']':
@@ -2558,7 +2571,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L':':
 			if (jsf->label_value_separator != NULL)
 				jsf->label_value_separator ();
-// 			jsps->state = 0;	// redundant
+//                      jsps->state = 0;        // redundant
 			break;
 
 		case L',':
@@ -2566,7 +2579,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				jsf->sibling_separator ();
 			jsps->state = 27;	// sibling followup
 			break;
-			
+
 		case L'0':
 			jsps->state = 17;	// parse number: 0
 			jsps->temp = rs_create (L"");	///TODO replace custom rstring with regular c-string handling
@@ -2594,11 +2607,11 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			break;
 
 		case L'-':
-			jsps->state = 23;        // number:
-			jsps->temp = rs_create(L"");
-			if(jsps->temp == NULL)
+			jsps->state = 23;	// number:
+			jsps->temp = rs_create (L"");
+			if (jsps->temp == NULL)
 				return JSON_MEMORY;
-			if(rs_catwc(jsps->temp, L'-') != RS_OK)
+			if (rs_catwc (jsps->temp, L'-') != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -2647,7 +2660,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		return JSON_OK;
 	}
 
-      state2:		// parse string: escaped character
+      state2:			// parse string: escaped character
 	{
 		switch (c)
 		{
@@ -2831,7 +2844,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		return JSON_OK;
 	}
 
-      state7:		// parse true: tr
+      state7:			// parse true: tr
 	{
 		if (c != L'r')
 		{
@@ -2842,7 +2855,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		return JSON_OK;
 	}
 
-      state8:		// parse true: tru
+      state8:			// parse true: tru
 	{
 		if (c != L'u')
 		{
@@ -3523,7 +3536,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		return JSON_OK;
 	}
 
-	state25:	// open object
+      state25:			// open object
 	{
 		switch (c)
 		{
@@ -3545,7 +3558,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				jsf->close_object ();
 			jsps->state = 26;	// close object
 			break;
-			
+
 		default:
 			return JSON_ILLEGAL_CHARACTER;
 			break;
@@ -3553,7 +3566,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		return JSON_OK;
 	}
 
-	state26:	// close object/array
+      state26:			// close object/array
 	{
 		switch (c)
 		{
@@ -3566,13 +3579,13 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'}':
 			if (jsf->close_object != NULL)
 				jsf->close_object ();
-// 			jsp->state = 26;	// close object
+//                      jsp->state = 26;        // close object
 			break;
 
 		case L']':
 			if (jsf->close_array != NULL)
 				jsf->close_array ();
-// 			jsps->state = 26;	// close object/array
+//                      jsps->state = 26;       // close object/array
 			break;
 
 		case L',':
@@ -3588,7 +3601,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		return JSON_OK;
 	}
 
-      state27: 	// sibling followup
+      state27:			// sibling followup
 	{
 		switch (c)
 		{
@@ -3614,7 +3627,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'[':
 			if (jsf->open_array != NULL)
 				jsf->open_array ();
-// 			jsps->state = 0;	// redundant
+//                      jsps->state = 0;        // redundant
 			break;
 
 		case L't':
@@ -3628,7 +3641,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'n':
 			jsps->state = 14;	// parse null: nu
 			break;
-			
+
 		case L'0':
 			jsps->state = 17;	// parse number: 0
 			jsps->temp = rs_create (L"");	///TODO replace custom rstring with regular c-string handling
@@ -3656,11 +3669,11 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			break;
 
 		case L'-':
-			jsps->state = 23;        // number:
-			jsps->temp = rs_create(L"");
-			if(jsps->temp == NULL)
+			jsps->state = 23;	// number:
+			jsps->temp = rs_create (L"");
+			if (jsps->temp == NULL)
 				return JSON_MEMORY;
-			if(rs_catwc(jsps->temp, L'-') != RS_OK)
+			if (rs_catwc (jsps->temp, L'-') != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -3673,7 +3686,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		return JSON_OK;
 	}
 
-      
+
 
 	return JSON_SOME_PROBLEM;
 }
