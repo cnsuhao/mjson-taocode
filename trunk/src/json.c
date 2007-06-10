@@ -764,7 +764,44 @@ json_format_string (wchar_t * text)
 
 
 wchar_t *
-json_escape_string (wchar_t * text)
+json_escape (wchar_t * text)
+{
+	rstring *output = rs_create (L"");
+	if (output == NULL)
+		return NULL;
+
+	size_t i;
+	for (i = 0; i < wcslen (text); i++)
+	{
+
+		if (text[i] == L'\\')
+			rs_catwcs (output, L"\\\\", 2);
+		else if (text[i] == '\"')
+			rs_catwcs (output, L"\\\"", 2);
+		else if (text[i] == L'/')
+			rs_catwcs (output, L"\\/", 2);
+		else if (text[i] == L'\b')
+			rs_catwcs (output, L"\\b", 2);
+		else if (text[i] == L'\f')
+			rs_catwcs (output, L"\\f", 2);
+		else if (text[i] == L'\n')
+			rs_catwcs (output, L"\\n", 2);
+		else if (text[i] == L'\r')
+			rs_catwcs (output, L"\\r", 2);
+		else if (text[i] == L'\t')
+			rs_catwcs (output, L"\\t", 2);
+		else if ((text[i] >= 0x20) && (text[i] <= 0x7E))	// ascii printable characters
+		{
+			rs_catwc (output, text[i]);
+		}
+	}
+
+	return rs_unwrap (output);
+}
+
+
+wchar_t *
+json_escape_to_ascii (wchar_t * text)
 {
 	rstring *output = rs_create (L"");
 	if (output == NULL)
