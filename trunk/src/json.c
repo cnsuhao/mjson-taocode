@@ -3723,7 +3723,5 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		return JSON_OK;
 	}
 
-
-
 	return JSON_SOME_PROBLEM;
 }

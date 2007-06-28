@@ -22,10 +22,11 @@
 \ingroup JSON
 
 \note error handling is only in a very rudimentary form.
-\author Rui Maciel rui.maciel@gmail.com
+\author Rui Maciel	rui_maciel@users.sourceforge.net
+\version v0.3
 */
 
-#include "rstring/rstring.h"
+#include "rstring/rstring.h"	///todo remove this helper library in favour of regular c-string handling code
 
 #ifndef JSON_H
 #define JSON_H
@@ -40,14 +41,23 @@ enum json_value_type
 The error messages produced by the JSON parsers
 **/
 enum json_error
-{ JSON_INCOMPLETE_DOCUMENT = 0, JSON_OK = 1, JSON_INCOMPATIBLE_TYPE, JSON_MEMORY, JSON_ILLEGAL_CHARACTER, JSON_BAD_TREE_STRUCTURE, JSON_MAXIMUM_LENGTH, JSON_SOME_PROBLEM };	///TODO rethink error codes
+{
+	JSON_INCOMPLETE_DOCUMENT = 0,	//!< the parsed document didn't ended
+	JSON_OK = 1,		//!< everything went smoothly
+	JSON_INCOMPATIBLE_TYPE,	//!< the currently parsed type does not belong here
+	JSON_MEMORY,		//!< an error occurred when allocating memory
+	JSON_ILLEGAL_CHARACTER,	//!< the currently parsed character does not belong here
+	JSON_BAD_TREE_STRUCTURE,	//!< the currently parsed tree is malformed
+	JSON_MAXIMUM_LENGTH,	//!< the parsed string reached the maximum allowed size
+	JSON_SOME_PROBLEM	//!< some random, unaccounted problem occurred 
+};
 
 /**
 The JSON document tree node, which is a basic JSON type
 **/
 struct json_value
 {
-	enum json_value_type type;	//!< the node's type
+	enum json_value_type type;	//!< the type of node
 	rstring *text;		//!< The text stored by the node. It is used exclusively by the JSON_STRING and JSON_NUMBER node types
 
 	// FIFO queue data
@@ -63,13 +73,14 @@ The structure holding all information needed to resume parsing
 **/
 struct json_parsing_info
 {
-	unsigned int state;	//!< the state where the parsing was left on the last run
-	struct json_value *cursor, *temp;
+	unsigned int state;	//!< the state where the parsing was left on the last parser run
+	struct json_value *cursor;	//!< pointers to nodes belonging to the document tree which aid the document parsing
+	struct json_value	*temp;	//!< temporary node which the parser uses to build up the parsed document
 };
 
 
 /**
-The structure which holds the functions that will be called by the saxy parser whenever the evens pop up
+The structure which holds the pointers to the functions that will be called by the saxy parser whenever their evens are triggered
 **/
 struct json_saxy_functions
 {
@@ -92,8 +103,8 @@ The structure holding the information needed for json_saxy_parse to resume parsi
 **/
 struct json_saxy_parser_status
 {
-	unsigned int state;
-	rstring *temp;
+	unsigned int state;	//!< current parser state
+	rstring *temp;		//!< temporary string which will be used to build up parsed strings between parser runs.
 };
 
 
@@ -108,7 +119,7 @@ struct json_value *json_new_value (enum json_value_type type);
 /**
 Creates a new JSON string and defines it's text
 @param text the value's text
-@return a pointer to the newly created JSON string
+@return a pointer to the newly created JSON string value
 **/
 struct json_value *json_new_string (wchar_t * text);
 
@@ -116,48 +127,48 @@ struct json_value *json_new_string (wchar_t * text);
 /**
 Creates a new JSON number and defines it's text
 @param text the value's number
-@return a pointer to the newly created JSON string
+@return a pointer to the newly created JSON string value
 **/
 struct json_value *json_new_number (wchar_t * text);
 
 
 /**
 Creates a new JSON object
-@return a pointer to the newly created JSON object
+@return a pointer to the newly created JSON object value
 **/
 struct json_value *json_new_object (void);
 
 
 /**
 Creates a new JSON array
-@return a pointer to the newly created JSON array
+@return a pointer to the newly created JSON array value
 **/
 struct json_value *json_new_array (void);
 
 
 /**
 Creates a new JSON null
-@return a pointer to the newly created JSON null
+@return a pointer to the newly created JSON null value
 **/
 struct json_value *json_new_null (void);
 
 
 /**
 Creates a new JSON true
-@return a pointer to the newly created JSON true
+@return a pointer to the newly created JSON true value
 **/
 struct json_value *json_new_true (void);
 
 
 /**
 Creates a new JSON false
-@return a pointer to the newly created JSON false
+@return a pointer to the newly created JSON false value
 **/
 struct json_value *json_new_false (void);
 
 
 /**
-Frees the memory appointed to the value fed as the parameter, as well as all the child values
+Frees the memory appointed to the value fed as the parameter, as well as all the child nodes
 @param value the root node of the tree being freed
 **/
 void json_free_value (struct json_value **value);
@@ -167,7 +178,7 @@ void json_free_value (struct json_value **value);
 Inserts a child node into a parent node, as well as performs some document tree integrity checks.
 @param parent the parent node
 @param child the node being added as a child to parent
-@return the error code corresponding to the operation state
+@return the error code corresponding to the operation result
 **/
 enum json_error json_insert_child (struct json_value *parent, struct json_value *child);
 
@@ -177,7 +188,7 @@ Inserts a label:value pair into a parent node, as well as performs some document
 @param parent the parent node
 @param label the label (json_value of JSON_STRING type) in the label:value pair
 @param value the value in the label:value pair
-@return the error code corresponding to the operation state
+@return the error code corresponding to the operation result
 **/
 enum json_error json_insert_pair_into_object (struct json_value *parent, struct json_value *label, struct json_value *value);
 
@@ -242,7 +253,7 @@ wchar_t *json_escape (wchar_t * text);
 This function performs the same tast as json_escape() but it also escapes non-ASCII characters
 As with json_escape(), the produced string, if unaccounted for, may contribute to memory leaks.
 @param text a wchar_t text string
-@return a wchar_t string holding the same text string but composed with ASCII characters
+@return a wchar_t string holding the same text string but composed of ASCII characters
 **/
 wchar_t *json_escape_to_ascii (wchar_t * text);
 
@@ -257,7 +268,7 @@ enum json_error json_parse_string (struct json_parsing_info *info, wchar_t * tex
 
 
 /**
-Function to perform a SAX-like parsing of any JSON document
+Function to perform a SAX-like parsing of any JSON document or document fragment that is passed to it
 @param jsps a structure holding the status information of the current parser
 @param jsf a structure holding the function pointers to the event functions
 @param c the character to be parsed
