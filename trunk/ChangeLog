@@ -1,5 +1,8 @@
 Version 0.4
 * implemented a SAX-like JSON parser: json_saxy_parse
+* renamed json_escape_string() to json_escape_to_ascii(), implemented
+json_escape() to simply escape the JSON escapable characters
+* fixed a bunch of bugs
 
 Version 0.3
 * Implemented new and improved parser which enables sequential parsing. The old clunk json_tree_to_string() is deprecated.

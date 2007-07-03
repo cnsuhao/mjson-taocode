@@ -23,7 +23,7 @@
 
 \note error handling is only in a very rudimentary form.
 \author Rui Maciel	rui_maciel@users.sourceforge.net
-\version v0.3
+\version v0.4
 */
 
 #include "rstring/rstring.h"	///todo remove this helper library in favour of regular c-string handling code
@@ -75,7 +75,7 @@ struct json_parsing_info
 {
 	unsigned int state;	//!< the state where the parsing was left on the last parser run
 	struct json_value *cursor;	//!< pointers to nodes belonging to the document tree which aid the document parsing
-	struct json_value	*temp;	//!< temporary node which the parser uses to build up the parsed document
+	struct json_value *temp;	//!< temporary node which the parser uses to build up the parsed document
 };
 
 
