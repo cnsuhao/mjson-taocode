@@ -1,0 +1,6 @@
+* finish the json_free_value function so that it really frees all allocated memory 
+* implement decent error handling on the parsing functions
+* test the library's hability to handle Unicode characters
+* replace all the rstring training wheel wrapper stuff with wchar_t strings (use the wrapper struct only internally?)
+* implement a variable, user-defined maximum string length value
+
