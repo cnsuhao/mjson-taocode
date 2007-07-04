@@ -499,10 +499,10 @@ json_white_space (const wchar_t c)
 {
 	switch (c)
 	{
-	case L'\x20':
-	case L'\x09':
-	case L'\x0A':
-	case L'\x0D':
+	case L'\x20':		// space
+	case L'\x09':		// horizontal tab
+	case L'\x0A':		// line feed or new line
+	case L'\x0D':		// Carriage return
 		return 1;
 	default:
 		return 0;
@@ -533,7 +533,7 @@ json_strip_white_spaces (wchar_t * text)	///fixit this function should not strip
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':	// JSON white spaces
+		case L'\x0D':	// JSON insignificant white spaces
 			pos++;
 			break;
 
@@ -623,7 +623,7 @@ json_format_string (wchar_t * text)
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':	// JSON white spaces
+		case L'\x0D':	// JSON insignificant white spaces
 			pos++;
 			break;
 
@@ -776,7 +776,7 @@ json_escape (wchar_t * text)
 
 		if (text[i] == L'\\')
 			rs_catwcs (output, L"\\\\", 2);
-		else if (text[i] == '\"')
+		else if (text[i] == L'\"')
 			rs_catwcs (output, L"\\\"", 2);
 		else if (text[i] == L'/')
 			rs_catwcs (output, L"\\/", 2);
@@ -790,10 +790,14 @@ json_escape (wchar_t * text)
 			rs_catwcs (output, L"\\r", 2);
 		else if (text[i] == L'\t')
 			rs_catwcs (output, L"\\t", 2);
-		else if ((text[i] >= 0x20) && (text[i] <= 0x7E))	// ascii printable characters
+		else if (text[i] <= 0x1F)	// escape the characters as declared in 2.5 of http://www.ietf.org/rfc/rfc4627.txt
 		{
-			rs_catwc (output, text[i]);
+			wchar_t temp[6];
+			swprintf (temp, 6, L"\\u%4x", text[i]);
+			rs_catwcs (output, temp, 6);
 		}
+		else
+			rs_catwc (output, text[i]);
 	}
 
 	return rs_unwrap (output);
@@ -827,6 +831,12 @@ json_escape_to_ascii (wchar_t * text)
 			rs_catwcs (output, L"\\r", 2);
 		else if (text[i] == L'\t')
 			rs_catwcs (output, L"\\t", 2);
+		else if (text[i] <= 0x1F)	// escape the characters as declared in 2.5 of http://www.ietf.org/rfc/rfc4627.txt
+		{
+			wchar_t temp[6];
+			swprintf (temp, 6, L"\\u%4x", text[i]);
+			rs_catwcs (output, temp, 6);
+		}
 		else if ((text[i] >= 0x20) && (text[i] <= 0x7E))	// ascii printable characters
 		{
 			rs_catwc (output, text[i]);
@@ -936,7 +946,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 	case 37:
 		goto state37;	// start array
 	case 38:
-		goto state38;	// fix
+		goto state38;	// fix literal cursor position
 	case 39:
 		goto state39;	// start value in array
 
@@ -955,7 +965,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':	// white spaces
+		case L'\x0D':	// JSON insignificant white spaces
 			info->state = 0;
 			pos++;
 			if (pos >= length)	// current string ended
@@ -1013,7 +1023,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':	// white spaces
+		case L'\x0D':	// JSON insignificant white spaces
 			info->state = 1;
 			pos++;
 			if (pos >= length)	// current string ended
@@ -1313,6 +1323,40 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 				goto state12;	// goto string followup
 			break;
 
+		case L'\x0000':	// range of characters that must be escaped according to 2.5 of http://www.ietf.org/rfc/rfc4627.txt
+		case L'\x0001':
+		case L'\x0002':
+		case L'\x0003':
+		case L'\x0004':
+		case L'\x0005':
+		case L'\x0006':
+		case L'\x0007':
+		case L'\x0008':
+		case L'\x0009':
+		case L'\x000a':
+		case L'\x000b':
+		case L'\x000c':
+		case L'\x000d':
+		case L'\x000e':
+		case L'\x000f':
+		case L'\x0010':
+		case L'\x0011':
+		case L'\x0012':
+		case L'\x0013':
+		case L'\x0014':
+		case L'\x0015':
+		case L'\x0016':
+		case L'\x0017':
+		case L'\x0018':
+		case L'\x0019':
+		case L'\x001a':
+		case L'\x001b':
+		case L'\x001c':
+		case L'\x001d':
+		case L'\x001e':
+		case L'\x001f':
+			return JSON_ILLEGAL_CHARACTER;
+			break;
 
 		default:
 			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
@@ -1536,7 +1580,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':	// white spaces
+		case L'\x0D':	// JSON insignificant white spaces
 			info->state = 12;
 			pos++;
 			if (pos >= length)
@@ -1593,7 +1637,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':	// white spaces
+		case L'\x0D':	// JSON insignificant white spaces
 			info->state = 13;
 			pos++;
 			if (pos >= length)
@@ -1735,12 +1779,12 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':
+		case L'\x0D':	// JSON insignificant white spaces
 		case L',':
 		case L'}':
 		case L']':
 			info->state = 38;
-			goto state38;
+			goto state38;	// fix literal cursor position
 			break;
 
 		default:
@@ -1796,12 +1840,12 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':
+		case L'\x0D':	// JSON insignificant white spaces
 		case L',':
 		case L'}':
 		case L']':
 			info->state = 38;
-			goto state38;	// number: end
+			goto state38;	// fix literal cursor position
 			break;
 
 		default:
@@ -1876,12 +1920,12 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':
-		case L',':	// some other acceptable characters which mark the end of a number
+		case L'\x0D':	// JSON insignificant white spaces
+		case L',':	// characters which mark the end of a number
 		case L'}':
 		case L']':
 			info->state = 38;
-			goto state38;
+			goto state38;	// fix literal cursor position
 			break;
 
 		default:
@@ -1986,12 +2030,12 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':
+		case L'\x0D':	// JSON insignificant white spaces
 		case L',':
 		case L'}':
 		case L']':
 			info->state = 38;
-			goto state38;
+			goto state38;	// fix literal cursor position
 			break;
 
 		default:
@@ -2007,7 +2051,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':	// white spaces
+		case L'\x0D':	// JSON insignificant white spaces
 			info->state = 23;
 			pos++;
 			if (pos >= length)
@@ -2063,7 +2107,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':	// white spaces
+		case L'\x0D':	// JSON insignificant white spaces
 			info->state = 24;
 			pos++;
 			if (pos >= length)
@@ -2182,7 +2226,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		if (pos >= length)
 			return JSON_INCOMPLETE_DOCUMENT;
 		else
-			goto state38;	// true: e
+			goto state38;	// fix literal cursor position
 
 	}
 
@@ -2275,7 +2319,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		if (pos >= length)
 			return JSON_INCOMPLETE_DOCUMENT;
 		else
-			goto state38;	// null: l 2 of 2
+			goto state38;	// fix literal cursor position
 	}
 
       state37:			// start array
@@ -2351,7 +2395,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':	// white spaces
+		case L'\x0D':	// JOSN insignificant white spaces
 			info->state = 39;
 			pos++;
 			if (pos >= length)	// current string ended
@@ -2559,7 +2603,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':
+		case L'\x0D':	// JSON insignificant white spaces
 			break;
 
 		case L'\"':
@@ -3013,7 +3057,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':
+		case L'\x0D':	// JSON insignificant white spaces
 			if (jsf->new_number != NULL)
 			{
 				wchar_t *text = rs_unwrap (jsps->temp);
@@ -3159,7 +3203,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':
+		case L'\x0D':	// JSON insignificant white spaces
 			if (jsf->new_number != NULL)
 			{
 				wchar_t *text = rs_unwrap (jsps->temp);
@@ -3304,7 +3348,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':
+		case L'\x0D':	// JSON insignificant white spaces
 			if (jsf->new_number != NULL)
 			{
 				wchar_t *text = rs_unwrap (jsps->temp);
@@ -3491,7 +3535,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':
+		case L'\x0D':	// JSON insignificant white spaces
 			if (jsf->new_number != NULL)
 			{
 				wchar_t *text = rs_unwrap (jsps->temp);
@@ -3580,7 +3624,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':
+		case L'\x0D':	// JSON insignificant white spaces
 			break;
 
 		case L'\"':
@@ -3610,7 +3654,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':
+		case L'\x0D':	// JSON insignificant white spaces
 			break;
 
 		case L'}':
@@ -3645,7 +3689,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
-		case L'\x0D':
+		case L'\x0D':	// JSON insignificant white spaces
 			break;
 
 		case L'\"':
