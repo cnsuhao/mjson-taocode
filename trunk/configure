@@ -2256,7 +2256,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=json
- VERSION=0.3
+ VERSION=0.5
 
 
 cat >>confdefs.h <<_ACEOF

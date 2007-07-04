@@ -1,3 +1,6 @@
+Version 0.5
+* fixed a bunch of bugs
+
 Version 0.4
 * implemented a SAX-like JSON parser: json_saxy_parse
 * renamed json_escape_string() to json_escape_to_ascii(), implemented
