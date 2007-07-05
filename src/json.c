@@ -305,8 +305,8 @@ json_render_tree (struct json_value *root)
 }
 
 
-wchar_t *
-json_tree_to_string (struct json_value *root)	///fixme this function leaks memory
+enum json_error
+json_tree_to_string (struct json_value *root, wchar_t * text)
 {
 	assert (root != NULL);
 
@@ -314,7 +314,11 @@ json_tree_to_string (struct json_value *root)	///fixme this function leaks memor
 	// set up the output string
 	rstring *output = rs_create (L"");
 	if (output == NULL)
-		return NULL;
+	{
+		rs_destroy (&output);
+		text = NULL;
+		return JSON_MEMORY;
+	}
 
 	// start the convoluted fun
       state1:			// open value
@@ -328,11 +332,23 @@ json_tree_to_string (struct json_value *root)	///fixme this function leaks memor
 		{
 		case JSON_STRING:
 			if (rs_catwc (output, L'\"') != RS_OK)
-				goto error;
+			{
+				rs_destroy (&output);
+				text = NULL;
+				return JSON_MEMORY;
+			}
 			if (rs_catrs (output, cursor->text) != RS_OK)
-				goto error;
+			{
+				rs_destroy (&output);
+				text = NULL;
+				return JSON_MEMORY;
+			}
 			if (rs_catwc (output, L'\"') != RS_OK)
-				goto error;
+			{
+				rs_destroy (&output);
+				text = NULL;
+				return JSON_MEMORY;
+			}
 
 			if (cursor->parent != NULL)
 			{
@@ -342,13 +358,18 @@ json_tree_to_string (struct json_value *root)	///fixme this function leaks memor
 					if (cursor->child != NULL)
 					{
 						if (rs_catwc (output, L':') != RS_OK)
-							goto error;
+						{
+							rs_destroy (&output);
+							text = NULL;
+							return JSON_MEMORY;
+						}
 					}
 					else
 					{
 						// malformed document tree: label without value in label:value pair
-						printf ("Tree integrity error: string as object children must be label:value pair\n");
-						goto error;
+						rs_destroy (&output);
+						text = NULL;
+						return JSON_BAD_TREE_STRUCTURE;
 					}
 				}
 			}
@@ -357,12 +378,18 @@ json_tree_to_string (struct json_value *root)	///fixme this function leaks memor
 				if (cursor->child != NULL)	// is root label in label:value pair
 				{
 					if (rs_catwc (output, L':') != RS_OK)
-						goto error;
+					{
+						rs_destroy (&output);
+						text = NULL;
+						return JSON_MEMORY;
+					}
 				}
 				else
 				{
 					// malformed document tree: label without value in label:value pair
-					goto error;	// no root but siblings
+					rs_destroy (&output);
+					text = NULL;
+					return JSON_BAD_TREE_STRUCTURE;
 				}
 			}
 			break;
@@ -370,13 +397,21 @@ json_tree_to_string (struct json_value *root)	///fixme this function leaks memor
 		case JSON_NUMBER:
 			// must not have any children
 			if (rs_catrs (output, cursor->text) != RS_OK)
-				goto error;
+			{
+				rs_destroy (&output);
+				text = NULL;
+				return JSON_MEMORY;
+			}
 			goto state2;	// close value
 			break;
 
 		case JSON_OBJECT:
 			if (rs_catwc (output, L'{') != RS_OK)
-				goto error;
+			{
+				rs_destroy (&output);
+				text = NULL;
+				return JSON_MEMORY;
+			}
 
 			if (cursor->child)
 			{
@@ -391,7 +426,11 @@ json_tree_to_string (struct json_value *root)	///fixme this function leaks memor
 
 		case JSON_ARRAY:
 			if (rs_catwc (output, L'[') != RS_OK)
-				goto error;
+			{
+				rs_destroy (&output);
+				text = NULL;
+				return JSON_MEMORY;
+			}
 			if (cursor->child != NULL)
 			{
 				cursor = cursor->child;
@@ -406,21 +445,34 @@ json_tree_to_string (struct json_value *root)	///fixme this function leaks memor
 		case JSON_TRUE:
 			// must not have any children
 			if (rs_catwcs (output, L"true", 4) != RS_OK)
-				goto error;
+			{
+				rs_destroy (&output);
+				text = NULL;
+				return JSON_MEMORY;
+			}
 			goto state2;	// close value
 			break;
 
 		case JSON_FALSE:
 			// must not have any children
 			if (rs_catwcs (output, L"false", 5) != RS_OK)
-				goto error;
+			{
+				rs_destroy (&output);
+				text = NULL;
+				return JSON_MEMORY;
+			}
 			goto state2;	// close value
 			break;
 
 		case JSON_NULL:
 			// must not have any children
 			if (rs_catwcs (output, L"null", 5) != RS_OK)
-				goto error;
+			{
+				rs_destroy (&output);
+				text = NULL;
+				return JSON_MEMORY;
+			}
+
 			goto state2;	// close value
 			break;
 
@@ -445,12 +497,20 @@ json_tree_to_string (struct json_value *root)	///fixme this function leaks memor
 		{
 		case JSON_OBJECT:
 			if (rs_catwc (output, L'}') != RS_OK)
-				goto error;
+			{
+				rs_destroy (&output);
+				text = NULL;
+				return JSON_MEMORY;
+			}
 			break;
 
 		case JSON_ARRAY:
 			if (rs_catwc (output, L']') != RS_OK)
-				goto error;
+			{
+				rs_destroy (&output);
+				text = NULL;
+				return JSON_MEMORY;
+			}
 			break;
 
 		case JSON_STRING:
@@ -484,13 +544,16 @@ json_tree_to_string (struct json_value *root)	///fixme this function leaks memor
 
       error:
 	{
-		printf ("ERROR!");
 		rs_destroy (&output);
-		return NULL;	///todo implement better, usable error handling
+		text = NULL;
+		return JSON_UNKNOWN_PROBLEM;
 	}
 
       end:
-	return rs_unwrap (output);
+	{
+		text = rs_unwrap (output);
+		return JSON_OK;
+	}
 }
 
 
@@ -951,7 +1014,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		goto state39;	// start value in array
 
 	default:
-		return JSON_SOME_PROBLEM;	// IF THIS PART IS REACHED THEN THERE IS A BUG SOMEWHERE
+		return JSON_UNKNOWN_PROBLEM;	// IF THIS PART IS REACHED THEN THERE IS A BUG SOMEWHERE
 		break;
 	}
 
@@ -1268,7 +1331,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 				if (info->temp == NULL)
 				{
 					///TODO does this need some memory cleanup?
-					return JSON_SOME_PROBLEM;
+					return JSON_UNKNOWN_PROBLEM;
 				}
 				info->cursor = info->temp;
 				info->temp = NULL;
@@ -2593,7 +2656,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		break;
 
 	default:		// oops... this should never be reached
-		return JSON_SOME_PROBLEM;
+		return JSON_UNKNOWN_PROBLEM;
 	}
 
       state0:			// starting point
@@ -2727,7 +2790,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 					jsf->new_string (t);
 			}
 			else
-				return JSON_SOME_PROBLEM;	///TODO find out what is the best error return code for this situation
+				return JSON_UNKNOWN_PROBLEM;	///TODO find out what is the best error return code for this situation
 			break;
 
 		default:
@@ -3767,5 +3830,5 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		return JSON_OK;
 	}
 
-	return JSON_SOME_PROBLEM;
+	return JSON_UNKNOWN_PROBLEM;
 }
