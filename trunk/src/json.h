@@ -49,7 +49,7 @@ enum json_error
 	JSON_ILLEGAL_CHARACTER,	//!< the currently parsed character does not belong here
 	JSON_BAD_TREE_STRUCTURE,	//!< the currently parsed tree is malformed
 	JSON_MAXIMUM_LENGTH,	//!< the parsed string reached the maximum allowed size
-	JSON_SOME_PROBLEM	//!< some random, unaccounted problem occurred 
+	JSON_UNKNOWN_PROBLEM	//!< some random, unaccounted problem occurred
 };
 
 /**
@@ -211,9 +211,10 @@ void json_render_tree (struct json_value *root);
 /**
 Produces a JSON markup text document from a document tree
 @param root The document's root node
-@return The JSON text document, or NULL if some problem is encountered while traversing the tree.
+@param text The JSON text document, or NULL if some problem is encountered while traversing the tree.
+@return  a json_error code describing how the operation went
 **/
-wchar_t *json_tree_to_string (struct json_value *root);
+enum json_error json_tree_to_string (struct json_value *root, wchar_t * text);
 
 
 /**
