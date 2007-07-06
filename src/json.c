@@ -2565,6 +2565,26 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 }
 
 
+struct json_value *
+json_parse_document (wchar_t * text)
+{
+	struct json_parsing_info jpi;
+	jpi.cursor = NULL;
+	jpi.temp = NULL;
+	jpi.state = 0;
+
+	enum json_error error = json_parse_string (&jpi, text);
+	if (error != JSON_OK)
+	{
+		///TODO check if jpi.temp is freed from within json_parse_string();
+		return NULL;
+	}
+	else
+	{
+		return jpi.cursor;	///todo test if this is really the root node
+	}
+}
+
 enum json_error
 json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_functions *jsf, wchar_t c)
 {
