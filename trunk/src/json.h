@@ -269,6 +269,13 @@ enum json_error json_parse_string (struct json_parsing_info *info, wchar_t * tex
 
 
 /**
+Produces a document tree from a JSON markup text string that contains a complete document
+@param text a text string containing a complete JSON text document
+@return a pointer to the new document tree or NULL if some error occurred
+**/
+struct json_value *json_parse_document (wchar_t * text);
+
+/**
 Function to perform a SAX-like parsing of any JSON document or document fragment that is passed to it
 @param jsps a structure holding the status information of the current parser
 @param jsf a structure holding the function pointers to the event functions
