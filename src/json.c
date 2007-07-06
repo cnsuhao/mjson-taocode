@@ -60,7 +60,7 @@ json_new_string (wchar_t * text)
 		return NULL;
 
 	// initialize members
-	new_object->text = rs_create (text);
+	new_object->text = rs_create (text);	// copies the content of text to a new rstring
 	new_object->parent = NULL;
 	new_object->child = NULL;
 	new_object->child_end = NULL;
@@ -221,21 +221,23 @@ json_insert_child (struct json_value *parent, struct json_value *child)
 
 
 enum json_error
-json_insert_pair_into_object (struct json_value *parent, struct json_value *label, struct json_value *value)
+json_insert_pair_into_object (struct json_value *parent, wchar_t * text_label, struct json_value *value)
 {
 	// verify if the parameters are valid
 	assert (parent != NULL);
-	assert (label != NULL);
+	assert (text_label != NULL);
 	assert (value != NULL);
-	assert (parent != label);
 	assert (parent != value);
-	assert (label != value);
 
 	// enforce type coherence
 	assert (parent->type == JSON_OBJECT);
-	assert (label->type == JSON_STRING);
 
 	enum json_error error;
+
+	// create label json_value
+	struct json_value *label = json_new_string (text_label);
+	if (label == NULL)
+		return JSON_MEMORY;
 
 	//insert value and check for error
 	error = json_insert_child (label, value);
@@ -306,9 +308,11 @@ json_render_tree (struct json_value *root)
 
 
 enum json_error
-json_tree_to_string (struct json_value *root, wchar_t * text)
+json_tree_to_string (struct json_value *root, wchar_t ** text)
 {
 	assert (root != NULL);
+	assert (text != NULL);
+
 
 	struct json_value *cursor = root;
 	// set up the output string
@@ -551,7 +555,7 @@ json_tree_to_string (struct json_value *root, wchar_t * text)
 
       end:
 	{
-		text = rs_unwrap (output);
+		*text = rs_unwrap (output);
 		return JSON_OK;
 	}
 }
