@@ -186,11 +186,11 @@ enum json_error json_insert_child (struct json_value *parent, struct json_value 
 /**
 Inserts a label:value pair into a parent node, as well as performs some document tree integrity checks.
 @param parent the parent node
-@param label the label (json_value of JSON_STRING type) in the label:value pair
+@param text_label a wchar_t string which serves as the label in the label:value pair
 @param value the value in the label:value pair
 @return the error code corresponding to the operation result
 **/
-enum json_error json_insert_pair_into_object (struct json_value *parent, struct json_value *label, struct json_value *value);
+enum json_error json_insert_pair_into_object (struct json_value *parent, wchar_t * text_label, struct json_value *value);
 
 
 /**
@@ -211,10 +211,10 @@ void json_render_tree (struct json_value *root);
 /**
 Produces a JSON markup text document from a document tree
 @param root The document's root node
-@param text The JSON text document, or NULL if some problem is encountered while traversing the tree.
+@param text a pointer to a wchar_t string that will hold the JSON document text.
 @return  a json_error code describing how the operation went
 **/
-enum json_error json_tree_to_string (struct json_value *root, wchar_t * text);
+enum json_error json_tree_to_string (struct json_value *root, wchar_t ** text);
 
 
 /**
