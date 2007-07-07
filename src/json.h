@@ -31,6 +31,8 @@
 #ifndef JSON_H
 #define JSON_H
 
+#define JSON_MAX_STRING_LENGTH 4096
+
 /**
 The descriptions of the json_value node type
 **/
