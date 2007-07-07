@@ -259,30 +259,30 @@ json_render_tree_indented (struct json_value *root, int level)
 	int tab;
 	for (tab = 0; tab < level; tab++)
 	{
-		printf ("> ");
+		wprintf (L"> ");
 	}
 	switch (root->type)
 	{
 	case JSON_STRING:
-		printf ("STRING: %ls\n", root->text->s);
+		wprintf (L"STRING: %ls\n", root->text->s);
 		break;
 	case JSON_NUMBER:
-		printf ("NUMBER: %ls\n", root->text->s);
+		wprintf (L"NUMBER: %ls\n", root->text->s);
 		break;
 	case JSON_OBJECT:
-		printf ("OBJECT: \n");
+		wprintf (L"OBJECT: \n");
 		break;
 	case JSON_ARRAY:
-		printf ("ARRAY: \n");
+		wprintf (L"ARRAY: \n");
 		break;
 	case JSON_TRUE:
-		printf ("TRUE:\n");
+		wprintf (L"TRUE:\n");
 		break;
 	case JSON_FALSE:
-		printf ("FALSE:\n");
+		wprintf (L"FALSE:\n");
 		break;
 	case JSON_NULL:
-		printf ("NULL:\n");
+		wprintf (L"NULL:\n");
 		break;
 	}
 	//iterate through children
@@ -1098,7 +1098,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 				return JSON_INCOMPLETE_DOCUMENT;
 			}
 			else
-				goto state1;
+				goto state1;	// start value in object
 			break;
 
 		case L'}':
@@ -1245,19 +1245,22 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			if (info->cursor->parent == NULL)
 				return JSON_OK;
 			else
-				info->cursor = info->cursor->parent;	///todo test this
+				info->cursor = info->cursor->parent;	// point the cursor to a parent node which supports children
 			break;
 
 		case JSON_ARRAY:
 			///todo finish this step
 			break;
 
-		default:
-			return JSON_ILLEGAL_CHARACTER;
+		default:	// The parent node of a JSON_ARRAY can only be a JSON_ARRAY or JSON_STRING
+			return JSON_BAD_TREE_STRUCTURE;	// the tree shouldn't be like this
 			break;
 		}
 
 		// proceed to the next state
+		/*
+		   In the previous switch() statement the cursor was pointed to the true parent node which supports children. That parent node can only be of type JSON_OBJECT or JSON_ARRAY
+		 */
 		switch (info->cursor->type)
 		{
 		case JSON_OBJECT:
@@ -1271,7 +1274,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			break;
 
 		default:
-			return JSON_BAD_TREE_STRUCTURE;	///TODO is this the right return code?
+			return JSON_BAD_TREE_STRUCTURE;	// other types besides JSON_ARRAY and JSON_OBJECT mean that the tree is malformed
 		}
 	}
 
@@ -1293,7 +1296,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 				}
 				break;
 
-			default:	// a string can't be a child of a value type other than object, array or string
+			default:	// a string can't be a child of a value type other than JSON_OBJECT, JSON_ARRAY or JSON_STRING
 				return JSON_ILLEGAL_CHARACTER;
 			}
 		}
@@ -1313,11 +1316,24 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
       state6:			// continue string
 	{
+		// check if there is a valid temporary function
+		if (info->temp == NULL)
+		{
+			///TODO does this need some memory cleanup?
+			return JSON_UNKNOWN_PROBLEM;
+		}
+
+		// proceed with the string parsing
 		switch (text[pos])
 		{
 		case L'\\':	// escaped characters
-			if (rs_catwc (info->temp->text, L'\\') != RS_OK)
-				return JSON_MEMORY;
+			if (info->temp->text->length < JSON_MAX_STRING_LENGTH - 6)
+			{
+				if (rs_catwc (info->temp->text, L'\\') != RS_OK)
+					return JSON_MEMORY;
+			}
+			else
+				info->temp->text->length = JSON_MAX_STRING_LENGTH;	// to avoid funny stuff happening
 
 			info->state = 7;	// continue string: escaped character
 			pos++;
@@ -1332,11 +1348,6 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'"':	// closing string
 			if (info->cursor == NULL)
 			{
-				if (info->temp == NULL)
-				{
-					///TODO does this need some memory cleanup?
-					return JSON_UNKNOWN_PROBLEM;
-				}
 				info->cursor = info->temp;
 				info->temp = NULL;
 			}
@@ -1426,8 +1437,11 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			break;
 
 		default:
-			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
-				return JSON_MEMORY;
+			if (info->temp->text->length < JSON_MAX_STRING_LENGTH)
+			{
+				if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+					return JSON_MEMORY;
+			}
 			info->state = 6;
 			pos++;
 			if (pos > length)
@@ -1450,8 +1464,11 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'n':
 		case L'r':
 		case L't':
-			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
-				return JSON_MEMORY;
+			if (info->temp->text->length < JSON_MAX_STRING_LENGTH - 5)
+			{
+				if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+					return JSON_MEMORY;
+			}
 			info->state = 6;
 			pos++;
 			if (pos > length)
@@ -1461,8 +1478,11 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			break;
 
 		case L'u':
-			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
-				return JSON_MEMORY;
+			if (info->temp->text->length < JSON_MAX_STRING_LENGTH - 4)
+			{
+				if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+					return JSON_MEMORY;
+			}
 			info->state = 8;
 			pos++;
 			if (pos > length)
@@ -1502,8 +1522,11 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'D':
 		case L'E':
 		case L'F':
-			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
-				return JSON_MEMORY;
+			if (info->temp->text->length < JSON_MAX_STRING_LENGTH - 3)
+			{
+				if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+					return JSON_MEMORY;
+			}
 			break;
 
 		default:
@@ -1543,8 +1566,11 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'D':
 		case L'E':
 		case L'F':
-			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
-				return JSON_MEMORY;
+			if (info->temp->text->length < JSON_MAX_STRING_LENGTH - 2)
+			{
+				if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+					return JSON_MEMORY;
+			}
 			break;
 
 		default:
@@ -1584,8 +1610,11 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'D':
 		case L'E':
 		case L'F':
-			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
-				return JSON_MEMORY;
+			if (info->temp->text->length < JSON_MAX_STRING_LENGTH - 1)
+			{
+				if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+					return JSON_MEMORY;
+			}
 			break;
 
 		default:
@@ -1625,8 +1654,11 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'D':
 		case L'E':
 		case L'F':
-			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
-				return JSON_MEMORY;
+			if (info->temp->text->length < JSON_MAX_STRING_LENGTH)
+			{
+				if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+					return JSON_MEMORY;
+			}
 			break;
 
 		default:

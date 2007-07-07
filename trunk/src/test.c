@@ -32,89 +32,28 @@
 
 
 int
-open_object ()
-{
-	printf ("{\n");
-	return 1;
-}
-
-int
-close_object ()
-{
-	printf ("}\n");
-	return 1;
-}
-
-int
-new_string (wchar_t * text)
-{
-	printf ("%ls\n", text);
-	return 1;
-}
-
-int
-new_number (wchar_t * text)
-{
-	printf ("%ls\n", text);
-	return 1;
-}
-
-
-int
 main ()
 {
 	setlocale (LC_CTYPE, "");
 
-	wchar_t text[80];
-	struct json_parsing_info info;
-	info.cursor = NULL;
-	info.temp = NULL;
-	info.state = 0;
+	wchar_t *test = L"{\"test\":\"\\u0050\\u0050\"}";
+	wprintf (L"%ls\n", test);
 
-//      enum json_error error = 0;
-	enum json_error error = 1;
+	struct json_value *root = json_parse_document (test);
 
-	struct json_saxy_functions jsf;
-	jsf.open_object = &open_object;
-	jsf.close_object = &close_object;
-	jsf.open_array = NULL;
-	jsf.close_array = NULL;
-	jsf.new_string = &new_string;
-	jsf.new_number = &new_number;
-	jsf.new_true = NULL;
-	jsf.new_false = NULL;
-	jsf.new_null = NULL;
-	jsf.sibling_separator = NULL;
-	jsf.label_value_separator = NULL;
-
-	struct json_saxy_parser_status jsps;
-	jsps.state = 0;
-	jsps.temp = NULL;
-
-	while ((!feof (stdin)) && (error == 1))
+	if (root == NULL)
 	{
-		fgetws (text, 80, stdin);
-//              printf ("%ls", text);
-//              error = json_parse_string (&info, text);
-		error = JSON_OK;
-		size_t i = 0;
-		while ((error == JSON_OK) && (i < wcslen (text)))
-		{
-			error = json_saxy_parse (&jsps, &jsf, text[i]);
-			i++;
-		}
-		if (error != 1)
-			printf ("error code: %i\n", error);
+		wprintf (L"snafu\n");
+		json_free_value (&root);
+		return EXIT_FAILURE;
+	}
+	else
+	{
+		wprintf (L"style\n");
 	}
 
-//      if (error == 1)
-//      {
-//              wchar_t *output = json_tree_to_string (info.cursor);
-//              wchar_t *clean = json_strip_white_spaces (output);
-//              printf ("%ls\n", clean);
-//              free (output);
-//              free (clean);
-//      }
+	json_render_tree (root);
 
+	json_free_value (&root);
 	return EXIT_SUCCESS;
 }

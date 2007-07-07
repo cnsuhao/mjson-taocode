@@ -1,4 +1,10 @@
 Version 0.5
+* implemented a max string length limit in json_parse_string()
+* implemented a json_parse_string() wrapper that enables parsing a complete
+JSON document without declaring external variables: json_parse_document()
+* tweaked json_insert_pair_into_object() to transfer the job of creating a new
+json_string() type from the user to the function.
+* implemented a decent error handling method for json_tree_to_string()
 * fixed a bunch of bugs
 
 Version 0.4
