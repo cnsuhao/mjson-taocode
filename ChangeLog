@@ -1,4 +1,5 @@
 Version 0.5
+* implemented a max string length limit in json_saxy_parse()
 * implemented a max string length limit in json_parse_string()
 * implemented a json_parse_string() wrapper that enables parsing a complete
 JSON document without declaring external variables: json_parse_document()
