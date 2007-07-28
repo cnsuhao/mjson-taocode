@@ -2795,7 +2795,8 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'\x0D':	// JSON insignificant white spaces
 			break;
 
-		case L'\"':
+		case L'\"':	// starting a string
+			jsps->string_length_limit_reached = 0;
 			jsps->state = 1;
 			jsps->temp = rs_create (L"");	///TODO replace custom rstring with regular c-string handling
 			if (jsps->temp == NULL)
@@ -2851,6 +2852,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			break;
 
 		case L'0':
+			jsps->string_length_limit_reached = 0;
 			jsps->state = 17;	// parse number: 0
 			jsps->temp = rs_create (L"");	///TODO replace custom rstring with regular c-string handling
 			if (jsps->temp == NULL)
@@ -2868,6 +2870,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'7':
 		case L'8':
 		case L'9':
+			jsps->string_length_limit_reached = 0;
 			jsps->state = 24;	// parse number: decimal
 			jsps->temp = rs_create (L"");	///TODO replace custom rstring with regular c-string handling
 			if (jsps->temp == NULL)
@@ -2877,6 +2880,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			break;
 
 		case L'-':
+			jsps->string_length_limit_reached = 0;
 			jsps->state = 23;	// number:
 			jsps->temp = rs_create (L"");
 			if (jsps->temp == NULL)
@@ -3359,7 +3363,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			}
 			if (jsf->open_object != NULL)
 				jsf->close_object ();
-			jsps->state = 26;	// close object
+			jsps->state = 26;	// close object/array
 			break;
 
 		case L']':
@@ -3423,9 +3427,20 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'7':
 		case L'8':
 		case L'9':
-			if (rs_catwc (jsps->temp, c) != RS_OK)
+			if (!jsps->string_length_limit_reached)
 			{
-				return JSON_MEMORY;
+				if (jsps->temp->length < JSON_MAX_STRING_LENGTH / 2)
+				{
+					if (rs_catwc (jsps->temp, c) != RS_OK)
+					{
+						///TODO does this need extra cleaning?
+						return JSON_MEMORY;
+					}
+				}
+				else
+				{
+					jsps->string_length_limit_reached = 1;
+				}
 			}
 			jsps->state = 19;	// parse number: fractional part
 			break;
@@ -3452,11 +3467,22 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'7':
 		case L'8':
 		case L'9':
-			if (rs_catwc (jsps->temp, c) != RS_OK)
+			if (!jsps->string_length_limit_reached)
 			{
-				return JSON_MEMORY;
+				if (jsps->temp->length < JSON_MAX_STRING_LENGTH / 2)
+				{
+					if (rs_catwc (jsps->temp, c) != RS_OK)
+					{
+						///TODO does this need extra cleaning?
+						return JSON_MEMORY;
+					}
+				}
+				else
+				{
+					jsps->string_length_limit_reached = 1;
+				}
 			}
-//                              jsps->state = 19;       // parse number: fractional part
+//                      jsps->state = 19;       // parse number: fractional part
 			break;
 
 		case L'e':
@@ -3561,6 +3587,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		{
 		case L'+':
 		case L'-':
+			jsps->string_length_limit_reached = 0;
 			if (rs_catwc (jsps->temp, c) != RS_OK)
 			{
 				return JSON_MEMORY;
@@ -3578,9 +3605,20 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'7':
 		case L'8':
 		case L'9':
-			if (rs_catwc (jsps->temp, c) != RS_OK)
+			if (!jsps->string_length_limit_reached)
 			{
-				return JSON_MEMORY;
+				if (jsps->temp->length < JSON_MAX_STRING_LENGTH)
+				{
+					if (rs_catwc (jsps->temp, c) != RS_OK)
+					{
+						///TODO does this need extra cleaning?
+						return JSON_MEMORY;
+					}
+				}
+				else
+				{
+					jsps->string_length_limit_reached = 1;
+				}
 			}
 			jsps->state = 21;	// parse number: exponent part
 			break;
@@ -3607,9 +3645,20 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'7':
 		case L'8':
 		case L'9':
-			if (rs_catwc (jsps->temp, c) != RS_OK)
+			if (!jsps->string_length_limit_reached)
 			{
-				return JSON_MEMORY;
+				if (jsps->temp->length < JSON_MAX_STRING_LENGTH)
+				{
+					if (rs_catwc (jsps->temp, c) != RS_OK)
+					{
+						///TODO does this need extra cleaning?
+						return JSON_MEMORY;
+					}
+				}
+				else
+				{
+					jsps->string_length_limit_reached = 1;
+				}
 			}
 //                              jsps->state = 21;       // parse number: exponent part
 			break;
@@ -3713,9 +3762,20 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'7':
 		case L'8':
 		case L'9':
-			if (rs_catwc (jsps->temp, c) != RS_OK)
+			if (!jsps->string_length_limit_reached)
 			{
-				return JSON_MEMORY;
+				if (jsps->temp->length < JSON_MAX_STRING_LENGTH)
+				{
+					if (rs_catwc (jsps->temp, c) != RS_OK)
+					{
+						///TODO does this need extra cleaning?
+						return JSON_MEMORY;
+					}
+				}
+				else
+				{
+					jsps->string_length_limit_reached = 1;
+				}
 			}
 			jsps->state = 21;	// parse number: exponent part
 			break;
@@ -3749,9 +3809,20 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'7':
 		case L'8':
 		case L'9':
-			if (rs_catwc (jsps->temp, c) != RS_OK)
+			if (!jsps->string_length_limit_reached)
 			{
-				return JSON_MEMORY;
+				if (jsps->temp->length < JSON_MAX_STRING_LENGTH / 2)
+				{
+					if (rs_catwc (jsps->temp, c) != RS_OK)
+					{
+						///TODO does this need extra cleaning?
+						return JSON_MEMORY;
+					}
+				}
+				else
+				{
+					jsps->string_length_limit_reached = 1;
+				}
 			}
 			jsps->state = 24;	// parse number: start decimal part
 			break;
@@ -3777,9 +3848,20 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'7':
 		case L'8':
 		case L'9':
-			if (rs_catwc (jsps->temp, c) != RS_OK)
+			if (!jsps->string_length_limit_reached)
 			{
-				return JSON_MEMORY;
+				if (jsps->temp->length < JSON_MAX_STRING_LENGTH / 2)
+				{
+					if (rs_catwc (jsps->temp, c) != RS_OK)
+					{
+						///TODO does this need extra cleaning?
+						return JSON_MEMORY;
+					}
+				}
+				else
+				{
+					jsps->string_length_limit_reached = 1;
+				}
 			}
 //                              jsps->state = 24;       // parse number: decimal part
 			break;
@@ -3798,6 +3880,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			{
 				return JSON_MEMORY;
 			}
+			jsps->string_length_limit_reached = 0;	// reset to accept the exponential part
 			jsps->state = 20;	// parse number: start exponent part
 			break;
 
