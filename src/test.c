@@ -30,13 +30,12 @@
 
 #include "json.h"
 
-
 int
 main ()
 {
 	setlocale (LC_CTYPE, "");
 
-	wchar_t *test = L"{\"test\":\"\\u0050\\u0050\"}";
+	wchar_t *test = L"{\"test\":123456789012345678901234567890.123456789012345678901234567890e12345678901234567890}";
 	wprintf (L"%ls\n", test);
 
 	struct json_value *root = json_parse_document (test);

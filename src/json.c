@@ -1892,6 +1892,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
       state14:			// start number
 	{
 		info->temp = json_new_number (L"");
+		info->string_length_limit_reached = 0;
 		// start number
 		switch (text[pos])
 		{
@@ -1975,8 +1976,18 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'7':
 		case L'8':
 		case L'9':
-			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
-				return JSON_MEMORY;
+			if (!info->string_length_limit_reached)
+			{
+				if (info->temp->text->length < JSON_MAX_STRING_LENGTH / 2)
+				{
+					if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+						return JSON_MEMORY;
+				}
+				else
+				{
+					info->string_length_limit_reached = 1;	// string length limit was reached. drop every subsequent character.
+				}
+			}
 			info->state = 16;
 			pos++;
 			if (pos > length)
@@ -1986,6 +1997,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			break;
 
 		case L'.':
+			info->string_length_limit_reached = 0;
 			if (rs_catwc (info->temp->text, L'.') != RS_OK)
 				return JSON_MEMORY;
 			info->state = 17;
@@ -2036,8 +2048,18 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'7':
 		case L'8':
 		case L'9':
-			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
-				return JSON_MEMORY;
+			if (!info->string_length_limit_reached)
+			{
+				if (info->temp->text->length < JSON_MAX_STRING_LENGTH / 2)
+				{
+					if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+						return JSON_MEMORY;
+				}
+				else
+				{
+					info->string_length_limit_reached = 1;	// string length limit was reached. drop every subsequent character.
+				}
+			}
 			info->state = 18;	// decimal part
 			pos++;
 			if (pos > length)
@@ -2065,8 +2087,19 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'7':
 		case L'8':
 		case L'9':
-			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
-				return JSON_MEMORY;
+			if (!info->string_length_limit_reached)
+			{
+				if (info->temp->text->length < JSON_MAX_STRING_LENGTH / 2)
+				{
+					if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+						return JSON_MEMORY;
+				}
+				else
+				{
+					info->string_length_limit_reached = 1;	// string length limit was reached. drop every subsequent character.
+				}
+			}
+
 			info->state = 18;
 			pos++;
 			if (pos > length)
@@ -2104,6 +2137,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
       state19:			// number: start exponential part
 	{
+		info->string_length_limit_reached = 0;
 		switch (text[pos])
 		{
 		case L'+':
@@ -2115,7 +2149,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			if (pos > length)
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
-				goto state20;	// number: exponential part
+				goto state20;	// number: exponential part following signal
 			break;
 
 		case L'0':
@@ -2186,8 +2220,18 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'7':
 		case L'8':
 		case L'9':
-			if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
-				return JSON_MEMORY;
+			if (!info->string_length_limit_reached)
+			{
+				if (info->temp->text->length < JSON_MAX_STRING_LENGTH)
+				{
+					if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+						return JSON_MEMORY;
+				}
+				else
+				{
+					info->string_length_limit_reached = 1;	// string length limit was reached. drop every subsequent character.
+				}
+			}
 			info->state = 21;
 			pos++;
 			if (pos > length)
