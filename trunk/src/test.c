@@ -35,13 +35,13 @@ main ()
 {
 	setlocale (LC_CTYPE, "");
 
-	struct json_value *root = json_new_object ();
+	json_t *root = json_new_object ();
 	json_insert_pair_into_object (root, L"first", json_new_string (L"número um"));
 	json_insert_pair_into_object (root, L"second", json_new_string (L"número dois"));
 	json_insert_pair_into_object (root, L"third", json_new_string (L"número três"));
 	json_insert_pair_into_object (root, L"fourth", json_new_string (L"número quatro"));
 
-	struct json_value *temp = json_find_first_label (root, L"thir");
+	json_t *temp = json_find_first_label (root, L"third");
 	wchar_t *test;
 
 	json_tree_to_string (temp, &test);

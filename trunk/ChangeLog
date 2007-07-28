@@ -1,4 +1,5 @@
 Version 0.5
+* added typedef struct json_value json_t, to simplify things a bit
 * added json_find_first_label(), a function that helps searching through a
 JSON_OBJECT's child labels
 * implemented a max string length limit in json_saxy_parse()
