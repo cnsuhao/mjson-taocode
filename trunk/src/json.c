@@ -2899,23 +2899,25 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		switch (c)
 		{
 		case L'\\':
-			if (jsps->temp->length < JSON_MAX_STRING_LENGTH - 1)	// check if there is space for a two character escape sequence
+			if (!jsps->string_length_limit_reached)
 			{
-				if (rs_catwc (jsps->temp, L'\\') != RS_OK)
+				if (jsps->temp->length < JSON_MAX_STRING_LENGTH - 1)	// check if there is space for a two character escape sequence
 				{
-					///TODO does this need extra cleaning?
-					return JSON_MEMORY;
+					if (rs_catwc (jsps->temp, L'\\') != RS_OK)
+					{
+						///TODO does this need extra cleaning?
+						return JSON_MEMORY;
+					}
 				}
-			}
-			else
-			{
-				//FIXME potential memory error
-				jsps->temp->length = JSON_MAX_STRING_LENGTH;	// to avoid funny stuff happening with the string's integrity
+				else
+				{
+					jsps->string_length_limit_reached = 1;
+				}
 			}
 			jsps->state = 2;	// parse string: escaped character
 			break;
 
-		case L'\"':
+		case L'\"':	// end of string
 			if (jsps->temp != NULL)
 			{
 				wchar_t *t = rs_unwrap (jsps->temp);
@@ -2928,10 +2930,20 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			break;
 
 		default:
-			if (rs_catwc (jsps->temp, c) != RS_OK)
+			if (!jsps->string_length_limit_reached)
 			{
-				///TODO does this need extra cleaning?
-				return JSON_MEMORY;
+				if (jsps->temp->length < JSON_MAX_STRING_LENGTH)	// check if there is space for a two character escape sequence
+				{
+					if (rs_catwc (jsps->temp, c) != RS_OK)
+					{
+						///TODO does this need extra cleaning?
+						return JSON_MEMORY;
+					}
+				}
+				else
+				{
+					jsps->string_length_limit_reached = 1;
+				}
 			}
 			break;
 		}
@@ -2950,30 +2962,38 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'n':
 		case L'r':
 		case L't':
-			if (jsps->temp->length < JSON_MAX_STRING_LENGTH)
+			if (!jsps->string_length_limit_reached)
 			{
-				if (rs_catwc (jsps->temp, c) != RS_OK)
+				if (jsps->temp->length < JSON_MAX_STRING_LENGTH)
 				{
-					///TODO does this need extra cleaning?
-					return JSON_MEMORY;
+					if (rs_catwc (jsps->temp, c) != RS_OK)
+					{
+						///TODO does this need extra cleaning?
+						return JSON_MEMORY;
+					}
+				}
+				else
+				{
+					jsps->string_length_limit_reached = 1;
 				}
 			}
 			break;
 
 		case L'u':
-			if (jsps->temp->length < JSON_MAX_STRING_LENGTH - 4)
+			if (!jsps->string_length_limit_reached)
 			{
-				if (rs_catwc (jsps->temp, c) != RS_OK)
+				if (jsps->temp->length < JSON_MAX_STRING_LENGTH - 4)
 				{
-					///TODO does this need extra cleaning?
-					return JSON_MEMORY;
+					if (rs_catwc (jsps->temp, c) != RS_OK)
+					{
+						///TODO does this need extra cleaning?
+						return JSON_MEMORY;
+					}
 				}
-			}
-			else
-			{
-				///todo remove freshly entered \u sequence
-				//FIXME potential memory error
-				jsps->temp->length = JSON_MAX_STRING_LENGTH;	// to avoid funny stuff happening with the string's integrity
+				else
+				{
+					jsps->string_length_limit_reached = 1;
+				}
 			}
 			jsps->state = 3;	// parse string: escaped unicode 1;
 			break;
@@ -3012,10 +3032,17 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'D':
 		case L'E':
 		case L'F':
-			if (jsps->temp->length < JSON_MAX_STRING_LENGTH - 3)
+			if (!jsps->string_length_limit_reached)
 			{
-				if (rs_catwc (jsps->temp, c) != RS_OK)
-					return JSON_MEMORY;
+				if (jsps->temp->length < JSON_MAX_STRING_LENGTH - 3)
+				{
+					if (rs_catwc (jsps->temp, c) != RS_OK)
+						return JSON_MEMORY;
+				}
+				else
+				{
+					jsps->string_length_limit_reached = 1;
+				}
 			}
 			jsps->state = 4;	// parse string. escaped unicode 2
 			break;
@@ -3052,10 +3079,17 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'D':
 		case L'E':
 		case L'F':
-			if (jsps->temp->length < JSON_MAX_STRING_LENGTH - 2)
+			if (!jsps->string_length_limit_reached)
 			{
-				if (rs_catwc (jsps->temp, c) != RS_OK)
-					return JSON_MEMORY;
+				if (jsps->temp->length < JSON_MAX_STRING_LENGTH - 2)
+				{
+					if (rs_catwc (jsps->temp, c) != RS_OK)
+						return JSON_MEMORY;
+				}
+				else
+				{
+					jsps->string_length_limit_reached = 1;
+				}
 			}
 			jsps->state = 5;	// parse string. escaped unicode 3
 			break;
@@ -3092,10 +3126,17 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'D':
 		case L'E':
 		case L'F':
-			if (jsps->temp->length < JSON_MAX_STRING_LENGTH - 1)
+			if (!jsps->string_length_limit_reached)
 			{
-				if (rs_catwc (jsps->temp, c) != RS_OK)
-					return JSON_MEMORY;
+				if (jsps->temp->length < JSON_MAX_STRING_LENGTH - 1)
+				{
+					if (rs_catwc (jsps->temp, c) != RS_OK)
+						return JSON_MEMORY;
+				}
+				else
+				{
+					jsps->string_length_limit_reached = 1;
+				}
 			}
 			jsps->state = 6;	// parse string. escaped unicode 4
 			break;
@@ -3132,10 +3173,17 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'D':
 		case L'E':
 		case L'F':
-			if (jsps->temp->length < JSON_MAX_STRING_LENGTH)
+			if (!jsps->string_length_limit_reached)
 			{
-				if (rs_catwc (jsps->temp, c) != RS_OK)
-					return JSON_MEMORY;
+				if (jsps->temp->length < JSON_MAX_STRING_LENGTH)
+				{
+					if (rs_catwc (jsps->temp, c) != RS_OK)
+						return JSON_MEMORY;
+				}
+				else
+				{
+					jsps->string_length_limit_reached = 1;
+				}
 			}
 			jsps->state = 1;	// parse string
 			break;
