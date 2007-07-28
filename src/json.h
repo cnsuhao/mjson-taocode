@@ -70,6 +70,8 @@ struct json_value
 	struct json_value *child_end;	//!< The pointer pointing to the last child node in the document tree
 };
 
+typedef struct json_value json_t;
+
 /**
 The structure holding all information needed to resume parsing
 **/
@@ -77,8 +79,8 @@ struct json_parsing_info
 {
 	unsigned int state;	//!< the state where the parsing was left on the last parser run
 	int string_length_limit_reached;	//!< flag informing if the string limit length defined by JSON_MAX_STRING_LENGTH was reached
-	struct json_value *cursor;	//!< pointers to nodes belonging to the document tree which aid the document parsing
-	struct json_value *temp;	//!< temporary node which the parser uses to build up the parsed document
+	json_t *cursor;		//!< pointers to nodes belonging to the document tree which aid the document parsing
+	json_t *temp;		//!< temporary node which the parser uses to build up the parsed document
 };
 
 
@@ -117,7 +119,7 @@ Creates a new JSON value and defines it's type
 @param type the value's type
 @return a pointer to the newly created value structure
 **/
-struct json_value *json_new_value (enum json_value_type type);
+json_t *json_new_value (enum json_value_type type);
 
 
 /**
@@ -125,7 +127,7 @@ Creates a new JSON string and defines it's text
 @param text the value's text
 @return a pointer to the newly created JSON string value
 **/
-struct json_value *json_new_string (wchar_t * text);
+json_t *json_new_string (wchar_t * text);
 
 
 /**
@@ -133,49 +135,49 @@ Creates a new JSON number and defines it's text
 @param text the value's number
 @return a pointer to the newly created JSON string value
 **/
-struct json_value *json_new_number (wchar_t * text);
+json_t *json_new_number (wchar_t * text);
 
 
 /**
 Creates a new JSON object
 @return a pointer to the newly created JSON object value
 **/
-struct json_value *json_new_object (void);
+json_t *json_new_object (void);
 
 
 /**
 Creates a new JSON array
 @return a pointer to the newly created JSON array value
 **/
-struct json_value *json_new_array (void);
+json_t *json_new_array (void);
 
 
 /**
 Creates a new JSON null
 @return a pointer to the newly created JSON null value
 **/
-struct json_value *json_new_null (void);
+json_t *json_new_null (void);
 
 
 /**
 Creates a new JSON true
 @return a pointer to the newly created JSON true value
 **/
-struct json_value *json_new_true (void);
+json_t *json_new_true (void);
 
 
 /**
 Creates a new JSON false
 @return a pointer to the newly created JSON false value
 **/
-struct json_value *json_new_false (void);
+json_t *json_new_false (void);
 
 
 /**
 Frees the memory appointed to the value fed as the parameter, as well as all the child nodes
 @param value the root node of the tree being freed
 **/
-void json_free_value (struct json_value **value);
+void json_free_value (json_t ** value);
 
 
 /**
@@ -184,7 +186,7 @@ Inserts a child node into a parent node, as well as performs some document tree 
 @param child the node being added as a child to parent
 @return the error code corresponding to the operation result
 **/
-enum json_error json_insert_child (struct json_value *parent, struct json_value *child);
+enum json_error json_insert_child (json_t * parent, json_t * child);
 
 
 /**
@@ -194,7 +196,7 @@ Inserts a label:value pair into a parent node, as well as performs some document
 @param value the value in the label:value pair
 @return the error code corresponding to the operation result
 **/
-enum json_error json_insert_pair_into_object (struct json_value *parent, wchar_t * text_label, struct json_value *value);
+enum json_error json_insert_pair_into_object (json_t * parent, wchar_t * text_label, json_t * value);
 
 
 /**
@@ -202,14 +204,14 @@ Renders the tree structure where root is the tree's root, which can also be a tr
 @param root the tree's root node (may be a child node)
 @param level the indentation level (number of tabs)
 **/
-void json_render_tree_indented (struct json_value *root, int level);
+void json_render_tree_indented (json_t * root, int level);
 
 
 /**
 Renders the tree structure where root is the tree's root, which can also be a tree branch.
 @param root the tree's root node (may be a child node)
 **/
-void json_render_tree (struct json_value *root);
+void json_render_tree (json_t * root);
 
 
 /**
@@ -218,7 +220,7 @@ Produces a JSON markup text document from a document tree
 @param text a pointer to a wchar_t string that will hold the JSON document text.
 @return  a json_error code describing how the operation went
 **/
-enum json_error json_tree_to_string (struct json_value *root, wchar_t ** text);
+enum json_error json_tree_to_string (json_t * root, wchar_t ** text);
 
 
 /**
@@ -277,7 +279,7 @@ Produces a document tree from a JSON markup text string that contains a complete
 @param text a text string containing a complete JSON text document
 @return a pointer to the new document tree or NULL if some error occurred
 **/
-struct json_value *json_parse_document (wchar_t * text);
+json_t *json_parse_document (wchar_t * text);
 
 /**
 Function to perform a SAX-like parsing of any JSON document or document fragment that is passed to it
@@ -294,6 +296,6 @@ Searches through the object's children for a label holding the text text_label
 @param text_label the text label to search for through the object's child labels
 @return a pointer to the first label holding a text equal to text_label or NULL if there is no such label or if object has no children
 **/
-struct json_value *json_find_first_label (struct json_value *object, wchar_t * text_label);
+json_t *json_find_first_label (json_t * object, wchar_t * text_label);
 
 #endif

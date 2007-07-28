@@ -27,12 +27,12 @@
 #include <wchar.h>
 
 
-struct json_value *
+json_t *
 json_new_value (enum json_value_type type)
 {
-	struct json_value *new_object;
+	json_t *new_object;
 	// allocate memory to the new object
-	new_object = malloc (sizeof (struct json_value));
+	new_object = malloc (sizeof (json_t));
 	if (new_object == NULL)
 		return NULL;
 
@@ -48,14 +48,14 @@ json_new_value (enum json_value_type type)
 }
 
 
-struct json_value *
+json_t *
 json_new_string (wchar_t * text)
 {
 	assert (text != NULL);
 
-	struct json_value *new_object;
+	json_t *new_object;
 	// allocate memory to the new object
-	new_object = malloc (sizeof (struct json_value));
+	new_object = malloc (sizeof (json_t));
 	if (new_object == NULL)
 		return NULL;
 
@@ -71,16 +71,16 @@ json_new_string (wchar_t * text)
 }
 
 
-struct json_value *
+json_t *
 json_new_number (wchar_t * text)
 {
 	assert (text != NULL);
 
 	//TODO enforce number string correctness or leave it to the user?
 
-	struct json_value *new_object;
+	json_t *new_object;
 	// allocate memory to the new object
-	new_object = malloc (sizeof (struct json_value));
+	new_object = malloc (sizeof (json_t));
 	if (new_object == NULL)
 		return NULL;
 
@@ -96,35 +96,35 @@ json_new_number (wchar_t * text)
 }
 
 
-struct json_value *
+json_t *
 json_new_object (void)
 {
 	return json_new_value (JSON_OBJECT);
 }
 
 
-struct json_value *
+json_t *
 json_new_array (void)
 {
 	return json_new_value (JSON_ARRAY);
 }
 
 
-struct json_value *
+json_t *
 json_new_null (void)
 {
 	return json_new_value (JSON_NULL);
 }
 
 
-struct json_value *
+json_t *
 json_new_true (void)
 {
 	return json_new_value (JSON_TRUE);
 }
 
 
-struct json_value *
+json_t *
 json_new_false (void)
 {
 	return json_new_value (JSON_FALSE);
@@ -132,7 +132,7 @@ json_new_false (void)
 
 
 void
-json_free_value (struct json_value **value)
+json_free_value (json_t ** value)
 {
 	assert ((*value) != NULL);
 
@@ -140,7 +140,7 @@ json_free_value (struct json_value **value)
 	if ((*value)->child != NULL)
 	{
 		///fixme write function to free entire subtree recursively
-		struct json_value *i, *j;
+		json_t *i, *j;
 		i = (*value)->child_end;
 		while (i != NULL)
 		{
@@ -194,7 +194,7 @@ json_free_value (struct json_value **value)
 
 
 enum json_error
-json_insert_child (struct json_value *parent, struct json_value *child)
+json_insert_child (json_t * parent, json_t * child)
 {
 	assert (parent != NULL);	// the parent must exist
 	assert (child != NULL);	// the child must exist
@@ -221,7 +221,7 @@ json_insert_child (struct json_value *parent, struct json_value *child)
 
 
 enum json_error
-json_insert_pair_into_object (struct json_value *parent, wchar_t * text_label, struct json_value *value)
+json_insert_pair_into_object (json_t * parent, wchar_t * text_label, json_t * value)
 {
 	// verify if the parameters are valid
 	assert (parent != NULL);
@@ -235,7 +235,7 @@ json_insert_pair_into_object (struct json_value *parent, wchar_t * text_label, s
 	enum json_error error;
 
 	// create label json_value
-	struct json_value *label = json_new_string (text_label);
+	json_t *label = json_new_string (text_label);
 	if (label == NULL)
 		return JSON_MEMORY;
 
@@ -253,7 +253,7 @@ json_insert_pair_into_object (struct json_value *parent, wchar_t * text_label, s
 
 
 void
-json_render_tree_indented (struct json_value *root, int level)
+json_render_tree_indented (json_t * root, int level)
 {
 	assert (root != NULL);
 	int tab;
@@ -288,7 +288,7 @@ json_render_tree_indented (struct json_value *root, int level)
 	//iterate through children
 	if (root->child != NULL)
 	{
-		struct json_value *ita, *itb;
+		json_t *ita, *itb;
 		ita = root->child;
 		while (ita != NULL)
 		{
@@ -301,7 +301,7 @@ json_render_tree_indented (struct json_value *root, int level)
 
 
 void
-json_render_tree (struct json_value *root)
+json_render_tree (json_t * root)
 {
 	assert (root != NULL);
 	json_render_tree_indented (root, 0);
@@ -309,13 +309,13 @@ json_render_tree (struct json_value *root)
 
 
 enum json_error
-json_tree_to_string (struct json_value *root, wchar_t ** text)
+json_tree_to_string (json_t * root, wchar_t ** text)
 {
 	assert (root != NULL);
 	assert (text != NULL);
 
 
-	struct json_value *cursor = root;
+	json_t *cursor = root;
 	// set up the output string
 	rstring *output = rs_create (L"");
 	if (output == NULL)
@@ -2712,7 +2712,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 }
 
 
-struct json_value *
+json_t *
 json_parse_document (wchar_t * text)
 {
 	struct json_parsing_info jpi;
@@ -4168,8 +4168,8 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 }
 
 
-struct json_value *
-json_find_first_label (struct json_value *object, wchar_t * text_label)
+json_t *
+json_find_first_label (json_t * object, wchar_t * text_label)
 {
 	assert (object != NULL);
 	assert (text_label != NULL);
@@ -4177,7 +4177,7 @@ json_find_first_label (struct json_value *object, wchar_t * text_label)
 
 	if (object->child == NULL)
 		return NULL;
-	struct json_value *cursor = object->child;
+	json_t *cursor = object->child;
 	while (cursor != NULL)
 	{
 		if (wcscmp (cursor->text->s, text_label) == 0)
