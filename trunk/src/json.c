@@ -984,6 +984,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		goto state20;	// number: exponential part following signal
 	case 21:
 		goto state21;	// number: exponential part
+//      case 22:
+//              goto state22;
 	case 23:
 		goto state23;	// value followup
 	case 24:
@@ -995,7 +997,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 	case 27:
 		goto state27;	// true: u
 //      case 28:
-//              goto state28;   // true: e
+//              goto state28;
 	case 29:
 		goto state29;	// false: f
 	case 30:
@@ -1004,6 +1006,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		goto state31;	// false: l
 	case 32:
 		goto state32;	// false: s
+//      case 33:
+//              goto state33:
 	case 34:
 		goto state34;	// null: n
 	case 35:
@@ -1307,6 +1311,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			info->temp = json_new_string (L"");
 			if (info->temp == NULL)
 				return JSON_MEMORY;
+			info->string_length_limit_reached = 0;
 		}
 
 		// move to the next state
@@ -1327,13 +1332,19 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		switch (text[pos])
 		{
 		case L'\\':	// escaped characters
-			if (info->temp->text->length < JSON_MAX_STRING_LENGTH - 6)
+			if (!info->string_length_limit_reached)
 			{
-				if (rs_catwc (info->temp->text, L'\\') != RS_OK)
-					return JSON_MEMORY;
+				if (info->temp->text->length < JSON_MAX_STRING_LENGTH - 6)	///TODO check if it is 6 and not 5
+				{
+					if (rs_catwc (info->temp->text, L'\\') != RS_OK)
+						return JSON_MEMORY;
+				}
+				else
+				{
+//                                      info->temp->text->length = JSON_MAX_STRING_LENGTH;      // to avoid funny stuff happening
+					info->string_length_limit_reached = 1;	// string length limit was reached. drop every subsequent character.
+				}
 			}
-			else
-				info->temp->text->length = JSON_MAX_STRING_LENGTH;	// to avoid funny stuff happening
 
 			info->state = 7;	// continue string: escaped character
 			pos++;
@@ -1358,7 +1369,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 				switch (info->cursor->type)
 				{
 				case JSON_ARRAY:
-					///todo finish this
+					///TODO finish this
 					break;
 
 				case JSON_STRING:
@@ -1437,10 +1448,17 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			break;
 
 		default:
-			if (info->temp->text->length < JSON_MAX_STRING_LENGTH)
+			if (!info->string_length_limit_reached)
 			{
-				if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
-					return JSON_MEMORY;
+				if (info->temp->text->length < JSON_MAX_STRING_LENGTH)
+				{
+					if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+						return JSON_MEMORY;
+				}
+				else
+				{
+					info->string_length_limit_reached = 1;
+				}
 			}
 			info->state = 6;
 			pos++;
@@ -1464,10 +1482,17 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'n':
 		case L'r':
 		case L't':
-			if (info->temp->text->length < JSON_MAX_STRING_LENGTH - 5)
+			if (!info->string_length_limit_reached)
 			{
-				if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
-					return JSON_MEMORY;
+				if (info->temp->text->length < JSON_MAX_STRING_LENGTH - 5)
+				{
+					if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+						return JSON_MEMORY;
+				}
+				else
+				{
+					info->string_length_limit_reached = 1;
+				}
 			}
 			info->state = 6;
 			pos++;
@@ -1478,10 +1503,17 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			break;
 
 		case L'u':
-			if (info->temp->text->length < JSON_MAX_STRING_LENGTH - 4)
+			if (!info->string_length_limit_reached)
 			{
-				if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
-					return JSON_MEMORY;
+				if (info->temp->text->length < JSON_MAX_STRING_LENGTH - 4)
+				{
+					if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+						return JSON_MEMORY;
+				}
+				else
+				{
+					info->string_length_limit_reached = 1;
+				}
 			}
 			info->state = 8;
 			pos++;
@@ -1522,22 +1554,32 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'D':
 		case L'E':
 		case L'F':
-			if (info->temp->text->length < JSON_MAX_STRING_LENGTH - 3)
+			if (!info->string_length_limit_reached)
 			{
-				if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
-					return JSON_MEMORY;
+				if (info->temp->text->length < JSON_MAX_STRING_LENGTH - 3)
+				{
+					if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+						return JSON_MEMORY;
+				}
+				else
+				{
+					info->string_length_limit_reached = 1;
+				}
 			}
+
+			info->state = 9;
+			pos++;
+			if (pos > length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state9;	// continue string: escaped unicode character 2
 			break;
 
 		default:
 			return JSON_ILLEGAL_CHARACTER;
 		}
-		info->state = 9;
-		pos++;
-		if (pos > length)
-			return JSON_INCOMPLETE_DOCUMENT;
-		else
-			goto state9;	// continue string: escaped unicode character 2
+		// this part shouldn't be reached
+		return JSON_UNKNOWN_PROBLEM;
 	}
 
       state9:			// continue string: escaped unicode character 2
@@ -1566,22 +1608,31 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'D':
 		case L'E':
 		case L'F':
-			if (info->temp->text->length < JSON_MAX_STRING_LENGTH - 2)
+			if (!info->string_length_limit_reached)
 			{
-				if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
-					return JSON_MEMORY;
+				if (info->temp->text->length < JSON_MAX_STRING_LENGTH - 2)
+				{
+					if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+						return JSON_MEMORY;
+				}
+				else
+				{
+					info->string_length_limit_reached = 1;
+				}
 			}
+			info->state = 10;
+			pos++;
+			if (pos > length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state10;	// continue string: escaped unicode character 3
 			break;
 
 		default:
 			return JSON_ILLEGAL_CHARACTER;
 		}
-		info->state = 10;
-		pos++;
-		if (pos > length)
-			return JSON_INCOMPLETE_DOCUMENT;
-		else
-			goto state10;	// continue string: escaped unicode character 3
+		// this section shouldn't be reached
+		return JSON_UNKNOWN_PROBLEM;
 	}
 
       state10:			// continue string: escaped unicode character 3
@@ -1610,22 +1661,32 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'D':
 		case L'E':
 		case L'F':
-			if (info->temp->text->length < JSON_MAX_STRING_LENGTH - 1)
+			if (!info->string_length_limit_reached)
 			{
-				if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
-					return JSON_MEMORY;
+				if (info->temp->text->length < JSON_MAX_STRING_LENGTH - 1)
+				{
+					if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+						return JSON_MEMORY;
+				}
+				else
+				{
+					info->string_length_limit_reached = 1;
+				}
 			}
+			info->state = 11;
+			pos++;
+			if (pos > length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state11;	// continue string: escaped unicode character 3
 			break;
 
 		default:
 			return JSON_ILLEGAL_CHARACTER;
 		}
-		info->state = 11;
-		pos++;
-		if (pos > length)
-			return JSON_INCOMPLETE_DOCUMENT;
-		else
-			goto state11;	// continue string: escaped unicode character 3
+
+		// this section shouldn't be reached
+		return JSON_UNKNOWN_PROBLEM;
 	}
 
       state11:			// continue string: escaped unicode character 4
@@ -1654,22 +1715,31 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'D':
 		case L'E':
 		case L'F':
-			if (info->temp->text->length < JSON_MAX_STRING_LENGTH)
+			if (!info->string_length_limit_reached)
 			{
-				if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
-					return JSON_MEMORY;
+				if (info->temp->text->length < JSON_MAX_STRING_LENGTH)
+				{
+					if (rs_catwc (info->temp->text, text[pos]) != RS_OK)
+						return JSON_MEMORY;
+				}
+				else
+				{
+					info->string_length_limit_reached = 1;
+				}
 			}
+			info->state = 6;
+			pos++;
+			if (pos > length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state6;	// continue string
 			break;
 
 		default:
 			return JSON_ILLEGAL_CHARACTER;
 		}
-		info->state = 6;
-		pos++;
-		if (pos > length)
-			return JSON_INCOMPLETE_DOCUMENT;
-		else
-			goto state6;	// continue string
+		// this section shouldn't be reached
+		return JSON_UNKNOWN_PROBLEM;
 	}
 
       state12:			// string followup
@@ -2829,7 +2899,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		switch (c)
 		{
 		case L'\\':
-			if (jsps->temp->length < JSON_MAX_STRING_LENGTH - 5)
+			if (jsps->temp->length < JSON_MAX_STRING_LENGTH - 1)	// check if there is space for a two character escape sequence
 			{
 				if (rs_catwc (jsps->temp, L'\\') != RS_OK)
 				{
@@ -2838,7 +2908,10 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				}
 			}
 			else
+			{
+				//FIXME potential memory error
 				jsps->temp->length = JSON_MAX_STRING_LENGTH;	// to avoid funny stuff happening with the string's integrity
+			}
 			jsps->state = 2;	// parse string: escaped character
 			break;
 
@@ -2895,6 +2968,12 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 					///TODO does this need extra cleaning?
 					return JSON_MEMORY;
 				}
+			}
+			else
+			{
+				///todo remove freshly entered \u sequence
+				//FIXME potential memory error
+				jsps->temp->length = JSON_MAX_STRING_LENGTH;	// to avoid funny stuff happening with the string's integrity
 			}
 			jsps->state = 3;	// parse string: escaped unicode 1;
 			break;
@@ -3096,7 +3175,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			return JSON_ILLEGAL_CHARACTER;
 		}
 
-		jsps->state = 0;	// general state. everything goes.
+		jsps->state = 0;	// back to general state.
 		if (jsf->new_true != NULL)
 			jsf->new_true ();
 		return JSON_OK;
