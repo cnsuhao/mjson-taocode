@@ -107,6 +107,7 @@ The structure holding the information needed for json_saxy_parse to resume parsi
 struct json_saxy_parser_status
 {
 	unsigned int state;	//!< current parser state
+	int string_length_limit_reached;	//!< flag informing if the string limit length defined by JSON_MAX_STRING_LENGTH was reached
 	rstring *temp;		//!< temporary string which will be used to build up parsed strings between parser runs.
 };
 
