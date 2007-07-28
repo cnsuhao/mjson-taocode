@@ -2,5 +2,4 @@
 * implement decent error handling on the parsing functions
 * test the library's ability to handle Unicode characters
 * replace all the rstring training wheel wrapper stuff with wchar_t strings (use the wrapper struct only internally?)
-* implement a similar string length cap on the number string parsing
 

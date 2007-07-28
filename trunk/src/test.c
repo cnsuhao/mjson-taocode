@@ -35,23 +35,17 @@ main ()
 {
 	setlocale (LC_CTYPE, "");
 
-	wchar_t *test = L"{\"test\":123456789012345678901234567890.123456789012345678901234567890e12345678901234567890}";
+	struct json_value *root = json_new_object ();
+	json_insert_pair_into_object (root, L"first", json_new_string (L"número um"));
+	json_insert_pair_into_object (root, L"second", json_new_string (L"número dois"));
+	json_insert_pair_into_object (root, L"third", json_new_string (L"número três"));
+	json_insert_pair_into_object (root, L"fourth", json_new_string (L"número quatro"));
+
+	struct json_value *temp = json_find_first_label (root, L"thir");
+	wchar_t *test;
+
+	json_tree_to_string (temp, &test);
 	wprintf (L"%ls\n", test);
-
-	struct json_value *root = json_parse_document (test);
-
-	if (root == NULL)
-	{
-		wprintf (L"snafu\n");
-		json_free_value (&root);
-		return EXIT_FAILURE;
-	}
-	else
-	{
-		wprintf (L"style\n");
-	}
-
-	json_render_tree (root);
 
 	json_free_value (&root);
 	return EXIT_SUCCESS;
