@@ -288,4 +288,12 @@ Function to perform a SAX-like parsing of any JSON document or document fragment
 **/
 enum json_error json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_functions *jsf, wchar_t c);
 
+/**
+Searches through the object's children for a label holding the text text_label
+@param object a json_value of type JSON_OBJECT
+@param text_label the text label to search for through the object's child labels
+@return a pointer to the first label holding a text equal to text_label or NULL if there is no such label or if object has no children
+**/
+struct json_value *json_find_first_label (struct json_value *object, wchar_t * text_label);
+
 #endif

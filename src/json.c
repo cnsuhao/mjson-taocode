@@ -303,6 +303,7 @@ json_render_tree_indented (struct json_value *root, int level)
 void
 json_render_tree (struct json_value *root)
 {
+	assert (root != NULL);
 	json_render_tree_indented (root, 0);
 }
 
@@ -4164,4 +4165,24 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 	}
 
 	return JSON_UNKNOWN_PROBLEM;
+}
+
+
+struct json_value *
+json_find_first_label (struct json_value *object, wchar_t * text_label)
+{
+	assert (object != NULL);
+	assert (text_label != NULL);
+	assert (object->type == JSON_OBJECT);
+
+	if (object->child == NULL)
+		return NULL;
+	struct json_value *cursor = object->child;
+	while (cursor != NULL)
+	{
+		if (wcscmp (cursor->text->s, text_label) == 0)
+			return cursor;
+		cursor = cursor->next;
+	}
+	return NULL;
 }

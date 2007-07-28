@@ -1,4 +1,6 @@
 Version 0.5
+* added json_find_first_label(), a function that helps searching through a
+JSON_OBJECT's child labels
 * implemented a max string length limit in json_saxy_parse()
 * implemented a max string length limit in json_parse_string()
 * implemented a json_parse_string() wrapper that enables parsing a complete
