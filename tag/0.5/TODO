@@ -1,0 +1,3 @@
+* implement decent error handling on the parsing functions
+* test the library's ability to handle Unicode characters
+
