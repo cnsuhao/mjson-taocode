@@ -41,11 +41,10 @@ main ()
 	json_insert_pair_into_object (root, L"third", json_new_string (L"número três"));
 	json_insert_pair_into_object (root, L"fourth", json_new_string (L"número quatro"));
 
-	json_t *temp = json_find_first_label (root, L"third");
 	wchar_t *test;
-
-	json_tree_to_string (temp, &test);
+	json_tree_to_string (root, &test);
 	wprintf (L"%ls\n", test);
+	free(test);
 
 	json_free_value (&root);
 	return EXIT_SUCCESS;
