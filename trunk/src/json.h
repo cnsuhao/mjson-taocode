@@ -26,7 +26,7 @@
 \version v0.5
 */
 
-#include "rstring/rstring.h"	///todo remove this helper library in favour of regular c-string handling code
+#include <wchar.h>
 
 #ifndef JSON_H
 #define JSON_H
@@ -60,7 +60,7 @@ The JSON document tree node, which is a basic JSON type
 struct json_value
 {
 	enum json_value_type type;	//!< the type of node
-	rstring *text;		//!< The text stored by the node. It is used exclusively by the JSON_STRING and JSON_NUMBER node types
+	wchar_t *text;		//!< The text stored by the node. It is used exclusively by the JSON_STRING and JSON_NUMBER node types
 
 	// FIFO queue data
 	struct json_value *next;	//!< The pointer pointing to the next element in the FIFO sibling list
@@ -110,7 +110,7 @@ struct json_saxy_parser_status
 {
 	unsigned int state;	//!< current parser state
 	int string_length_limit_reached;	//!< flag informing if the string limit length defined by JSON_MAX_STRING_LENGTH was reached
-	rstring *temp;		//!< temporary string which will be used to build up parsed strings between parser runs.
+	wchar_t *temp;		//!< temporary string which will be used to build up parsed strings between parser runs.
 };
 
 

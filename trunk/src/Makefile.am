@@ -7,5 +7,3 @@ INCLUDES = -I$(top_srcdir)/src/rstring $(all_includes)
 json_LDFLAGS = $(all_libraries) 
 noinst_HEADERS = json.h
 json_SOURCES = json.c test.c
-json_LDADD = $(top_builddir)/src/rstring/librstring.a 
-SUBDIRS = rstring
