@@ -23,7 +23,7 @@
 
 \note error handling is only in a very rudimentary form.
 \author Rui Maciel	rui_maciel@users.sourceforge.net
-\version v0.5
+\version v0.6
 */
 
 #include <wchar.h>
