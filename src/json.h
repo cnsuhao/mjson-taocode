@@ -135,7 +135,7 @@ json_t *json_new_string (wchar_t * text);
 
 
 /**
-Creates a new JSON number and defines it's text
+Creates a new JSON number and defines it's text. The user is responsible for the number string's correctness
 @param text the value's number
 @return a pointer to the newly created JSON string value
 **/
