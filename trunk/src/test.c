@@ -36,7 +36,7 @@ main ()
 {
 	setlocale (LC_CTYPE, "");
 
-	wchar_t *text = L"{\"tree\":\"tree\"}";
+	wchar_t *text = L"{\"tree\":{\"a\":\"b\",\"c\":{\"d\":\"e\",\"f\":[true, false, null, \"g\"]}}}";
 
 	struct json_parsing_info info;
 	memset(&info, 0, sizeof(info));

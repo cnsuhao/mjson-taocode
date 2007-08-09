@@ -39,6 +39,7 @@ The descriptions of the json_value node type
 enum json_value_type
 { JSON_STRING = 0, JSON_NUMBER, JSON_OBJECT, JSON_ARRAY, JSON_TRUE, JSON_FALSE, JSON_NULL };
 
+
 /**
 The error messages produced by the JSON parsers
 **/
@@ -53,6 +54,7 @@ enum json_error
 	JSON_MAXIMUM_LENGTH,	//!< the parsed string reached the maximum allowed size
 	JSON_UNKNOWN_PROBLEM	//!< some random, unaccounted problem occurred
 };
+
 
 /**
 The JSON document tree node, which is a basic JSON type
@@ -70,7 +72,9 @@ struct json_value
 	struct json_value *child_end;	//!< The pointer pointing to the last child node in the document tree
 };
 
+
 typedef struct json_value json_t;
+
 
 /**
 The structure holding all information needed to resume parsing
@@ -281,6 +285,7 @@ Produces a document tree from a JSON markup text string that contains a complete
 **/
 json_t *json_parse_document (wchar_t * text);
 
+
 /**
 Function to perform a SAX-like parsing of any JSON document or document fragment that is passed to it
 @param jsps a structure holding the status information of the current parser
@@ -289,6 +294,7 @@ Function to perform a SAX-like parsing of any JSON document or document fragment
 @return a json_error code informing how the parsing went
 **/
 enum json_error json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_functions *jsf, wchar_t c);
+
 
 /**
 Searches through the object's children for a label holding the text text_label
