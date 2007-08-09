@@ -1186,7 +1186,6 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 	///todo sanitize the state numbers.
 	/*
 	   redundant states which were eliminated:
-	   state28
 	   state33
 	 */
 	// ckeck if pre-conditions are met
@@ -1225,7 +1224,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 	case 11:
 		goto state11;	// continue string: escaped unicode character 4 of 4
 	case 12:
-		goto state12;	// string followup
+		goto state12;	// value in array
 	case 13:
 		goto state13;	// pair
 	case 14:
@@ -1278,8 +1277,6 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		goto state37;	// start array
 	case 38:
 		goto state38;	// fix literal cursor position
-	case 39:
-		goto state39;	// start value in array
 
 	default:
 		return JSON_UNKNOWN_PROBLEM;	// IF THIS PART IS REACHED THEN THERE IS A BUG SOMEWHERE
@@ -1356,7 +1353,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\x0D':	// JSON insignificant white spaces
 //                      info->state = 1;
 			pos++;
-			if (pos > length)	// current string ended
+			if (pos > length)	// current string buffer ended
 			{
 				return JSON_INCOMPLETE_DOCUMENT;
 			}
@@ -1367,7 +1364,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'}':
 			info->state = 3;
 			pos++;
-			if (pos > length)	// current string ended
+			if (pos > length)	// current string buffer ended
 			{
 				return JSON_INCOMPLETE_DOCUMENT;
 			}
@@ -1393,7 +1390,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 				return JSON_ILLEGAL_CHARACTER;
 			info->state = 24;	// sibling
 			pos++;
-			if (pos > length)	// current string ended
+			if (pos > length)	// current string buffer ended
 			{
 				return JSON_INCOMPLETE_DOCUMENT;
 			}
@@ -1445,7 +1442,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		{
 			info->state = 22;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_OK;
 			else
 				goto state22;	// parse whitespaces until the end
@@ -1463,7 +1460,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			{
 				info->state = 22;
 				pos++;
-				if (pos > length)
+				if (pos > length)	// current string buffer ended
 					return JSON_OK;
 				else
 					goto state22;	// parse whitespaces until the end
@@ -1489,8 +1486,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			break;
 
 		case JSON_ARRAY:
-			info->state = 39;
-			goto state39;	// start value in array
+			info->state = 12;
+			goto state12;	// start value in array
 			break;
 
 		default:
@@ -1509,7 +1506,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		{
 			info->state = 22;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_OK;
 			else
 				goto state22;	// parse whitespaces until the end
@@ -1527,7 +1524,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
 				info->state = 22;
 				pos++;
-				if (pos > length)
+				if (pos > length)	// current string buffer ended
 					return JSON_OK;
 				else
 					goto state22;	// parse whitespaces until the end
@@ -1557,8 +1554,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			break;
 
 		case JSON_ARRAY:
-			info->state = 39;
-			goto state39;	// start value in array
+			info->state = 12;
+			goto state12;	// start value in array
 			break;
 
 		default:
@@ -1646,7 +1643,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
 			info->state = 7;	// continue string: escaped character
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 			{
 				return JSON_INCOMPLETE_DOCUMENT;
 			}
@@ -1662,7 +1659,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
 				info->state = 28;
 				pos++;
-				if (pos > length)
+				if (pos > length)	// current string buffer ended
 					return JSON_INCOMPLETE_DOCUMENT;
 				else
 					goto state28;	// label string followup
@@ -1676,12 +1673,13 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			{
 			case JSON_ARRAY:
 				info->temp = NULL;
-				info->state = 39;
+				
+				info->state = 12;
 				pos++;
-				if (pos > length)
+				if (pos > length)	// current string buffer ended
 					return JSON_INCOMPLETE_DOCUMENT;
 				else
-					goto state39;	// value in array
+					goto state12;	// value in array
 				break;
 
 			case JSON_STRING:	// parent is label in label:value pair
@@ -1700,7 +1698,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
 					info->state = 1;
 					pos++;
-					if (pos > length)
+					if (pos > length)	// current string buffer ended
 						return JSON_OK;
 					else
 						goto state1;	// start label string in object
@@ -1710,7 +1708,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 					// root node is JSON_STRING, new child node is JSON_STRING. There is no more document to parse.
 					info->state = 22;
 					pos++;
-					if (pos > length)
+					if (pos > length)	// current string buffer ended
 						return JSON_OK;
 					else
 						goto state22;	// parse whitespaces until the end
@@ -1723,7 +1721,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
 				info->state = 28;
 				pos++;
-				if (pos > length)
+				if (pos > length)	// current string buffer ended
 					return JSON_INCOMPLETE_DOCUMENT;
 				else
 					goto state28;	// label string followup
@@ -1790,7 +1788,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			}
 			info->state = 6;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state6;
@@ -1829,7 +1827,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			}
 			info->state = 6;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state6;	// continue string
@@ -1854,7 +1852,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			}
 			info->state = 8;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state8;	// continue string: escaped unicode character 1
@@ -1911,7 +1909,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
 			info->state = 9;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state9;	// continue string: escaped unicode character 2
@@ -1967,9 +1965,10 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 					info->string_length_limit_reached = 1;
 				}
 			}
+			
 			info->state = 10;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state10;	// continue string: escaped unicode character 3
@@ -2025,9 +2024,10 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 					info->string_length_limit_reached = 1;
 				}
 			}
+			
 			info->state = 11;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state11;	// continue string: escaped unicode character 3
@@ -2084,9 +2084,10 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 					info->string_length_limit_reached = 1;
 				}
 			}
+			
 			info->state = 6;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state6;	// continue string
@@ -2099,60 +2100,111 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		return JSON_UNKNOWN_PROBLEM;
 	}
 
-      state12:			// string followup
+	state12:		// value in array
 	{
 		switch (text[pos])
 		{
-		case L'\x20':
-		case L'\x09':
-		case L'\x0A':
-		case L'\x0D':	// JSON insignificant white spaces
-			info->state = 12;
-			pos++;
-			if (pos > length)
-				return JSON_INCOMPLETE_DOCUMENT;
-			else
-				goto state12;
-			break;
+			case L'\x20':
+			case L'\x09':
+			case L'\x0A':
+				case L'\x0D':	// JOSN insignificant white spaces
+					info->state = 12;
+					pos++;
+					if (pos > length)	// current string buffer ended
+					{
+						return JSON_INCOMPLETE_DOCUMENT;
+					}
+					else
+						goto state12;
+					break;
 
-		case L'}':	// end object
-			info->state = 3;
-			pos++;
-			if (pos > length)
-				return JSON_INCOMPLETE_DOCUMENT;
-			else
-				goto state3;	// end object
-			break;
+			case L'{':
+				info->state = 2;
+				pos++;
+				if (pos > length)	// current string buffer ended
+					return JSON_INCOMPLETE_DOCUMENT;
+				else
+					goto state2;	// start object
 
-		case L']':	// end array
-			info->state = 4;
-			pos++;
-			if (pos > length)
-				return JSON_INCOMPLETE_DOCUMENT;
-			else
-				goto state4;	// end array
-			break;
+			case L'[':
+				info->state = 37;
+				pos++;
+				if (pos > length)	// current string buffer ended
+					return JSON_INCOMPLETE_DOCUMENT;
+				else
+					goto state37;	// start array
 
-		case L':':
-			info->state = 13;
-			pos++;
-			if (pos > length)
-				return JSON_INCOMPLETE_DOCUMENT;
-			else
-				goto state13;	// pair
-			break;
+			case L']':
+				info->state = 4;
+				pos++;
+				if (pos > length)	// current string buffer ended
+					return JSON_INCOMPLETE_DOCUMENT;
+				else
+					goto state4;	// end array
 
-		case L',':
-			info->state = 24;
-			pos++;
-			if (pos > length)
-				return JSON_INCOMPLETE_DOCUMENT;
-			else
-				goto state24;	// sibling
-			break;
+			case L'\"':
+				info->state = 5;
+				pos++;
+				if (pos > length)	// current string buffer ended
+					return JSON_INCOMPLETE_DOCUMENT;
+				else
+					goto state5;	// start string
 
-		default:
-			return JSON_ILLEGAL_CHARACTER;
+			case L't':
+				info->state = 25;	// true: t
+				pos++;
+				if (pos > length)	// current buffer string ended
+				{
+					return JSON_INCOMPLETE_DOCUMENT;
+				}
+				else
+					goto state25;	// true: t
+				break;
+				break;
+
+			case L'f':
+				info->state = 29;	// false: f
+				pos++;
+				if (pos > length)	// current buffer string ended
+				{
+					return JSON_INCOMPLETE_DOCUMENT;
+				}
+				else
+					goto state29;	// start value in object
+				break;
+				break;
+
+			case L'n':
+				info->state = 34;	// null: n
+				pos++;
+				if (pos > length)	// current buffer string ended
+				{
+					return JSON_INCOMPLETE_DOCUMENT;
+				}
+				else
+					goto state34;	// null: n
+				break;
+
+			case L',':
+				if (info->cursor == NULL)
+					return JSON_ILLEGAL_CHARACTER;
+				if (info->cursor->child_end == NULL)
+					return JSON_ILLEGAL_CHARACTER;
+			
+				info->state = 24;	// sibling
+				pos++;
+				if (pos > length)	// current string buffer ended
+				{
+					return JSON_INCOMPLETE_DOCUMENT;
+				}
+				else
+					goto state24;	// sibling
+				break;
+
+
+			default:
+				return JSON_ILLEGAL_CHARACTER;
+				break;
 		}
 	}
 
@@ -2178,16 +2230,16 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\x0D':	// JSON insignificant white spaces
 			info->state = 13;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
-				goto state13;	// restart loop
+				goto state13;	// pair
 			break;
 
 		case L'{':
 			info->state = 2;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state2;	// start object
@@ -2196,7 +2248,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'[':
 			info->state = 37;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state37;
@@ -2206,7 +2258,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\"':
 			info->state = 5;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state5;	// start string
@@ -2229,7 +2281,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L't':
 			info->state = 25;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state25;	// true
@@ -2238,7 +2290,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'f':
 			info->state = 29;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state29;	// false
@@ -2247,7 +2299,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'n':
 			info->state = 34;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state34;	// null
@@ -2276,7 +2328,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
 			info->state = 15;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state15;	// number: leading zero
@@ -2301,7 +2353,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
 			info->state = 16;	// number: decimal part
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state16;	// number: decimal part
@@ -2327,7 +2379,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
 			info->state = 17;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state17;	// number: start fractional part
@@ -2379,9 +2431,10 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 					info->string_length_limit_reached = 1;	// string length limit was reached. drop every subsequent character.
 				}
 			}
+			
 			info->state = 16;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state16;	// number: decimal part
@@ -2395,9 +2448,10 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			}
 			info->temp->text = tmp;
 			wcsncat (info->temp->text, L".", 1);
+			
 			info->state = 17;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state17;	// number: start fractional part
@@ -2412,7 +2466,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			wcsncat (info->temp->text, &text[pos], 1);
 			info->state = 19;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state19;	// start exponential
@@ -2464,9 +2518,10 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 					info->string_length_limit_reached = 1;	// string length limit was reached. drop every subsequent character.
 				}
 			}
+			
 			info->state = 18;	// decimal part
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state18;	// number: fractional part
@@ -2512,7 +2567,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
 			info->state = 18;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state18;	// number: fractional part
@@ -2529,7 +2584,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
 			info->state = 19;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state19;	// number: start exponential part
@@ -2567,7 +2622,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
 			info->state = 20;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state20;	// number: exponential part following signal
@@ -2592,7 +2647,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
 			info->state = 21;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state21;	// number: exponential part
@@ -2627,7 +2682,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
 			info->state = 21;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state21;	// number: exponential part
@@ -2671,7 +2726,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			}
 			info->state = 21;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state21;	// exponential part
@@ -2703,7 +2758,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\x0A':
 		case L'\x0D':	// JSON insignificant white spaces
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_OK;
 			else
 				goto state22;
@@ -2725,7 +2780,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\x0D':	// JSON insignificant white spaces
 			info->state = 23;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state23;	// number followup
@@ -2734,7 +2789,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L',':
 			info->state = 24;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state24;	// sibling
@@ -2743,7 +2798,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'}':
 			info->state = 3;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state3;	// end array
@@ -2752,7 +2807,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L']':
 			info->state = 4;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state4;	// end array
@@ -2781,7 +2836,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\x0D':	// JSON insignificant white spaces
 			info->state = 24;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state24;
@@ -2790,7 +2845,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'{':
 			info->state = 2;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state2;	// start object
@@ -2799,7 +2854,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'[':
 			info->state = 37;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state37;	// start array
@@ -2808,7 +2863,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\"':
 			info->state = 5;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state5;	// start string
@@ -2832,7 +2887,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L't':
 			info->state = 25;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state25;	// true
@@ -2841,7 +2896,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'f':
 			info->state = 29;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state29;	// false
@@ -2850,7 +2905,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'n':
 			info->state = 34;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state34;	// true
@@ -2867,7 +2922,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			return JSON_ILLEGAL_CHARACTER;
 		info->state = 26;
 		pos++;
-		if (pos > length)
+		if (pos > length)	// current string buffer ended
 			return JSON_INCOMPLETE_DOCUMENT;
 		else
 			goto state26;	// true: r
@@ -2880,7 +2935,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			return JSON_ILLEGAL_CHARACTER;
 		info->state = 27;
 		pos++;
-		if (pos > length)
+		if (pos > length)	// current string buffer ended
 			return JSON_INCOMPLETE_DOCUMENT;
 		else
 			goto state27;	// true: u
@@ -2894,7 +2949,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		info->temp = json_new_true ();
 		info->state = 38;
 		pos++;
-		if (pos > length)
+		if (pos > length)	// current string buffer ended
 			return JSON_INCOMPLETE_DOCUMENT;
 		else
 			goto state38;	// fix literal cursor position
@@ -2911,7 +2966,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\x0D':	// JSON insignificant white spaces
 			info->state = 28;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state28;	// value in label:value pair
@@ -2920,7 +2975,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L':':
 			info->state = 13;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_INCOMPLETE_DOCUMENT;
 			else
 				goto state13;	// pair
@@ -2938,7 +2993,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			return JSON_ILLEGAL_CHARACTER;
 		info->state = 30;
 		pos++;
-		if (pos > length)
+		if (pos > length)	// current string buffer ended
 			return JSON_INCOMPLETE_DOCUMENT;
 		else
 			goto state30;	// false: a
@@ -2949,9 +3004,10 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 	{
 		if (text[pos] != L'l')
 			return JSON_ILLEGAL_CHARACTER;
+		
 		info->state = 31;
 		pos++;
-		if (pos > length)
+		if (pos > length)	// current string buffer ended
 			return JSON_INCOMPLETE_DOCUMENT;
 		else
 			goto state31;	// false: l
@@ -2962,9 +3018,10 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 	{
 		if (text[pos] != L's')
 			return JSON_ILLEGAL_CHARACTER;
+		
 		info->state = 32;
 		pos++;
-		if (pos > length)
+		if (pos > length)	// current string buffer ended
 			return JSON_INCOMPLETE_DOCUMENT;
 		else
 			goto state32;	// false: s
@@ -2978,7 +3035,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		// fix the loose strings
 		info->state = 38;
 		pos++;
-		if (pos > length)
+		if (pos > length)	// current string buffer ended
 			return JSON_INCOMPLETE_DOCUMENT;
 		else
 			goto state38;	// fix literal cursor position
@@ -2988,9 +3045,10 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 	{
 		if (text[pos] != L'u')
 			return JSON_ILLEGAL_CHARACTER;
+		
 		info->state = 35;
 		pos++;
-		if (pos > length)
+		if (pos > length)	// current string buffer ended
 			return JSON_INCOMPLETE_DOCUMENT;
 		else
 			goto state35;	// null: u
@@ -3001,9 +3059,10 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 	{
 		if (text[pos] != L'l')
 			return JSON_ILLEGAL_CHARACTER;
+		
 		info->state = 36;
 		pos++;
-		if (pos > length)
+		if (pos > length)	// current string buffer ended
 			return JSON_INCOMPLETE_DOCUMENT;
 		else
 			goto state36;	// null: l 1 of 2
@@ -3018,7 +3077,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		// move onto the next one
 		info->state = 38;
 		pos++;
-		if (pos > length)
+		if (pos > length)	// current string buffer ended
 			return JSON_INCOMPLETE_DOCUMENT;
 		else
 			goto state38;	// fix literal cursor position
@@ -3047,8 +3106,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		info->cursor = info->temp;
 		info->temp = NULL;
 
-		info->state = 39;	// start value in array
-		goto state39;	// start value in array
+		info->state = 12;	// start value in array
+		goto state12;	// start value in array
 	}
 
       state38:			// fix literal cursor position
@@ -3061,7 +3120,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
 			info->state = 22;
 			pos++;
-			if (pos > length)
+			if (pos > length)	// current string buffer ended
 				return JSON_OK;
 			else
 				goto state22;	// parse whitespaces until the end
@@ -3079,7 +3138,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			{
 				info->state = 22;
 				pos++;
-				if (pos > length)
+				if (pos > length)	// current string buffer ended
 					return JSON_OK;
 				else
 					goto state22;	// parse whitespaces until the end
@@ -3100,113 +3159,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		info->state = 23;
 		goto state23;	// value followup
 	}
-
-      state39:			// value in array
-	{
-		switch (text[pos])
-		{
-		case L'\x20':
-		case L'\x09':
-		case L'\x0A':
-		case L'\x0D':	// JOSN insignificant white spaces
-			info->state = 39;
-			pos++;
-			if (pos > length)	// current string ended
-			{
-				return JSON_INCOMPLETE_DOCUMENT;
-			}
-			else
-				goto state39;
-			break;
-
-		case L'{':
-			info->state = 2;
-			pos++;
-			if (pos > length)
-				return JSON_INCOMPLETE_DOCUMENT;
-			else
-				goto state2;	// start object
-
-		case L'[':
-			info->state = 37;
-			pos++;
-			if (pos > length)
-				return JSON_INCOMPLETE_DOCUMENT;
-			else
-				goto state37;	// start array
-
-		case L']':
-			info->state = 4;
-			pos++;
-			if (pos > length)
-				return JSON_INCOMPLETE_DOCUMENT;
-			else
-				goto state4;	// end array
-
-		case L'\"':
-			info->state = 5;
-			pos++;
-			if (pos > length)
-				return JSON_INCOMPLETE_DOCUMENT;
-			else
-				goto state5;	// start string
-
-		case L't':
-			info->state = 25;	// true: t
-			pos++;
-			if (pos > length)	// current buffer string ended
-			{
-				return JSON_INCOMPLETE_DOCUMENT;
-			}
-			else
-				goto state25;	// true: t
-			break;
-			break;
-
-		case L'f':
-			info->state = 29;	// false: f
-			pos++;
-			if (pos > length)	// current buffer string ended
-			{
-				return JSON_INCOMPLETE_DOCUMENT;
-			}
-			else
-				goto state29;	// start value in object
-			break;
-			break;
-
-		case L'n':
-			info->state = 34;	// null: n
-			pos++;
-			if (pos > length)	// current buffer string ended
-			{
-				return JSON_INCOMPLETE_DOCUMENT;
-			}
-			else
-				goto state34;	// null: n
-			break;
-
-		case L',':
-			if (info->cursor == NULL)
-				return JSON_ILLEGAL_CHARACTER;
-			if (info->cursor->child_end == NULL)
-				return JSON_ILLEGAL_CHARACTER;
-			info->state = 24;	// sibling
-			pos++;
-			if (pos > length)	// current string ended
-			{
-				return JSON_INCOMPLETE_DOCUMENT;
-			}
-			else
-				goto state24;	// sibling
-			break;
-
-
-		default:
-			return JSON_ILLEGAL_CHARACTER;
-			break;
-		}
-	}
+	
 	// if the execution reached this part then we have a problem
 	return JSON_UNKNOWN_PROBLEM;
 }
