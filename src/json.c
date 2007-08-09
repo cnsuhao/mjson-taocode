@@ -90,7 +90,6 @@ json_new_number (wchar_t * text)
 		return NULL;
 
 	// initialize members
-//      new_object->text = rs_create (text);
 	new_object->text = (wchar_t *) calloc (wcslen (text) + 1, sizeof (wchar_t));
 	if (new_object == NULL)
 		return NULL;
@@ -196,10 +195,9 @@ json_free_value (json_t ** value)
 	//finally, freeing the memory allocated for this value
 	if ((*value)->text != NULL)
 	{
-//              rs_destroy (&(*value)->text);   // the string
 		free ((*value)->text);
 	}
-	free ((*value));	// the json value
+	free (*value);		// the json value
 	(*value) = NULL;
 }
 
@@ -325,11 +323,9 @@ json_tree_to_string (json_t * root, wchar_t ** text)
 	assert (root != NULL);
 	assert (text != NULL);
 
-
 	json_t *cursor = root;
 	// set up the output string
 	wchar_t *output = NULL;
-
 	wchar_t *temp = NULL;	// temp pointer to use with all the realloc() calls
 	size_t length = 0;	// temp length variable to help define the realloc() new size
 
@@ -527,7 +523,7 @@ json_tree_to_string (json_t * root, wchar_t ** text)
 		if (cursor->child)
 		{
 			cursor = cursor->child;
-			goto state1;
+			goto state1;	// open value
 		}
 		else
 		{
@@ -625,7 +621,7 @@ json_white_space (const wchar_t c)
 
 
 wchar_t *
-json_strip_white_spaces (wchar_t * text)	///fixit this function should not strip white spaces from JSON strings
+json_strip_white_spaces (wchar_t * text)
 {
 	assert (text != NULL);
 	// declaring the variables
@@ -721,11 +717,12 @@ wchar_t *
 json_format_string (wchar_t * text)
 {
 	size_t pos = 0;
-	unsigned int indentation = 0, i;
+	unsigned int indentation = 0;	// the current indentation level
+	unsigned int i;		// loop iterator variable
 
 	wchar_t *output = NULL;
 	wchar_t *temp = NULL;
-	size_t length = 0;
+	size_t length = 0;	// temp variable to calculate the new realloc size
 
 	while (pos < wcslen (text))
 	{
@@ -773,6 +770,7 @@ json_format_string (wchar_t * text)
 				wcsncat (output, L"\t", 1);
 			}
 			wcsncat (output, L"}", 1);
+
 			pos++;
 			break;
 
@@ -786,6 +784,7 @@ json_format_string (wchar_t * text)
 			}
 			output = temp;
 			wcsncat (output, L": ", 2);
+
 			pos++;
 			break;
 
@@ -803,6 +802,7 @@ json_format_string (wchar_t * text)
 			{
 				wcsncat (output, L"\t", 1);
 			}
+
 			pos++;
 			break;
 
@@ -818,8 +818,8 @@ json_format_string (wchar_t * text)
 			wcsncat (output, &text[pos], 1);
 
 			pos++;
-			char loop = 1;	// inner string loop trigger
-			while (loop)	// parse the inner part of the string
+			char loop = 1;	// inner string loop trigger is enabled
+			while (loop)	// parse the inner part of the string   ///todo rethink this loop
 			{
 				if (text[pos] == L'\\')	// escaped sequence
 				{
@@ -832,6 +832,7 @@ json_format_string (wchar_t * text)
 					}
 					output = temp;
 					wcsncat (output, L"\\", 1);
+
 					pos++;
 					if (text[pos] == L'\"')	// don't consider a \" escaped sequence as an end of string
 					{
@@ -841,6 +842,7 @@ json_format_string (wchar_t * text)
 						}
 						output = temp;
 						wcsncat (output, L"\"", 1);
+
 						pos++;
 					}
 				}
@@ -856,6 +858,7 @@ json_format_string (wchar_t * text)
 				}
 				output = temp;
 				wcsncat (output, &text[pos], 1);
+
 				pos++;
 				if (pos >= wcslen (text))
 				{
@@ -874,6 +877,7 @@ json_format_string (wchar_t * text)
 			}
 			output = temp;
 			wcsncat (output, &text[pos], 1);
+
 			pos++;
 			break;
 		}
@@ -886,6 +890,10 @@ json_format_string (wchar_t * text)
 wchar_t *
 json_escape (wchar_t * text)
 {
+	// check if pre-conditions are met
+	assert (text != NULL);
+
+	// defining the temporary variables
 	wchar_t *output = NULL;
 	wchar_t *temp = NULL;
 	size_t length = 0;
@@ -1022,6 +1030,9 @@ json_escape (wchar_t * text)
 wchar_t *
 json_escape_to_ascii (wchar_t * text)
 {
+	//check if pre-conditions are met
+	assert (text != NULL);
+	// temporary variables
 	wchar_t *output = NULL;
 	wchar_t *temp = NULL;
 	size_t length = 0;
@@ -1175,12 +1186,13 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 	///todo sanitize the state numbers.
 	/*
 	   redundant states which were eliminated:
-	   state22
 	   state28
 	   state33
 	 */
-
+	// ckeck if pre-conditions are met
 	assert (info != NULL);
+	assert (text != NULL);
+
 	// setup the initial values
 	size_t pos = 0;
 	size_t length = wcslen (text);
@@ -1232,8 +1244,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		goto state20;	// number: exponential part following signal
 	case 21:
 		goto state21;	// number: exponential part
-//      case 22:
-//              goto state22;
+	case 22:
+		goto state22;	// parse whitespaces until the end
 	case 23:
 		goto state23;	// value followup
 	case 24:
@@ -1285,14 +1297,13 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\x09':
 		case L'\x0A':
 		case L'\x0D':	// JSON insignificant white spaces
-			info->state = 0;
 			pos++;
 			if (pos > length)	// current string ended
 			{
 				return JSON_INCOMPLETE_DOCUMENT;
 			}
 			else
-				goto state0;
+				goto state0;	// general purpose state: starting point
 			break;
 
 		case L'{':
@@ -1343,7 +1354,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\x09':
 		case L'\x0A':
 		case L'\x0D':	// JSON insignificant white spaces
-			info->state = 1;
+//                      info->state = 1;
 			pos++;
 			if (pos > length)	// current string ended
 			{
@@ -1432,24 +1443,36 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			return JSON_ILLEGAL_CHARACTER;
 		if (info->cursor->parent == NULL)
 		{
-			return JSON_OK;
+			info->state = 22;
+			pos++;
+			if (pos > length)
+				return JSON_OK;
+			else
+				goto state22;	// parse whitespaces until the end
+
 		}
 
-		// move on down
+		// point cursor to the parent node
 		info->cursor = info->cursor->parent;
 
 		// check if we descended into the root node
-		switch (info->cursor->type)
+		switch (info->cursor->type)	/// todo rethink these switch statements
 		{
 		case JSON_STRING:
 			if (info->cursor->parent == NULL)
-				return JSON_OK;
+			{
+				info->state = 22;
+				pos++;
+				if (pos > length)
+					return JSON_OK;
+				else
+					goto state22;	// parse whitespaces until the end
+			}
 			else
-				info->cursor = info->cursor->parent;	///todo test this
+				info->cursor = info->cursor->parent;
 			break;
 
 		case JSON_ARRAY:
-			///todo finish this step
 			break;
 
 		default:
@@ -1471,7 +1494,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			break;
 
 		default:
-			return JSON_BAD_TREE_STRUCTURE;	///TODO is this the right return code?
+			return JSON_BAD_TREE_STRUCTURE;
 		}
 	}
 
@@ -1484,7 +1507,12 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			return JSON_ILLEGAL_CHARACTER;
 		if (info->cursor->parent == NULL)
 		{
-			return JSON_OK;
+			info->state = 22;
+			pos++;
+			if (pos > length)
+				return JSON_OK;
+			else
+				goto state22;	// parse whitespaces until the end
 		}
 
 		// move on down
@@ -1495,7 +1523,15 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		{
 		case JSON_STRING:
 			if (info->cursor->parent == NULL)
-				return JSON_OK;
+			{
+
+				info->state = 22;
+				pos++;
+				if (pos > length)
+					return JSON_OK;
+				else
+					goto state22;	// parse whitespaces until the end
+			}
 			else
 				info->cursor = info->cursor->parent;	// point the cursor to a parent node which supports children
 			break;
@@ -1535,7 +1571,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		// verify tree integrity
 		if (info->cursor != NULL)
 		{
-			switch (info->cursor->type)
+			switch (info->cursor->type)	// JSON_STRING must be a child of JSON_OBJECT, JSON_ARRAY or JSON_STRING
 			{
 			case JSON_OBJECT:
 			case JSON_ARRAY:
@@ -1548,7 +1584,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 				}
 				break;
 
-			default:	// a string can't be a child of a value type other than JSON_OBJECT, JSON_ARRAY or JSON_STRING
+			default:	// ...otherwise, the tree is malformed
 				return JSON_ILLEGAL_CHARACTER;
 			}
 		}
@@ -1559,7 +1595,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			info->temp = json_new_string (L"");
 			if (info->temp == NULL)
 				return JSON_MEMORY;
-			info->string_length_limit_reached = 0;
+			info->string_length_limit_reached = 0;	// reset the max string length checker
 		}
 
 		// move to the next state
@@ -1570,9 +1606,19 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
       state6:			// continue string
 	{
 		// check if there is a valid temporary function
-		if (info->temp == NULL)
+		if (info->temp == NULL)	// something weird just happened. The temp variable is expected to be non-null
 		{
-			///TODO does this need some memory cleanup?
+			// cleanup
+			if (info->cursor)
+			{
+				// clean the current tree structure
+				while (info->cursor->parent)	// point info->cursor to the root node
+				{
+					info->cursor = info->cursor->parent;
+				}
+				// clean
+				json_free_value (&info->cursor);
+			}
 			return JSON_UNKNOWN_PROBLEM;
 		}
 
@@ -1582,7 +1628,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\\':	// escaped characters
 			if (!info->string_length_limit_reached)
 			{
-				if (wcslen (info->temp->text) < JSON_MAX_STRING_LENGTH - 6)	///TODO check if it is 6 and not 5
+				if (wcslen (info->temp->text) < JSON_MAX_STRING_LENGTH - 6)	// 6 = \u[:xdigit:]{4}
 				{
 					wchar_t *tmp;
 					if ((tmp = realloc (info->temp->text, sizeof (wchar_t) * (wcslen (info->temp->text) + 2))) == NULL)
@@ -1609,7 +1655,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			break;
 
 		case L'"':	// closing string
-			if (info->cursor == NULL)
+			if (info->cursor == NULL)	// this string will be the root node
 			{
 				info->cursor = info->temp;
 				info->temp = NULL;
@@ -1617,11 +1663,10 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			else
 			{
 				json_insert_child (info->cursor, info->temp);
-				// return the cursor to a sane place
+				// make sure the cursor points to a valid parent node
 				switch (info->cursor->type)
 				{
-				case JSON_ARRAY:
-					///TODO finish this
+				case JSON_ARRAY:	// cursor already points to a valid root node.
 					break;
 
 				case JSON_STRING:
@@ -1642,8 +1687,13 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 					}
 					else
 					{
-						/// TODO clean up info structure
-						return JSON_OK;
+						// root node is JSON_STRING, new child node is JSON_STRING. There is no more document to parse.
+						info->state = 22;
+						pos++;
+						if (pos > length)
+							return JSON_OK;
+						else
+							goto state22;	// parse whitespaces until the end
 					}
 					break;
 
@@ -2610,6 +2660,27 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		}
 	}
 
+      state22:			// parse whitespaces until the end
+	{
+		switch (text[pos])
+		{
+		case L'\x0':	///todo check if this is the way to go
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// JSON insignificant white spaces
+			pos++;
+			if (pos > length)
+				return JSON_OK;
+			else
+				goto state22;
+			break;
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+			break;
+		}
+	}
+
 
       state23:			// value followup
 	{
@@ -2923,7 +2994,13 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		{
 			info->cursor = info->temp;
 			info->temp = NULL;
-			return JSON_OK;
+
+			info->state = 22;
+			pos++;
+			if (pos > length)
+				return JSON_OK;
+			else
+				goto state22;	// parse whitespaces until the end
 		}
 		else
 		{
@@ -2936,7 +3013,12 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case JSON_STRING:
 			if (info->cursor->parent == NULL)
 			{
-				return JSON_OK;
+				info->state = 22;
+				pos++;
+				if (pos > length)
+					return JSON_OK;
+				else
+					goto state22;	// parse whitespaces until the end
 			}
 
 			info->cursor = info->cursor->parent;

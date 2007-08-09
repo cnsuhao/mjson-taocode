@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include <locale.h>
+#include <string.h>
 
 #include "json.h"
 
@@ -35,17 +36,23 @@ main ()
 {
 	setlocale (LC_CTYPE, "");
 
-	json_t *root = json_new_object ();
-	json_insert_pair_into_object (root, L"first", json_new_string (L"número um"));
-	json_insert_pair_into_object (root, L"second", json_new_string (L"número dois"));
-	json_insert_pair_into_object (root, L"third", json_new_string (L"número três"));
-	json_insert_pair_into_object (root, L"fourth", json_new_string (L"número quatro"));
+	wchar_t *text = L"[true, false, \"label\":\"value\"]";
 
-	wchar_t *test;
-	json_tree_to_string (root, &test);
-	wprintf (L"%ls\n", test);
-	free(test);
+	struct json_parsing_info info;
+	memset(&info, 0, sizeof(info));
+	json_t *root;
+	wprintf(L"%ls\n",text);
+	root = json_parse_document(text);
 
-	json_free_value (&root);
+	if(root)
+	{
+		json_tree_to_string(root, &text);
+		wprintf(L"%ls\n",text);
+		json_free_value (&root);
+	}
+	else
+	{
+		wprintf(L"error\n");
+	}
 	return EXIT_SUCCESS;
 }
