@@ -1,3 +1,6 @@
+Versino 0.6
+* fixed a bunch of bugs
+
 Version 0.5
 * removed every rstring dependency
 * added typedef struct json_value json_t, to simplify things a bit

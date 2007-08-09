@@ -1198,12 +1198,12 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 	size_t length = wcslen (text);
 
 	// go to the state that we should be to resume parsing
-	switch (info->state)
+	switch (info->state)	// list of valid states in json_parse_string()
 	{
 	case 0:
 		goto state0;	// general purpose state: starting point
 	case 1:
-		goto state1;	// start value in object
+		goto state1;	// start label string in object
 	case 2:
 		goto state2;	// start object
 	case 3:
@@ -1256,8 +1256,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		goto state26;	// true: r
 	case 27:
 		goto state27;	// true: u
-//      case 28:
-//              goto state28;
+	case 28:
+		goto state28;	// label followup
 	case 29:
 		goto state29;	// false: f
 	case 30:
@@ -1346,7 +1346,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
 	}
 
-      state1:			// start value in object
+      state1:			// start label string in object
 	{
 		switch (text[pos])
 		{
@@ -1361,7 +1361,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 				return JSON_INCOMPLETE_DOCUMENT;
 			}
 			else
-				goto state1;	// start value in object
+				goto state1;	// start label string in object
 			break;
 
 		case L'}':
@@ -1378,7 +1378,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\"':
 			info->state = 5;
 			pos++;
-			if (pos > length)	// current string ended
+			if (pos > length)	// current string buffer ended
 			{
 				return JSON_INCOMPLETE_DOCUMENT;
 			}
@@ -1431,7 +1431,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		info->temp = NULL;
 
 		info->state = 1;
-		goto state1;	// start value in object
+		goto state1;	// start label string in object
 	}
 
       state3:			// end object
@@ -1485,7 +1485,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		{
 		case JSON_OBJECT:
 			info->state = 1;
-			goto state1;	// start value in object
+			goto state1;	// start label string in object
 			break;
 
 		case JSON_ARRAY:
@@ -1553,7 +1553,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		{
 		case JSON_OBJECT:
 			info->state = 1;
-			goto state1;	// start value in object
+			goto state1;	// start label string in object
 			break;
 
 		case JSON_ARRAY:
@@ -1659,59 +1659,79 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			{
 				info->cursor = info->temp;
 				info->temp = NULL;
+
+				info->state = 28;
+				pos++;
+				if (pos > length)
+					return JSON_INCOMPLETE_DOCUMENT;
+				else
+					goto state28;	// label string followup
 			}
-			else
+
+			// append the child string to the parent node
+			json_insert_child (info->cursor, info->temp);
+
+			// make sure the cursor points to a valid parent node
+			switch (info->cursor->type)
 			{
-				json_insert_child (info->cursor, info->temp);
-				// make sure the cursor points to a valid parent node
-				switch (info->cursor->type)
-				{
-				case JSON_ARRAY:	// cursor already points to a valid root node.
-					break;
-
-				case JSON_STRING:
-					if (info->cursor->parent != NULL)
-					{
-						// todo perform tree sanity check
-						switch (info->cursor->parent->type)
-						{
-						case JSON_OBJECT:
-						case JSON_ARRAY:
-							break;
-						default:
-							return JSON_BAD_TREE_STRUCTURE;
-							break;
-						}
-						// set cursor to continue parsing
-						info->cursor = info->cursor->parent;
-					}
-					else
-					{
-						// root node is JSON_STRING, new child node is JSON_STRING. There is no more document to parse.
-						info->state = 22;
-						pos++;
-						if (pos > length)
-							return JSON_OK;
-						else
-							goto state22;	// parse whitespaces until the end
-					}
-					break;
-
-				case JSON_OBJECT:
-					info->cursor = info->temp;	// point cursor at inserted child label
-					break;
-
-				default:
-					return JSON_BAD_TREE_STRUCTURE;
-				}
+			case JSON_ARRAY:
 				info->temp = NULL;
+				info->state = 39;
+				pos++;
+				if (pos > length)
+					return JSON_INCOMPLETE_DOCUMENT;
+				else
+					goto state39;	// value in array
+				break;
+
+			case JSON_STRING:	// parent is label in label:value pair
+				info->temp = NULL;
+				if (info->cursor->parent != NULL)
+				{
+					// todo perform tree sanity check
+					if (info->cursor->parent->type != JSON_OBJECT)
+					{
+						///TODO perform cleanup
+						return JSON_BAD_TREE_STRUCTURE;
+					}
+
+					// set cursor to continue parsing
+					info->cursor = info->cursor->parent;
+
+					info->state = 1;
+					pos++;
+					if (pos > length)
+						return JSON_OK;
+					else
+						goto state1;	// start label string in object
+				}
+				else
+				{
+					// root node is JSON_STRING, new child node is JSON_STRING. There is no more document to parse.
+					info->state = 22;
+					pos++;
+					if (pos > length)
+						return JSON_OK;
+					else
+						goto state22;	// parse whitespaces until the end
+				}
+				break;
+
+			case JSON_OBJECT:
+				info->cursor = info->temp;	// point cursor at inserted child label
+				info->temp = NULL;
+
+				info->state = 28;
+				pos++;
+				if (pos > length)
+					return JSON_INCOMPLETE_DOCUMENT;
+				else
+					goto state28;	// label string followup
+				break;
+
+			default:
+				return JSON_BAD_TREE_STRUCTURE;
 			}
-			info->state = 12;
-			pos++;
-			if (pos > length)
-				return JSON_INCOMPLETE_DOCUMENT;
-			else
-				goto state12;	// goto string followup
 			break;
 
 		case L'\x0000':	// range of characters that must be escaped according to 2.5 of http://www.ietf.org/rfc/rfc4627.txt
@@ -1746,6 +1766,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		case L'\x001d':
 		case L'\x001e':
 		case L'\x001f':
+			///TODO perform exit cleanup
 			return JSON_ILLEGAL_CHARACTER;
 			break;
 
@@ -2137,6 +2158,18 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
       state13:			// pair
 	{
+		// perform pre-condition sanity checks
+		if (info->cursor == NULL)
+		{
+			///TODO perform cleanup
+			return JSON_ILLEGAL_CHARACTER;
+		}
+		if (info->cursor->type != JSON_STRING)
+		{
+			return JSON_BAD_TREE_STRUCTURE;	//todo make sure this is the right return value
+		}
+
+		// go on
 		switch (text[pos])
 		{
 		case L'\x20':
@@ -2868,6 +2901,37 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
 	}
 
+      state28:			// label string followup
+	{
+		switch (text[pos])
+		{
+		case L'\x20':
+		case L'\x09':
+		case L'\x0A':
+		case L'\x0D':	// JSON insignificant white spaces
+			info->state = 28;
+			pos++;
+			if (pos > length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state28;	// value in label:value pair
+			break;
+
+		case L':':
+			info->state = 13;
+			pos++;
+			if (pos > length)
+				return JSON_INCOMPLETE_DOCUMENT;
+			else
+				goto state13;	// pair
+			break;
+
+		default:
+			return JSON_ILLEGAL_CHARACTER;
+			break;
+		}
+	}
+
       state29:			// false: f
 	{
 		if (text[pos] != L'a')
@@ -3037,7 +3101,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 		goto state23;	// value followup
 	}
 
-      state39:			// start value in array
+      state39:			// value in array
 	{
 		switch (text[pos])
 		{
@@ -3095,7 +3159,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 				return JSON_INCOMPLETE_DOCUMENT;
 			}
 			else
-				goto state25;	// start value in object
+				goto state25;	// true: t
 			break;
 			break;
 
@@ -3143,7 +3207,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 			break;
 		}
 	}
-	return 1;		///fixit return a relevant JSON error code
+	// if the execution reached this part then we have a problem
+	return JSON_UNKNOWN_PROBLEM;
 }
 
 

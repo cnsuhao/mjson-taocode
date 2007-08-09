@@ -36,7 +36,7 @@ main ()
 {
 	setlocale (LC_CTYPE, "");
 
-	wchar_t *text = L"[true, false, \"label\":\"value\"]";
+	wchar_t *text = L"{\"tree\":\"tree\"}";
 
 	struct json_parsing_info info;
 	memset(&info, 0, sizeof(info));
@@ -46,6 +46,7 @@ main ()
 
 	if(root)
 	{
+		json_render_tree(root);
 		json_tree_to_string(root, &text);
 		wprintf(L"%ls\n",text);
 		json_free_value (&root);
