@@ -2510,7 +2510,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 					info->cursor = info->cursor->parent;
 				json_free_value (&info->cursor);
 			}
-			return JSON_BAD_TREE_STRUCTURE;	//todo make sure this is the right return value
+			return JSON_BAD_TREE_STRUCTURE;
 		}
 
 		// go on
@@ -4060,7 +4060,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				jsps->temp = NULL;
 			}
 			else
-				return JSON_UNKNOWN_PROBLEM;	///TODO find out what is the best error return code for this situation
+				return JSON_UNKNOWN_PROBLEM;
 			break;
 
 		default:
@@ -4136,7 +4136,6 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			break;
 
 		default:
-			///todo cleanup?
 			return JSON_ILLEGAL_CHARACTER;
 			break;
 		}
@@ -4541,7 +4540,6 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			break;
 
 		default:
-			//TODO cleanup?
 			return JSON_ILLEGAL_CHARACTER;
 			break;
 		}
@@ -4583,7 +4581,6 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			break;
 
 		default:
-			//TODO cleanup?
 			return JSON_ILLEGAL_CHARACTER;
 			break;
 		}
@@ -4708,7 +4705,6 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 
 
 		default:
-			//TODO cleanup?
 			return JSON_ILLEGAL_CHARACTER;
 			break;
 		}
@@ -4762,7 +4758,6 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			break;
 
 		default:
-			//TODO cleanup?
 			return JSON_ILLEGAL_CHARACTER;
 			break;
 		}
@@ -4873,7 +4868,6 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			break;
 
 		default:
-			//TODO cleanup?
 			return JSON_ILLEGAL_CHARACTER;
 			break;
 		}
@@ -4914,7 +4908,6 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			break;
 
 		default:
-			//TODO cleanup?
 			return JSON_ILLEGAL_CHARACTER;
 			break;
 		}
@@ -5090,7 +5083,6 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			break;
 
 		default:
-			//TODO cleanup?
 			return JSON_ILLEGAL_CHARACTER;
 			break;
 		}
