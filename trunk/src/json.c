@@ -81,8 +81,6 @@ json_new_number (wchar_t * text)
 {
 	assert (text != NULL);
 
-	//TODO enforce number string correctness or leave it to the user?
-
 	json_t *new_object;
 	// allocate memory to the new object
 	new_object = malloc (sizeof (json_t));
@@ -208,9 +206,45 @@ json_insert_child (json_t * parent, json_t * child)
 	assert (parent != NULL);	// the parent must exist
 	assert (child != NULL);	// the child must exist
 	assert (parent != child);	// parent and child must not be the same. if they are, it will enter an infinite loop
-	assert ((parent->type == JSON_OBJECT) || (parent->type == JSON_ARRAY) || (parent->type == JSON_STRING));	// must be a valid parent type
-	///todo implement a way to enforce object->text->value sequence
-	assert (!(parent->type == JSON_OBJECT && child->type == JSON_OBJECT));
+
+	// enforce tree structure correctness
+	switch (parent->type)
+	{
+	case JSON_STRING:
+		if (child->child)	// the string value in a label:value pair must not have childs
+			return JSON_BAD_TREE_STRUCTURE;
+		break;
+
+	case JSON_OBJECT:
+		if (child->type != JSON_STRING)	// an JSON_OBJECT must only accept JSON_STRING child nodes
+			return JSON_BAD_TREE_STRUCTURE;
+		break;
+
+	case JSON_ARRAY:
+		switch (child->type)
+		{
+		case JSON_STRING:
+		case JSON_TRUE:
+		case JSON_FALSE:
+		case JSON_NULL:
+		case JSON_NUMBER:
+			if (child->child)
+				return JSON_BAD_TREE_STRUCTURE;
+			break;
+
+		case JSON_OBJECT:
+			break;
+
+		case JSON_ARRAY:
+			break;
+		default:
+			return JSON_BAD_TREE_STRUCTURE;
+		}
+		break;
+
+	default:
+		return JSON_BAD_TREE_STRUCTURE;
+	}
 
 	child->parent = parent;
 	if (parent->child)
