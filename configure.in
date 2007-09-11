@@ -1,11 +1,30 @@
-AC_INIT(configure.in)
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
 
-AM_CONFIG_HEADER(config.h)
+AC_PREREQ(2.61)
+AC_INIT(json, 0.6)
 AM_INIT_AUTOMAKE(json, 0.6)
-AC_PROG_RANLIB
+AC_CONFIG_SRCDIR([src/test.c])
+AC_CONFIG_HEADER([config.h])
 
-AC_LANG_C
+# Checks for programs.
 AC_PROG_CC
-AM_PROG_LIBTOOL
 
-AC_OUTPUT(Makefile src/Makefile)
+# Checks for libraries.
+
+# Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS([locale.h memory.h stdlib.h string.h wchar.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_HEADER_STDBOOL
+AC_TYPE_SIZE_T
+
+# Checks for library functions.
+AC_FUNC_MALLOC
+AC_FUNC_REALLOC
+AC_CHECK_FUNCS([memset setlocale])
+
+AC_CONFIG_FILES([Makefile src/Makefile])
+AC_OUTPUT
