@@ -163,13 +163,16 @@ json_free_value (json_t ** value)
 		(*value)->previous->next = (*value)->next;
 		(*value)->next->previous = (*value)->previous;
 	}
-	if ((*value)->previous)
+	else
 	{
-		(*value)->previous->next = NULL;
-	}
-	if ((*value)->next)
-	{
-		(*value)->next->previous = NULL;
+		if ((*value)->previous)
+		{
+			(*value)->previous->next = NULL;
+		}
+		if ((*value)->next)
+		{
+			(*value)->next->previous = NULL;
+		}
 	}
 
 	//fixing parent node connections
