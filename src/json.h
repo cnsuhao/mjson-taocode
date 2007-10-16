@@ -273,9 +273,10 @@ wchar_t *json_escape_to_ascii (wchar_t * text);
 Produces a document tree from a JSON markup text string
 @param info the information necessary to resume parsing any incomplete document
 @param text a text string containing information described by the JSON language, partial or complete.
+@param n the number of characters that form text
 @return a code describing how the operation ended up
 **/
-enum json_error json_parse_string (struct json_parsing_info *info, wchar_t * text);
+enum json_error json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n);
 
 
 /**

@@ -1218,7 +1218,7 @@ json_escape_to_ascii (wchar_t * text)
 
 
 enum json_error
-json_parse_string (struct json_parsing_info *info, wchar_t * text)
+json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 {
 	///todo sanitize the state numbers.
 	/*
@@ -1231,7 +1231,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text)
 
 	// setup the initial values
 	size_t pos = 0;
-	size_t length = wcslen (text);
+	size_t length = n;
 
 	// go to the state that we should be to resume parsing
 	switch (info->state)	// list of valid states in json_parse_string()
@@ -3804,7 +3804,7 @@ json_parse_document (wchar_t * text)
 	jpi.temp = NULL;
 	jpi.state = 0;
 
-	enum json_error error = json_parse_string (&jpi, text);
+	enum json_error error = json_parse_string (&jpi, text, wcslen (text));
 	if (error != JSON_OK)
 	{
 		///TODO check if jpi.temp is freed from within json_parse_string();

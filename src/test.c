@@ -31,29 +31,52 @@
 
 #include "json.h"
 
+#define BUFFER 80
 int
 main ()
 {
+	// set the variables
 	setlocale (LC_CTYPE, "");
+	wchar_t buffer[BUFFER];
+	FILE *file;
 
-	wchar_t *text = L"{\"tree\":{\"a\":\"b\",\"c\":{\"d\":\"e\",\"f\":[true, false, null, \"g\"]}}}";
+	struct json_parsing_info jpi;
+	jpi.cursor = NULL;
+	jpi.temp = NULL;
+	jpi.state = 0;
+	enum json_error error = JSON_OK;
 
-	struct json_parsing_info info;
-	memset(&info, 0, sizeof(info));
-	json_t *root;
-	wprintf(L"%ls\n",text);
-	root = json_parse_document(text);
-
-	if(root)
+	// open the file
+	file = fopen("documents/test6.json", "r");
+	if(file == NULL)
 	{
-		json_render_tree(root);
-		json_tree_to_string(root, &text);
-		wprintf(L"%ls\n",text);
-		json_free_value (&root);
+		printf("error opening file\n");
+		return 1;
 	}
-	else
+	fwide(file,1);
+
+	// parse the file
+	while( (fgetws(buffer,BUFFER, file) != NULL) && ((error == JSON_OK) || error == JSON_INCOMPLETE_DOCUMENT) )
 	{
-		wprintf(L"error\n");
+		printf("%ls\n",buffer);
+		error = json_parse_string (&jpi, buffer, wcslen(buffer));
+		switch (error)
+		{
+			case JSON_INCOMPLETE_DOCUMENT:
+				printf("incomplete\t");
+			case JSON_OK:
+				break;
+
+			default:
+				printf("some error\n");
+				return;
+				break;
+		}
+		printf("%ls",buffer);
 	}
+	fclose(file);
+
+	// render the tree
+	json_render_tree(jpi.cursor);
 	return EXIT_SUCCESS;
 }
