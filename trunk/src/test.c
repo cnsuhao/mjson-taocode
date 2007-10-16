@@ -47,36 +47,36 @@ main ()
 	enum json_error error = JSON_OK;
 
 	// open the file
-	file = fopen("documents/test6.json", "r");
-	if(file == NULL)
+	file = fopen ("documents/test6.json", "r");
+	if (file == NULL)
 	{
-		printf("error opening file\n");
+		printf ("error opening file\n");
 		return 1;
 	}
-	fwide(file,1);
+	fwide (file, 1);
 
 	// parse the file
-	while( (fgetws(buffer,BUFFER, file) != NULL) && ((error == JSON_OK) || error == JSON_INCOMPLETE_DOCUMENT) )
+	while ((fgetws (buffer, BUFFER, file) != NULL) && ((error == JSON_OK) || error == JSON_INCOMPLETE_DOCUMENT))
 	{
-		printf("%ls\n",buffer);
-		error = json_parse_string (&jpi, buffer, wcslen(buffer));
+		printf ("%ls\n", buffer);
+		error = json_parse_string (&jpi, buffer, wcslen (buffer));
 		switch (error)
 		{
-			case JSON_INCOMPLETE_DOCUMENT:
-				printf("incomplete\t");
-			case JSON_OK:
-				break;
+		case JSON_INCOMPLETE_DOCUMENT:
+			printf ("incomplete\t");
+		case JSON_OK:
+			break;
 
-			default:
-				printf("some error\n");
-				return;
-				break;
+		default:
+			printf ("some error\n");
+			return;
+			break;
 		}
-		printf("%ls",buffer);
+		printf ("%ls", buffer);
 	}
-	fclose(file);
+	fclose (file);
 
 	// render the tree
-	json_render_tree(jpi.cursor);
+	json_render_tree (jpi.cursor);
 	return EXIT_SUCCESS;
 }

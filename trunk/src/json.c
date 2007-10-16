@@ -298,62 +298,6 @@ json_insert_pair_into_object (json_t * parent, wchar_t * text_label, json_t * va
 }
 
 
-void
-json_render_tree_indented (json_t * root, int level)
-{
-	assert (root != NULL);
-	int tab;
-	for (tab = 0; tab < level; tab++)
-	{
-		wprintf (L"> ");
-	}
-	switch (root->type)
-	{
-	case JSON_STRING:
-		wprintf (L"STRING: %ls\n", root->text);
-		break;
-	case JSON_NUMBER:
-		wprintf (L"NUMBER: %ls\n", root->text);
-		break;
-	case JSON_OBJECT:
-		wprintf (L"OBJECT: \n");
-		break;
-	case JSON_ARRAY:
-		wprintf (L"ARRAY: \n");
-		break;
-	case JSON_TRUE:
-		wprintf (L"TRUE:\n");
-		break;
-	case JSON_FALSE:
-		wprintf (L"FALSE:\n");
-		break;
-	case JSON_NULL:
-		wprintf (L"NULL:\n");
-		break;
-	}
-	//iterate through children
-	if (root->child != NULL)
-	{
-		json_t *ita, *itb;
-		ita = root->child;
-		while (ita != NULL)
-		{
-			json_render_tree_indented (ita, level + 1);
-			itb = ita->next;
-			ita = itb;
-		}
-	}
-}
-
-
-void
-json_render_tree (json_t * root)
-{
-	assert (root != NULL);
-	json_render_tree_indented (root, 0);
-}
-
-
 enum json_error
 json_tree_to_string (json_t * root, wchar_t ** text)
 {

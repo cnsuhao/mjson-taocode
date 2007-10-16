@@ -204,21 +204,6 @@ enum json_error json_insert_pair_into_object (json_t * parent, wchar_t * text_la
 
 
 /**
-Renders the tree structure where root is the tree's root, which can also be a tree branch. This function is used recursively by json_render_tree()
-@param root the tree's root node (may be a child node)
-@param level the indentation level (number of tabs)
-**/
-void json_render_tree_indented (json_t * root, int level);
-
-
-/**
-Renders the tree structure where root is the tree's root, which can also be a tree branch.
-@param root the tree's root node (may be a child node)
-**/
-void json_render_tree (json_t * root);
-
-
-/**
 Produces a JSON markup text document from a document tree
 @param root The document's root node
 @param text a pointer to a wchar_t string that will hold the JSON document text.
