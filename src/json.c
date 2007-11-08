@@ -612,6 +612,7 @@ json_strip_white_spaces (wchar_t * text)
 	wchar_t *output;
 	wchar_t *temp;
 	size_t length;
+	char loop;
 
 	assert (text != NULL);
 	/* declaring the variables */
@@ -644,7 +645,7 @@ json_strip_white_spaces (wchar_t * text)
 			wcsncat (output, L"\"", 1);
 
 			pos++;
-			char loop = 1;	/* inner string loop trigger */
+			loop = 1;	/* inner string loop trigger */
 			while (loop)	/* parse the inner part of the string */
 			{
 				if (text[pos] == L'\\')	/* escaped sequence */
@@ -709,6 +710,7 @@ json_format_string (wchar_t * text)
 	size_t pos = 0;
 	unsigned int indentation = 0;	/* the current indentation level */
 	unsigned int i;		/* loop iterator variable */
+	char loop;
 
 	wchar_t *output = NULL;
 	wchar_t *temp = NULL;
@@ -808,7 +810,7 @@ json_format_string (wchar_t * text)
 			wcsncat (output, &text[pos], 1);
 
 			pos++;
-			char loop = 1;	/* inner string loop trigger is enabled */
+			loop = 1;	/* inner string loop trigger is enabled */
 			while (loop)	/* parse the inner part of the string   ///todo rethink this loop */
 			{
 				if (text[pos] == L'\\')	/* escaped sequence */
@@ -1181,6 +1183,7 @@ enum json_error
 json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 {
 	size_t pos, length;
+	wchar_t *tmp;	/* temporary string */
 	/*/todo sanitize the state numbers. */
 	/*
 	   redundant states which were eliminated:
@@ -2593,7 +2596,6 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 	{
 		info->temp = json_new_number (L"");
 		info->string_length_limit_reached = 0;
-		wchar_t *tmp;
 		/* start number */
 		switch (text[pos])
 		{
