@@ -35,15 +35,9 @@
 int
 main (void)
 {
-	// set the variables
+	/* set the variables */
 	setlocale (LC_CTYPE, "");
-	wchar_t *test = L"[1]";
 
-	json_t *root;
-	root = json_parse_document(test);
-	if(root == NULL)
-		printf("error\n");
-	else
-		printf("good\n");
+
 	return EXIT_SUCCESS;
 }
