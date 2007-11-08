@@ -45,14 +45,14 @@ The error messages produced by the JSON parsers
 **/
 enum json_error
 {
-	JSON_INCOMPLETE_DOCUMENT = 0,	//!< the parsed document didn't ended
-	JSON_OK = 1,		//!< everything went smoothly
-	JSON_INCOMPATIBLE_TYPE,	//!< the currently parsed type does not belong here
-	JSON_MEMORY,		//!< an error occurred when allocating memory
-	JSON_ILLEGAL_CHARACTER,	//!< the currently parsed character does not belong here
-	JSON_BAD_TREE_STRUCTURE,	//!< the currently parsed tree is malformed
-	JSON_MAXIMUM_LENGTH,	//!< the parsed string reached the maximum allowed size
-	JSON_UNKNOWN_PROBLEM	//!< some random, unaccounted problem occurred
+	JSON_INCOMPLETE_DOCUMENT = 0,	/*!< the parsed document didn't ended */
+	JSON_OK = 1,		/*!< everything went smoothly */
+	JSON_INCOMPATIBLE_TYPE,	/*!< the currently parsed type does not belong here */
+	JSON_MEMORY,		/*!< an error occurred when allocating memory */
+	JSON_ILLEGAL_CHARACTER,	/*!< the currently parsed character does not belong here */
+	JSON_BAD_TREE_STRUCTURE,	/*!< the currently parsed tree is malformed */
+	JSON_MAXIMUM_LENGTH,	/*!< the parsed string reached the maximum allowed size */
+	JSON_UNKNOWN_PROBLEM	/*!< some random, unaccounted problem occurred */
 };
 
 
@@ -61,15 +61,15 @@ The JSON document tree node, which is a basic JSON type
 **/
 struct json_value
 {
-	enum json_value_type type;	//!< the type of node
-	wchar_t *text;		//!< The text stored by the node. It is used exclusively by the JSON_STRING and JSON_NUMBER node types
+	enum json_value_type type;	/*!< the type of node */
+	wchar_t *text;		/*!< The text stored by the node. It is used exclusively by the JSON_STRING and JSON_NUMBER node types */
 
-	// FIFO queue data
-	struct json_value *next;	//!< The pointer pointing to the next element in the FIFO sibling list
-	struct json_value *previous;	//!< The pointer pointing to the previous element in the FIFO sibling list
-	struct json_value *parent;	//!< The pointer pointing to the parent node in the document tree
-	struct json_value *child;	//!< The pointer pointing to the first child node in the document tree
-	struct json_value *child_end;	//!< The pointer pointing to the last child node in the document tree
+	/* FIFO queue data */
+	struct json_value *next;	/*!< The pointer pointing to the next element in the FIFO sibling list */
+	struct json_value *previous;	/*!< The pointer pointing to the previous element in the FIFO sibling list */
+	struct json_value *parent;	/*!< The pointer pointing to the parent node in the document tree */
+	struct json_value *child;	/*!< The pointer pointing to the first child node in the document tree */
+	struct json_value *child_end;	/*!< The pointer pointing to the last child node in the document tree */
 };
 
 
@@ -81,10 +81,10 @@ The structure holding all information needed to resume parsing
 **/
 struct json_parsing_info
 {
-	unsigned int state;	//!< the state where the parsing was left on the last parser run
-	int string_length_limit_reached;	//!< flag informing if the string limit length defined by JSON_MAX_STRING_LENGTH was reached
-	json_t *cursor;		//!< pointers to nodes belonging to the document tree which aid the document parsing
-	json_t *temp;		//!< temporary node which the parser uses to build up the parsed document
+	unsigned int state;	/*!< the state where the parsing was left on the last parser run */
+	int string_length_limit_reached;	/*!< flag informing if the string limit length defined by JSON_MAX_STRING_LENGTH was reached */
+	json_t *cursor;		/*!< pointers to nodes belonging to the document tree which aid the document parsing */
+	json_t *temp;		/*!< temporary node which the parser uses to build up the parsed document */
 };
 
 
@@ -112,9 +112,9 @@ The structure holding the information needed for json_saxy_parse to resume parsi
 **/
 struct json_saxy_parser_status
 {
-	unsigned int state;	//!< current parser state
-	int string_length_limit_reached;	//!< flag informing if the string limit length defined by JSON_MAX_STRING_LENGTH was reached
-	wchar_t *temp;		//!< temporary string which will be used to build up parsed strings between parser runs.
+	unsigned int state;	/*!< current parser state */
+	int string_length_limit_reached;	/*!< flag informing if the string limit length defined by JSON_MAX_STRING_LENGTH was reached */
+	wchar_t *temp;		/*!< temporary string which will be used to build up parsed strings between parser runs. */
 };
 
 
