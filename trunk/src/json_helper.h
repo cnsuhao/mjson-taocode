@@ -1,14 +1,7 @@
-//
-// C++ Interface: json_helper
-//
-// Description:
-//
-//
-// Author: Rui Maciel <rui_maciel@users.sourceforge.net>, (C) 2007
-//
-// Copyright: See COPYING file that comes with this distribution
-//
-//
+/*// C++ Interface: json_helper*/
+/*// Description:*/
+/*// Author: Rui Maciel <rui_maciel@users.sourceforge.net>, (C) 2007*/
+/*// Copyright: See COPYING file that comes with this distribution*/
 
 
 #ifndef JSON_HELPER_H
@@ -32,3 +25,4 @@ void json_render_tree (json_t * root);
 
 
 #endif
+

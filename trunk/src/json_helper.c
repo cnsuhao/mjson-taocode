@@ -19,8 +19,8 @@
 void
 json_render_tree_indented (json_t * root, int level)
 {
-	assert (root != NULL);
 	int tab;
+	assert (root != NULL);
 	for (tab = 0; tab < level; tab++)
 	{
 		printf ("> ");

@@ -51,9 +51,9 @@ json_new_value (enum json_value_type type)
 json_t *
 json_new_string (wchar_t * text)
 {
+	json_t *new_object;
 	assert (text != NULL);
 
-	json_t *new_object;
 	/* allocate memory to the new object */
 	new_object = malloc (sizeof (json_t));
 	if (new_object == NULL)
@@ -79,9 +79,9 @@ json_new_string (wchar_t * text)
 json_t *
 json_new_number (wchar_t * text)
 {
+	json_t *new_object;
 	assert (text != NULL);
 
-	json_t *new_object;
 	/* allocate memory to the new object */
 	new_object = malloc (sizeof (json_t));
 	if (new_object == NULL)
@@ -269,6 +269,8 @@ json_insert_child (json_t * parent, json_t * child)
 enum json_error
 json_insert_pair_into_object (json_t * parent, wchar_t * text_label, json_t * value)
 {
+	enum json_error error;
+	json_t *label;
 	/* verify if the parameters are valid */
 	assert (parent != NULL);
 	assert (text_label != NULL);
@@ -278,10 +280,9 @@ json_insert_pair_into_object (json_t * parent, wchar_t * text_label, json_t * va
 	/* enforce type coherence */
 	assert (parent->type == JSON_OBJECT);
 
-	enum json_error error;
 
 	/* create label json_value */
-	json_t *label = json_new_string (text_label);
+	label = json_new_string (text_label);
 	if (label == NULL)
 		return JSON_MEMORY;
 
@@ -301,14 +302,17 @@ json_insert_pair_into_object (json_t * parent, wchar_t * text_label, json_t * va
 enum json_error
 json_tree_to_string (json_t * root, wchar_t ** text)
 {
+	json_t *cursor;
+	wchar_t *output, *temp;
+	size_t length;
 	assert (root != NULL);
 	assert (text != NULL);
 
-	json_t *cursor = root;
+	cursor = root;
 	/* set up the output string */
-	wchar_t *output = NULL;
-	wchar_t *temp = NULL;	/* temp pointer to use with all the realloc() calls */
-	size_t length = 0;	/* temp length variable to help define the realloc() new size */
+	output = NULL;
+	temp = NULL;		/* temp pointer to use with all the realloc() calls */
+	length = 0;		/* temp length variable to help define the realloc() new size */
 
 	/* start the convoluted fun */
       state1:			/* open value */
@@ -604,13 +608,18 @@ json_white_space (const wchar_t c)
 wchar_t *
 json_strip_white_spaces (wchar_t * text)
 {
+	size_t pos;
+	wchar_t *output;
+	wchar_t *temp;
+	size_t length;
+
 	assert (text != NULL);
 	/* declaring the variables */
-	size_t pos = 0;
+	pos = 0;
 
-	wchar_t *output = NULL;
-	wchar_t *temp = NULL;
-	size_t length = 0;
+	output = NULL;
+	temp = NULL;
+	length = 0;
 
 	while (pos < wcslen (text))
 	{
@@ -871,14 +880,17 @@ json_format_string (wchar_t * text)
 wchar_t *
 json_escape (wchar_t * text)
 {
+	wchar_t *output;
+	wchar_t *temp;
+	size_t length;
+	size_t i;
 	/* check if pre-conditions are met */
 	assert (text != NULL);
 
 	/* defining the temporary variables */
-	wchar_t *output = NULL;
-	wchar_t *temp = NULL;
-	size_t length = 0;
-	size_t i;
+	output = NULL;
+	temp = NULL;
+	length = 0;
 	for (i = 0; i < wcslen (text); i++)
 	{
 		if (text[i] == L'\\')
@@ -1011,13 +1023,17 @@ json_escape (wchar_t * text)
 wchar_t *
 json_escape_to_ascii (wchar_t * text)
 {
+	wchar_t *output;
+	wchar_t *temp;
+	size_t length;
+	size_t i;
+
 	/*check if pre-conditions are met */
 	assert (text != NULL);
 	/* temporary variables */
-	wchar_t *output = NULL;
-	wchar_t *temp = NULL;
-	size_t length = 0;
-	size_t i;
+	output = NULL;
+	temp = NULL;
+	length = 0;
 	for (i = 0; i < wcslen (text); i++)
 	{
 		if (text[i] == L'\\')
@@ -1164,6 +1180,7 @@ json_escape_to_ascii (wchar_t * text)
 enum json_error
 json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 {
+	size_t pos, length;
 	/*/todo sanitize the state numbers. */
 	/*
 	   redundant states which were eliminated:
@@ -1174,8 +1191,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 	assert (text != NULL);
 
 	/* setup the initial values */
-	size_t pos = 0;
-	size_t length = n;
+	pos = 0;
+	length = n;
 
 	/* go to the state that we should be to resume parsing */
 	switch (info->state)	/* list of valid states in json_parse_string() */
