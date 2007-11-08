@@ -49,7 +49,7 @@ json_render_tree_indented (json_t * root, int level)
 		printf ("NULL:\n");
 		break;
 	}
-	//iterate through children
+	/* iterate through children */
 	if (root->child != NULL)
 	{
 		json_t *ita, *itb;
