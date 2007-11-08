@@ -33,50 +33,17 @@
 
 #define BUFFER 80
 int
-main ()
+main (void)
 {
 	// set the variables
 	setlocale (LC_CTYPE, "");
-	wchar_t buffer[BUFFER];
-	FILE *file;
+	wchar_t *test = L"[1]";
 
-	struct json_parsing_info jpi;
-	jpi.cursor = NULL;
-	jpi.temp = NULL;
-	jpi.state = 0;
-	enum json_error error = JSON_OK;
-
-	// open the file
-	file = fopen ("documents/test6.json", "r");
-	if (file == NULL)
-	{
-		printf ("error opening file\n");
-		return 1;
-	}
-	fwide (file, 1);
-
-	// parse the file
-	while ((fgetws (buffer, BUFFER, file) != NULL) && ((error == JSON_OK) || error == JSON_INCOMPLETE_DOCUMENT))
-	{
-		printf ("%ls\n", buffer);
-		error = json_parse_string (&jpi, buffer, wcslen (buffer));
-		switch (error)
-		{
-		case JSON_INCOMPLETE_DOCUMENT:
-			printf ("incomplete\t");
-		case JSON_OK:
-			break;
-
-		default:
-			printf ("some error\n");
-			return;
-			break;
-		}
-		printf ("%ls", buffer);
-	}
-	fclose (file);
-
-	// render the tree
-	json_render_tree (jpi.cursor);
+	json_t *root;
+	root = json_parse_document(test);
+	if(root == NULL)
+		printf("error\n");
+	else
+		printf("good\n");
 	return EXIT_SUCCESS;
 }

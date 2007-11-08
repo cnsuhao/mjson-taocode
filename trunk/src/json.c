@@ -2362,6 +2362,21 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 			else
 				goto state5;	// start string
 
+			case L'-':
+			case L'0':
+			case L'1':
+			case L'2':
+			case L'3':
+			case L'4':
+			case L'5':
+			case L'6':
+			case L'7':
+			case L'8':
+			case L'9':
+				info->state = 14;
+				goto state14;	// number
+				break;
+
 		case L't':
 			info->state = 25;	// true: t
 			pos++;
