@@ -1,0 +1,41 @@
+Versino 0.6
+* fixed a bunch of bugs
+
+Version 0.5
+* removed every rstring dependency
+* added typedef struct json_value json_t, to simplify things a bit
+* added json_find_first_label(), a function that helps searching through a
+JSON_OBJECT's child labels
+* implemented a max string length limit in json_saxy_parse()
+* implemented a max string length limit in json_parse_string()
+* implemented a json_parse_string() wrapper that enables parsing a complete
+JSON document without declaring external variables: json_parse_document()
+* tweaked json_insert_pair_into_object() to transfer the job of creating a new
+json_string() type from the user to the function.
+* implemented a decent error handling method for json_tree_to_string()
+* fixed a bunch of bugs
+
+Version 0.4
+* implemented a SAX-like JSON parser: json_saxy_parse
+* renamed json_escape_string() to json_escape_to_ascii(), implemented
+json_escape() to simply escape the JSON escapable characters
+* fixed a bunch of bugs
+
+Version 0.3
+* Implemented new and improved parser which enables sequential parsing. The old clunk json_tree_to_string() is deprecated.
+* Fixed the JSON parser's inability to parse escape character sequences contained in JSON strings
+* started replacing my pet rstrings with the wchar_t strings.
+* added json_escape_string(), a function that escapes all non-printable ASCII characters
+* rstring: renamed a bunch of functions in order to be more coherent
+* fixed a bunch of bugs and memory leaks
+
+Version 0.2
+* added functions to identify and strip white spaces
+* implemented all remaining json_new_* functions
+* implemented json_format_string(), a basic formatting function
+* rstring: switched from char to wchar_t, to better support Unicode
+* switched the library to wchar_t
+
+Version 0.1
+* The starting point
+
