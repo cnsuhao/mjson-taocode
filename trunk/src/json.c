@@ -60,7 +60,6 @@ json_new_string (wchar_t * text)
 		return NULL;
 
 	/* initialize members */
-/*      new_object->text = rs_create (text);    // copies the content of text to a new wchar_t **/
 	new_object->text = (wchar_t *) calloc (wcslen (text) + 1, sizeof (wchar_t));
 	if (new_object == NULL)
 		return NULL;
@@ -1183,7 +1182,7 @@ enum json_error
 json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 {
 	size_t pos, length;
-	wchar_t *tmp;	/* temporary string */
+	wchar_t *tmp;		/* temporary string */
 	/*/todo sanitize the state numbers. */
 	/*
 	   redundant states which were eliminated:
@@ -5243,4 +5242,267 @@ json_find_first_label (json_t * object, wchar_t * text_label)
 		cursor = cursor->next;
 	}
 	return NULL;
+}
+
+
+size_t
+utf8wcslen (const wchar_t * intext)
+{
+	size_t utfsize;		/* size of wchar_t string */
+	size_t wsize;		/* size of the c string */
+
+	assert (intext != NULL);
+	/* get the size of the new wchar_t string */
+	for (wsize = 0, utfsize = 0; wsize < wcslen (intext); wsize++)
+	{
+		if (intext[wsize] <= 0x7f)	/* one byte character */
+		{
+			++utfsize;
+		}
+		else if (intext[wsize] <= 0x7FF)	/* two byte character */
+		{
+			utfsize += 2;
+		}
+		else if (intext[wsize] <= 0xFFFF)	/* three byte character */
+		{
+			utfsize += 3;
+		}
+		else if (intext[wsize] <= 0x1FFFFF)	/* four byte character */
+		{
+			utfsize += 4;
+		}
+		else if (intext[wsize] <= 0x3FFFFFF)	/* five byte character */
+		{
+			utfsize += 5;
+		}
+		else if (intext[wsize] <= 0x7FFFFFFF)	/* five byte character */
+		{
+			utfsize += 6;
+		}
+		else
+			return 0;
+	}
+	return utfsize;
+}
+
+
+char *
+wchar_to_utf8 (const wchar_t * input)
+{
+	char *output;		/* utf8 string */
+	size_t wpos;		/* input string position */
+	size_t utf8pos;		/* output string position */
+
+	assert (input != NULL);
+	/* allocate memory for the new string */
+	output = calloc (sizeof (char), utf8wcslen (input) + 1);	/* length + '\0' */
+	if (output == NULL)
+	{
+		return NULL;
+	}
+
+	/* convert the input string to the output string */
+	for (wpos = 0, utf8pos = 0; wpos < wcslen (input); wpos++)
+	{
+
+		if (input[wpos] <= 0x7F)
+		{
+			output[utf8pos] = input[wpos];
+			++utf8pos;
+		}
+		else if (input[wpos] <= 0x7FF)
+		{
+			output[utf8pos++] = (input[wpos] >> 6) | 192;
+			output[utf8pos++] = (input[wpos] & 63) | 128;
+		}
+		else if (input[wpos] <= 0xFFFF)
+		{
+			output[utf8pos++] = input[wpos] >> 12 | 224;
+			output[utf8pos++] = (input[wpos] >> 6 & 63) | 128;
+			output[utf8pos++] = (input[wpos] & 63) | 128;
+		}
+		else if (input[wpos] <= 0x1FFFFF)
+		{
+			output[utf8pos++] = input[wpos] >> 18 | 240;
+			output[utf8pos++] = (input[wpos] >> 12 & 63) | 128;
+			output[utf8pos++] = (input[wpos] >> 6 & 63) | 128;
+			output[utf8pos++] = (input[wpos] & 63) | 128;
+		}
+		else if (input[wpos] <= 0x3FFFFFF)
+		{
+			output[utf8pos++] = input[wpos] >> 24 | 248;
+			output[utf8pos++] = (input[wpos] >> 18 & 63) | 128;
+			output[utf8pos++] = (input[wpos] >> 12 & 63) | 128;
+			output[utf8pos++] = (input[wpos] >> 6 & 63) | 128;
+			output[utf8pos++] = (input[wpos] & 63) | 128;
+		}
+		else if (input[wpos] <= 0x7FFFFFFF)
+		{
+			output[utf8pos++] = input[wpos] >> 30 | 252;
+			output[utf8pos++] = (input[wpos] >> 24 & 63) | 128;
+			output[utf8pos++] = (input[wpos] >> 18 & 63) | 128;
+			output[utf8pos++] = (input[wpos] >> 12 & 63) | 128;
+			output[utf8pos++] = (input[wpos] >> 6 & 63) | 128;
+			output[utf8pos++] = (input[wpos] & 63) | 128;
+		}
+	}
+	output[utf8pos] = '\0';
+
+	return output;
+}
+
+
+size_t
+utf8cslen (const char *input)
+{
+	size_t utf8pos = 0;
+	size_t utf8_size = 0;
+	while (utf8pos < strlen ((char *) input))
+	{
+		if ((unsigned char) input[utf8pos] <= 128)
+		{
+			++utf8pos;
+		}
+		else if ((unsigned char) input[utf8pos] <= 0xDF)
+		{
+			utf8pos += 2;
+		}
+		else if ((unsigned char) input[utf8pos] <= 0xEF)
+		{
+			utf8pos += 3;
+		}
+		else if ((unsigned char) input[utf8pos] <= 0xF7)
+		{
+			utf8pos += 4;
+		}
+		else if ((unsigned char) input[utf8pos] <= 0xFB)
+		{
+			utf8pos += 5;
+		}
+		else if ((unsigned char) input[utf8pos] <= 0xFD)
+		{
+			utf8pos += 6;
+		}
+		else
+		{
+			/* just in case there is a problem */
+			return 0;
+		}
+		++utf8_size;
+	}
+	return utf8_size;
+}
+
+
+wchar_t *
+utf8_to_wchar (const char *input)
+{
+	wchar_t *output;
+	size_t utf8pos;
+	size_t wpos;
+	char i;	/* static loop counter */
+
+	assert (input != NULL);
+	output = calloc (sizeof (wchar_t), utf8cslen (input));
+	if (output == NULL)
+	{
+		return NULL;
+	}
+
+	/* starting the conversion */
+	utf8pos = 0;
+	wpos = 0;
+
+	while (utf8pos < strlen ((char *) input))
+	{
+		if ((input[utf8pos] & 0x80) == 0)
+		{
+			output[wpos] = input[utf8pos++];
+		}
+		else if ((input[utf8pos] & 0xE0) == 0xC0)
+		{
+			output[wpos] = (input[utf8pos++] & 0x1F) << 6;
+			if ((input[utf8pos] & 0xC0) == 0x80)
+			{
+				output[wpos] |= (input[utf8pos++] & 63);
+			}
+			else
+			{	/* Invalid utf8 string */
+				free (output);
+				return NULL;
+			}
+		}
+		else if ((input[utf8pos] & 0xF0) == 0xE0)
+		{
+			output[wpos] = input[utf8pos++] & 0xF << 12;
+			for (i = 1; i >= 0; i--)
+			{
+				if ((input[utf8pos] & 0xC0) == 0x80)
+				{
+					output[wpos] &= input[utf8pos++] & 0x3F << i;
+				}
+				else
+				{	/* Invalid utf8 string */
+					free (output);
+					return NULL;
+				}
+			}
+
+		}
+		else if ((input[utf8pos] & 0xF8) == 0xF0)
+		{
+			output[wpos] = input[utf8pos++] & 0xF << 12;
+			for (i = 2; i >= 0; i--)
+			{
+				if ((input[utf8pos] & 0xC0) == 0x80)
+				{
+					output[wpos] &= input[utf8pos++] & 0x3F << i;
+				}
+				else
+				{	/* Invalid utf8 string */
+					free (output);
+					return NULL;
+				}
+			}
+
+		}
+		else if ((input[utf8pos] & 0xFC) == 0xF8)
+		{
+			for (i = 3; i >= 0; i--)
+			{
+				if ((input[utf8pos] & 0xC0) == 0x80)
+				{
+					output[wpos] &= input[utf8pos++] & 0x3F << i;
+				}
+				else
+				{	/* Invalid utf8 string */
+					free (output);
+					return NULL;
+				}
+			}
+		}
+		else if ((input[utf8pos] & 0xFE) == 0xFC)
+		{
+			for (i = 4; i >= 0; i--)
+			{
+				if ((input[utf8pos] & 0xC0) == 0x80)
+				{
+					output[wpos] &= input[utf8pos++] & 0x3F << i;
+				}
+				else
+				{	/* Invalid utf8 string */
+					free (output);
+					return NULL;
+				}
+			}
+		}
+		else		/* Invalid utf8 string */
+		{
+			free (output);
+			return NULL;
+		}
+		++wpos;
+	}
+	output[wpos] = L'\0';
+	return output;
 }
