@@ -123,7 +123,7 @@ Creates a new JSON value and defines it's type
 @param type the value's type
 @return a pointer to the newly created value structure
 **/
-json_t *json_new_value (enum json_value_type type);
+json_t *json_new_value (const enum json_value_type type);
 
 
 /**
@@ -131,7 +131,7 @@ Creates a new JSON string and defines it's text
 @param text the value's text
 @return a pointer to the newly created JSON string value
 **/
-json_t *json_new_string (wchar_t * text);
+json_t *json_new_string (const wchar_t * text);
 
 
 /**
@@ -139,7 +139,7 @@ Creates a new JSON number and defines it's text. The user is responsible for the
 @param text the value's number
 @return a pointer to the newly created JSON string value
 **/
-json_t *json_new_number (wchar_t * text);
+json_t *json_new_number (const wchar_t * text);
 
 
 /**

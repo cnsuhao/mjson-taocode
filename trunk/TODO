@@ -2,5 +2,6 @@
 * test the library's ability to handle Unicode characters
 * implement info->cursor cleanup in all json_parse_string() returns
 * check whenever it is ok to accept empty strings ""
-* implement char functions
-
+* implement char functions along wchar_t functions
+* implement text redundancy reduction
+* implement wchar_t size inspection

@@ -28,7 +28,7 @@
 
 
 json_t *
-json_new_value (enum json_value_type type)
+json_new_value (const enum json_value_type type)
 {
 	json_t *new_object;
 	/* allocate memory to the new object */
@@ -49,12 +49,12 @@ json_new_value (enum json_value_type type)
 
 
 json_t *
-json_new_string (wchar_t * text)
+json_new_string (const wchar_t * text)
 {
 	json_t *new_object;
 	assert (text != NULL);
 
-	/* allocate memory to the new object */
+	/* allocate memory for the new object */
 	new_object = malloc (sizeof (json_t));
 	if (new_object == NULL)
 		return NULL;
@@ -76,12 +76,12 @@ json_new_string (wchar_t * text)
 
 
 json_t *
-json_new_number (wchar_t * text)
+json_new_number (const wchar_t * text)
 {
 	json_t *new_object;
 	assert (text != NULL);
 
-	/* allocate memory to the new object */
+	/* allocate memory for the new object */
 	new_object = malloc (sizeof (json_t));
 	if (new_object == NULL)
 		return NULL;
@@ -142,10 +142,9 @@ json_free_value (json_t ** value)
 {
 	assert ((*value) != NULL);
 
-	/* free each and every child nodes */
+	/* free each and every child node */
 	if ((*value)->child != NULL)
 	{
-		/*/fixme write function to free entire subtree recursively */
 		json_t *i, *j;
 		i = (*value)->child_end;
 		while (i != NULL)

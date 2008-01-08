@@ -1,4 +1,3 @@
-AM_CFLAGS = --pedantic -Wall -Wextra -std=c89
 bin_PROGRAMS = test
 
 # set the include path found by configure
