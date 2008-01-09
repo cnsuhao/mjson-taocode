@@ -62,7 +62,7 @@ The JSON document tree node, which is a basic JSON type
 struct json_value
 {
 	enum json_value_type type;	/*!< the type of node */
-	wchar_t *text;		/*!< The text stored by the node. It is used exclusively by the JSON_STRING and JSON_NUMBER node types */
+	char *text;		/*!< The text stored by the node. It stores UTF-8 strings and is used exclusively by the JSON_STRING and JSON_NUMBER node types */
 
 	/* FIFO queue data */
 	struct json_value *next;	/*!< The pointer pointing to the next element in the FIFO sibling list */
@@ -237,10 +237,9 @@ wchar_t *json_format_string (wchar_t * text);
 
 
 /**
-Outputs a new wchar_t string which holds the same characters as the given string but replaces all escapable characters the respective escape sequence.
-Please notice that this function produces a new string separate from wchar_t *text which, if unaccounted for, may contribute to memory leaks.
+Outputs a new UTF8 c-string which holds the same characters as the given string but replaces all non-BMP characters with the respective escape sequence.
 @param text a wchar_t text string
-@return a wchar_t string holding the same text string but with escaped characters
+@return an UTF-8 c-string holding the same text string but with escaped characters
 **/
 wchar_t *json_escape (wchar_t * text);
 
@@ -288,6 +287,41 @@ Searches through the object's children for a label holding the text text_label
 @param text_label the text label to search for through the object's child labels
 @return a pointer to the first label holding a text equal to text_label or NULL if there is no such label or if object has no children
 **/
-json_t *json_find_first_label (json_t * object, wchar_t * text_label);
+json_t *json_find_first_label (const json_t * object, const wchar_t * text_label);
+
+
+/**
+Returns the number of characters needed by a c-string to be able to contain the text stored in the given wchar_t string in UTF-8 format.
+@param input a wchar_t string
+@return the number of characters in a c-string needed to store the given text in UTF-8 format or zero, if an error occurs
+**/
+size_t utf8wcslen (const wchar_t * intext);
+
+/**
+Creates an UTF-8 string holding the text contained in a given wchar_t string
+@param input a wchar_t string
+@param n the number of characters to convert
+@return a c-string holding the same piece of text described in the UTF-8 format
+ **/
+char * wchar_to_utf8 (const wchar_t * input, const size_t n);
+
+
+/**
+Returns the number of characters contained in a given UTF-8 c-string
+@param input a c-string holding UTF-8 text
+@return the number of characters contained in that string or zero, if an error occurs
+**/
+size_t utf8cslen (const char *input);
+
+
+/**
+Creates a wchar_t string holding the text contained in a given UTF-8 c-string
+@param input a c-string storing UTF-8 text
+@param n the number of characters to convert
+@return a wchar_t string holding the same piece of text
+**/
+wchar_t * utf8_to_wchar (const char *input, const size_t n);
+
+
 
 #endif
