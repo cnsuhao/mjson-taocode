@@ -237,11 +237,6 @@ json_insert_child (json_t * parent, json_t * child)
 
 	case JSON_OBJECT: /* JSON objects may only accept JSON string objects which already have child nodes of their own */
 		if(child->type == JSON_STRING)
-		{
-			if(child->child == NULL)
-				return JSON_BAD_TREE_STRUCTURE;
-		}
-		else
 			return JSON_BAD_TREE_STRUCTURE;
 		break;
 
