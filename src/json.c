@@ -212,12 +212,36 @@ json_insert_child (json_t * parent, json_t * child)
 	switch (parent->type)
 	{
 	case JSON_STRING:
-		if (child->child)	/* the string value in a label:value pair must not have childs */
-			return JSON_BAD_TREE_STRUCTURE;
+		/* a string accepts every JSON type as a child value */
+		/* therefore, the sanity check must be performed on the child node */
+		switch(child->type)
+		{
+			case JSON_STRING:
+			case JSON_NUMBER:
+			case JSON_TRUE:
+			case JSON_FALSE:
+			case JSON_NULL:
+				if (child->child != NULL)
+					return JSON_BAD_TREE_STRUCTURE;
+				break;
+
+			case JSON_OBJECT:
+			case JSON_ARRAY:
+				break;
+
+			default:
+				return JSON_BAD_TREE_STRUCTURE;	/* this part should never be reached */
+				break;
+		}
 		break;
 
-	case JSON_OBJECT:
-		if (child->type != JSON_STRING)	/* an JSON_OBJECT must only accept JSON_STRING child nodes */
+	case JSON_OBJECT: /* JSON objects may only accept JSON string objects which already have child nodes of their own */
+		if(child->type == JSON_STRING)
+		{
+			if(child->child == NULL)
+				return JSON_BAD_TREE_STRUCTURE;
+		}
+		else
 			return JSON_BAD_TREE_STRUCTURE;
 		break;
 
