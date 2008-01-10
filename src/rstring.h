@@ -1,0 +1,124 @@
+/***************************************************************************
+ *   Copyright (C) 2007 by Rui Maciel   *
+ *   rui.maciel@gmail.com   *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU Library General Public License as       *
+ *   published by the Free Software Foundation; either version 2 of the    *
+ *   License, or (at your option) any later version.                       *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU Library General Public     *
+ *   License along with this program; if not, write to the                 *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
+
+#include <wchar.h>
+
+#ifndef RSTRING
+#define RSTRING
+
+struct rui_wstring
+{
+	wchar_t *text;		///<! wchar_t c-string
+	size_t length;		///<! current length of s
+	size_t max;		///<! maximum length of s, according to the allocated memory
+};
+
+typedef struct rui_wstring rwstring;
+
+
+enum rui_string_error_codes
+{ RS_MEMORY, RS_OK = 1 };
+
+typedef enum rui_string_error_codes rstring_code;
+
+/**
+Creates and initializes a string
+\param cstring a c-string containing the initial string text
+\return a pointer to the newly created rwstring
+**/
+rwstring *rws_create (const wchar_t * cstring);
+
+/**
+Frees the memory allocated to a rwstring
+\param rws pointer to a pointer to a rwstring
+**/
+void rws_free (rwstring ** rws);
+
+/**
+Creates a duplicate string of copied
+\param copied the string that will be duplicated
+\return a duplicate of copied, NULL if the memory allocation failed
+**/
+rwstring *rws_duplicate (rwstring * copied);
+
+/** Returns the length of a rwstring
+\param rws rwstring to measure
+\return the length of the string
+**/
+size_t rws_length (rwstring * rws);
+
+/** Copies a rwstring into another rwstring
+\param to rwstring where to copy to
+\param from rwstring where to copy from
+\return result
+**/
+int rws_copyrws (rwstring * to, const rwstring * from);
+
+/** Copies a wchar_t string into a rwstring
+\param to rwstring where to copy to
+\param from wchar_t string where to copy from
+\param length the length to be copied
+\return result
+**/
+int rws_copywcs (rwstring * to, const wchar_t * from, const size_t length);
+
+/** Concatenates a rwstring onto the end of a rwstring
+\param pre rwstring where to append to
+\param pos rtring where to append from
+\return result
+**/
+int rws_catrws (rwstring * pre, const rwstring * pos);
+
+/** Concatenates a wchar_t string onto the end of a rwstring
+\param pre rwstring where to append to
+\param pos wchar_t string where to append from
+\param length the length to be copied
+\return result
+**/
+int rws_catwcs (rwstring * pre, const wchar_t * pos, const size_t length);
+
+/** Concatenates a single wchar_t onto the end of a rwstring
+\param pre rwstring where to append to
+\param c wchar_t to be appended
+\return result
+**/
+int rws_catwc (rwstring * pre, const wchar_t c);
+
+/** Concatenates a single char onto the end of a rwstring
+\param pre rwstring where to append to
+\param c char to be appended
+\return result
+**/
+int rws_catc (rwstring * pre, const char c);
+
+/** Wraps a wchar_t string with a rwstring structure, in order to offer a higher level string handling
+\param wcs wchar_t structure which will be wrapped
+\return a rwstring structure with the s pointer pointing towards wcs
+**/
+rwstring *rws_wrap (wchar_t * wcs);
+
+/** Unwraps a rwstring from it's wchar_t string. Returns a pointer to the wchar_t string and frees everything else
+\param rws the rwstring structure to be unwrapped and freed
+\return a wchar_t string containing the text
+**/
+wchar_t *rws_unwrap (rwstring * rws);
+
+
+#endif
