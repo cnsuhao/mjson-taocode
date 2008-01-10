@@ -552,11 +552,10 @@ json_tree_to_string (json_t * root, wchar_t ** text)
 			length = 2;
 			if (output)
 				length += wcslen (output);
-			if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
+			if ((realloc (output, sizeof (wchar_t) * length)) == NULL)
 			{
 				return JSON_MEMORY;
 			}
-			output = temp;
 			wcsncat (output, L"}", 1);
 			break;
 
@@ -5452,7 +5451,7 @@ wchar_to_utf8 (const wchar_t * input, const size_t n)
 			output[utf8pos++] = (input[wpos] & 63) | 128;
 		}
 	}
-	output[utf8pos] = '\0';
+	//output[utf8pos] = '\0';
 
 	return output;
 }

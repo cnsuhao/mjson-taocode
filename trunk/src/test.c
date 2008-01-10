@@ -30,14 +30,18 @@
 #include <string.h>
 
 #include "json.h"
+#include "rstring.h"
 
-#define BUFFER 80
+
 int
 main (void)
 {
 	/* set the variables */
 	setlocale (LC_CTYPE, "");
+	rwstring *test;
+	test = rws_create(L"text");
+	printf("%ls\n",test->text);
 
-
+	rws_free(&test);
 	return EXIT_SUCCESS;
 }
