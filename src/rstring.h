@@ -32,6 +32,15 @@ struct rui_wstring
 
 typedef struct rui_wstring rwstring;
 
+struct rui_cstring
+{
+	char *text;		///<! char c-string
+	size_t length;		///<! current length of s
+	size_t max;		///<! maximum length of s, according to the allocated memory
+};
+
+typedef struct rui_cstring rcstring;
+
 
 enum rui_string_error_codes
 { RS_MEMORY, RS_OK = 1 };
@@ -120,5 +129,87 @@ rwstring *rws_wrap (wchar_t * wcs);
 **/
 wchar_t *rws_unwrap (rwstring * rws);
 
+
+/**
+Creates and initializes a string
+\param cstring a c-string containing the initial string text
+\return a pointer to the newly created rcstring
+**/
+rcstring *rcs_create (const char * cstring);
+
+/**
+Frees the memory allocated to a rcstring
+\param rcs pointer to a pointer to a rcstring
+**/
+void rcs_free (rcstring ** rcs);
+
+/**
+Creates a duplicate string of copied
+\param copied the string that will be duplicated
+\return a duplicate of copied, NULL if the memory allocation failed
+**/
+rcstring *rcs_duplicate (rcstring * copied);
+
+/** Returns the length of a rcstring
+\param rcs rcstring to measure
+\return the length of the string
+**/
+size_t rcs_length (rcstring * rcs);
+
+/** Copies a rcstring into another rcstring
+\param to rcstring where to copy to
+\param from rcstring where to copy from
+\return result
+**/
+int rcs_copyrcs (rcstring * to, const rcstring * from);
+
+/** Copies a char string into a rcstring
+\param to rcstring where to copy to
+\param from char string where to copy from
+\param length the length to be copied
+\return result
+**/
+int rcs_copycs (rcstring * to, const char * from, const size_t length);
+
+/** Concatenates a rcstring onto the end of a rcstring
+\param pre rcstring where to append to
+\param pos rtring where to append from
+\return result
+**/
+int rcs_catrcs (rcstring * pre, const rcstring * pos);
+
+/** Concatenates a char string onto the end of a rcstring
+\param pre rcstring where to append to
+\param pos char string where to append from
+\param length the length to be copied
+\return result
+**/
+int rcs_catcs (rcstring * pre, const char * pos, const size_t length);
+
+/** Concatenates a single char onto the end of a rcstring
+\param pre rcstring where to append to
+\param c char to be appended
+\return result
+**/
+int rcs_catwc (rcstring * pre, const wchar_t c);
+
+/** Concatenates a single char onto the end of a rcstring
+\param pre rcstring where to append to
+\param c char to be appended
+\return result
+**/
+int rcs_catc (rcstring * pre, const char c);
+
+/** Wraps a char string with a rcstring structure, in order to offer a higher level string handling
+\param cs char structure which will be wrapped
+\return a rcstring structure with the s pointer pointing towards cs
+**/
+rcstring *rcs_wrap (char * cs);
+
+/** Unwraps a rcstring from it's char string. Returns a pointer to the char string and frees everything else
+\param rcs the rcstring structure to be unwrapped and freed
+\return a char string containing the text
+**/
+char *rcs_unwrap (rcstring * rcs);
 
 #endif

@@ -22,6 +22,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>		// printf
+#include <string.h>
 #include <assert.h>
 #include <wchar.h>
 
@@ -245,3 +246,226 @@ rws_unwrap (rwstring * rws)
 	free (rws);
 	return out;
 }
+
+
+rcstring *
+rcs_create (const char * cstring)
+{
+	assert (cstring != NULL);
+	rcstring *rcs = malloc (sizeof (rcstring));	// allocates memory for a struct rcstring
+	if (rcs == NULL)
+		return NULL;
+
+	rcs->length = rcs->max = strlen (cstring);
+
+//      rcs->text = NULL;
+	rcs->text = calloc (rcs->length + 1, sizeof (char));
+	if (rcs->text == NULL)
+		return NULL;
+
+	strncpy (rcs->text, cstring, rcs->length);
+	return rcs;
+}
+
+
+void
+rcs_free (rcstring ** rcs)
+{
+	assert (rcs != NULL);
+	if (*rcs != NULL)
+	{
+		if ((*rcs)->text != NULL)
+		{
+			free ((*rcs)->text);
+			(*rcs)->text = NULL;
+		}
+		free (*rcs);
+		*rcs = NULL;
+	}
+
+}
+
+rcstring *
+rcs_duplicate (rcstring * copied)
+{
+	assert (copied != NULL);
+	rcstring *copy = malloc (sizeof (rcstring));
+	if (copy == NULL)
+		return NULL;
+
+	/*TODO check if this makes any sense */
+	copy->text = calloc (1, sizeof (char));
+	if (copy->text == NULL)
+		return NULL;
+	copy->text[0] = 0;
+	copy->length = copy->max = 0;
+
+	if (rcs_copyrcs (copy, copied) == RS_OK)
+		return copy;
+	else
+		return NULL;
+}
+
+
+size_t
+rcs_length (rcstring * rcs)
+{
+	assert (rcs != NULL);
+	return rcs->length;
+}
+
+
+int
+rcs_copyrcs (rcstring * to, const rcstring * from)
+{
+	assert (to != NULL);
+
+	if (from == NULL)
+		return RS_OK;	// nothing to copy
+
+	//TODO implement intelligent memory allocation
+	if (to->max < from->length)
+	{
+		to->text = realloc (to->text, (from->length + 1) * sizeof (char));
+		if (to->text == NULL)
+		{
+			return RS_MEMORY;
+		}
+
+		to->max = from->length;
+	}
+	strncpy (to->text, from->text, from->length);
+	to->text[from->length] = '\0';
+	to->length = from->length;
+	return RS_OK;
+}
+
+
+int
+rcs_copycs (rcstring * to, const char * from, const size_t length)
+{
+	assert (to != NULL);
+
+	if (from == NULL)
+		return RS_OK;
+
+	//TODO implement intelligent memory allocation
+	if (to->max < length)
+	{
+		to->text = realloc (to->text, (length + 1) * sizeof (char));
+		if (to->text == NULL)
+		{
+			return RS_MEMORY;
+		}
+
+		to->max = length;
+	}
+	strncpy (to->text, from, length);
+	to->text[length] = '\0';
+	to->length = length;
+	return RS_OK;
+}
+
+int
+rcs_catrcs (rcstring * pre, const rcstring * pos)
+{
+	assert (pre != NULL);
+	if (pos == NULL)
+		return RS_OK;
+
+	if (pre->max < pre->length + pos->length + 1)
+	{
+		pre->text = realloc (pre->text, (pre->length + pos->length + 1) * sizeof (char));
+		if (pre->text == NULL)
+		{
+			return RS_MEMORY;
+		}
+
+		pre->max = pre->length + pos->length;
+	}
+	strncpy (pre->text + pre->length, pos->text, pos->length);
+	pre->text[pre->length + pos->length] = 0;
+	pre->length = pre->length + pos->length;
+	return RS_OK;
+}
+
+int
+rcs_catcs (rcstring * pre, const char * pos, const size_t length)
+{
+	assert (pre != NULL);
+	if (pos == NULL)
+		return RS_OK;
+
+	if (pre->max < pre->length + length)
+	{
+		pre->text = realloc (pre->text, (pre->length + length + 1) * sizeof (char));
+		if (pre->text == NULL)
+		{
+			return RS_MEMORY;
+		}
+
+		pre->max = pre->length + length;
+	}
+	strncpy (pre->text + pre->length, pos, length);
+	pre->text[pre->length + length] = 0;
+	pre->length = pre->length + length;	//is this the correct value?
+	return RS_OK;
+}
+
+
+int
+rcs_catwc (rcstring * pre, const wchar_t wc)
+{
+	assert(0);
+	assert (pre != NULL);
+	/*TODO convert wc to multi-byte UTF8 string and append */
+	return RS_OK;
+}
+
+
+int
+rcs_catc (rcstring * pre, const char c)
+{
+	assert (pre != NULL);
+	if (pre->max <= pre->length)
+	{
+		pre->text = realloc (pre->text, (pre->length + 2) * sizeof (char));	// 2 = new character + null character
+		if (pre->text == NULL)
+		{
+			return RS_MEMORY;
+		}
+
+		pre->max = pre->length + 1;
+	}
+	pre->text[pre->length] = c;
+	pre->text[pre->length + 1] = '\0';
+	pre->length++;
+	return RS_OK;
+}
+
+
+rcstring *
+rcs_wrap (char * cs)
+{
+	if (cs == NULL)
+		return NULL;
+	rcstring *wrapper = malloc (sizeof (rcstring));
+	if (wrapper == NULL)
+		return NULL;
+	wrapper->max = wrapper->length = strlen (cs);
+	wrapper->text = cs;
+	return wrapper;
+}
+
+
+char *
+rcs_unwrap (rcstring * rcs)
+{
+	if (rcs == NULL)
+		return NULL;
+	char *out = rcs->text;
+
+	free (rcs);
+	return out;
+}
+

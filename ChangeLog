@@ -1,4 +1,8 @@
-Versino 0.6
+Version 0.7
+* switched the internal unicode support from UCS-4-ish (wchar_t) to UTF-8
+* fixed a bunch of bugs
+
+Version 0.6
 * fixed a bunch of bugs
 
 Version 0.5
