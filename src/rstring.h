@@ -116,7 +116,7 @@ int rws_catwcs (rwstring * pre, const wchar_t * pos, const size_t length);
 \param length the number of characters to be copied
 \return result
 **/
-int rws_catcs (rwstring * pre, const char * pos, const size_t length);
+int rws_catcs (rwstring * pre, const char *pos, const size_t length);
 
 /** Concatenates a single wchar_t onto the end of a rwstring
 \param pre rwstring where to append to
@@ -184,7 +184,7 @@ int rcs_copyrcs (rcstring * to, const rcstring * from);
 \param length the length to be copied
 \return result
 **/
-int rcs_copycs (rcstring * to, const char * from, const size_t length);
+int rcs_copycs (rcstring * to, const char *from, const size_t length);
 
 /** Concatenates a rcstring onto the end of a rcstring
 \param pre rcstring where to append to
@@ -199,7 +199,7 @@ int rcs_catrcs (rcstring * pre, const rcstring * pos);
 \param length the length to be copied
 \return result
 **/
-int rcs_catcs (rcstring * pre, const char * pos, const size_t length);
+int rcs_catcs (rcstring * pre, const char *pos, const size_t length);
 
 /** Concatenates a single char onto the end of a rcstring
 \param pre rcstring where to append to
@@ -219,7 +219,7 @@ int rcs_catc (rcstring * pre, const char c);
 \param cs char which will be wrapped
 \return a rcstring structure with the s pointer pointing towards cs
 **/
-rcstring *rcs_wrap (char * cs);
+rcstring *rcs_wrap (char *cs);
 
 /** Unwraps a rcstring container from it's char string. Returns a pointer to the char string and frees everything else
 \param rcs the rcstring structure to be unwrapped and freed

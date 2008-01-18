@@ -5,4 +5,3 @@
 * implement char functions along wchar_t functions
 * implement text redundancy reduction
 * implement wchar_t size inspection
-* fix the memory leaks

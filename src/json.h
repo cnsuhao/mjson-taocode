@@ -305,7 +305,7 @@ Creates an UTF-8 string holding the text contained in a given wchar_t string
 @param n the number of characters to convert
 @return a c-string holding the same piece of text described in the UTF-8 format
  **/
-char * wchar_to_utf8 (const wchar_t * input, const size_t n);
+char *wchar_to_utf8 (const wchar_t * input, const size_t n);
 
 
 /**
@@ -322,7 +322,7 @@ Creates a wchar_t string holding the text contained in a given UTF-8 c-string
 @param n the number of characters to convert
 @return a wchar_t string holding the same piece of text
 **/
-wchar_t * utf8_to_wchar (const char *input, const size_t n);
+wchar_t *utf8_to_wchar (const char *input, const size_t n);
 
 
 
