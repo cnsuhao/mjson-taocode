@@ -171,12 +171,12 @@ rws_catrcs (rwstring * pre, const rcstring * pos)
 {
 	size_t utf8pos;
 	wchar_t wc;
-	char i;	/* static loop counter */
+	char i;			/* static loop counter */
 
 	assert (pre != NULL);
 	assert (pos != NULL);
-	assert (strlen(pos->text) == pos->length);
-	assert (strlen(pos->text) == pos->length);
+	assert (strlen (pos->text) == pos->length);
+	assert (strlen (pos->text) == pos->length);
 
 	/* starting the conversion */
 	utf8pos = 0;
@@ -185,7 +185,7 @@ rws_catrcs (rwstring * pre, const rcstring * pos)
 	{
 		if ((pos->text[utf8pos] & 0x80) == 0)
 		{
-			if (rws_catc(pre, pos->text[utf8pos++]) != RS_OK)
+			if (rws_catc (pre, pos->text[utf8pos++]) != RS_OK)
 			{
 				return RS_MEMORY;
 			}
@@ -200,9 +200,9 @@ rws_catrcs (rwstring * pre, const rcstring * pos)
 			}
 			else
 			{	/* Invalid utf8 string */
-				return RS_UNKNOWN; 	/* malformed UTF8 string */
+				return RS_UNKNOWN;	/* malformed UTF8 string */
 			}
-			if (rws_catwc(pre, wc) != RS_OK)
+			if (rws_catwc (pre, wc) != RS_OK)
 			{
 				return RS_MEMORY;
 			}
@@ -221,7 +221,7 @@ rws_catrcs (rwstring * pre, const rcstring * pos)
 					return RS_UNKNOWN;
 				}
 			}
-			if (rws_catwc(pre, wc) != RS_OK)
+			if (rws_catwc (pre, wc) != RS_OK)
 			{
 				return RS_MEMORY;
 			}
@@ -239,10 +239,10 @@ rws_catrcs (rwstring * pre, const rcstring * pos)
 				else
 				{	/* Invalid utf8 string */
 					return RS_UNKNOWN;
-					
+
 				}
 			}
-			if (rws_catwc(pre, wc) != RS_OK)
+			if (rws_catwc (pre, wc) != RS_OK)
 			{
 				return RS_MEMORY;
 			}
@@ -259,10 +259,10 @@ rws_catrcs (rwstring * pre, const rcstring * pos)
 				else
 				{	/* Invalid utf8 string */
 					return RS_UNKNOWN;
-					
+
 				}
 			}
-			if (rws_catwc(pre, wc) != RS_OK)
+			if (rws_catwc (pre, wc) != RS_OK)
 			{
 				return RS_MEMORY;
 			}
@@ -280,7 +280,7 @@ rws_catrcs (rwstring * pre, const rcstring * pos)
 					return RS_UNKNOWN;
 				}
 			}
-			if (rws_catwc(pre, wc) != RS_OK)
+			if (rws_catwc (pre, wc) != RS_OK)
 			{
 				return RS_MEMORY;
 			}
@@ -290,7 +290,7 @@ rws_catrcs (rwstring * pre, const rcstring * pos)
 			return RS_UNKNOWN;
 		}
 	}
-	
+
 	return RS_OK;
 }
 
@@ -468,7 +468,7 @@ rcs_copyrcs (rcstring * to, const rcstring * from)
 
 
 int
-rcs_copycs (rcstring * to, const char * from, const size_t length)
+rcs_copycs (rcstring * to, const char *from, const size_t length)
 {
 	assert (to != NULL);
 
@@ -516,7 +516,7 @@ rcs_catrcs (rcstring * pre, const rcstring * pos)
 }
 
 int
-rcs_catcs (rcstring * pre, const char * pos, const size_t length)
+rcs_catcs (rcstring * pre, const char *pos, const size_t length)
 {
 	assert (pre != NULL);
 	if (pos == NULL)
@@ -547,42 +547,42 @@ rcs_catwc (rcstring * pre, const wchar_t wc)
 
 	if (wc <= 0x7F)
 	{
-		rcs_catc(pre,wc);
+		rcs_catc (pre, wc);
 	}
 	else if (wc <= 0x7FF)
 	{
-		rcs_catc(pre,(wc >> 6) | 192);
-		rcs_catc(pre,(wc & 63) | 128);
+		rcs_catc (pre, (wc >> 6) | 192);
+		rcs_catc (pre, (wc & 63) | 128);
 	}
 	else if (wc <= 0xFFFF)
 	{
-		rcs_catc(pre,wc >> 12 | 224);
-		rcs_catc(pre,(wc >> 6 & 63) | 128);
-		rcs_catc(pre,(wc & 63) | 128);
+		rcs_catc (pre, wc >> 12 | 224);
+		rcs_catc (pre, (wc >> 6 & 63) | 128);
+		rcs_catc (pre, (wc & 63) | 128);
 	}
 	else if (wc <= 0x1FFFFF)
 	{
-		rcs_catc(pre,wc >> 18 | 240);
-		rcs_catc(pre,(wc >> 12 & 63) | 128);
-		rcs_catc(pre,(wc >> 6 & 63) | 128);
-		rcs_catc(pre,(wc & 63) | 128);
+		rcs_catc (pre, wc >> 18 | 240);
+		rcs_catc (pre, (wc >> 12 & 63) | 128);
+		rcs_catc (pre, (wc >> 6 & 63) | 128);
+		rcs_catc (pre, (wc & 63) | 128);
 	}
 	else if (wc <= 0x3FFFFFF)
 	{
-		rcs_catc(pre,wc >> 24 | 248);
-		rcs_catc(pre,(wc >> 18 & 63) | 128);
-		rcs_catc(pre,(wc >> 12 & 63) | 128);
-		rcs_catc(pre,(wc >> 6 & 63) | 128);
-		rcs_catc(pre,(wc & 63) | 128);
+		rcs_catc (pre, wc >> 24 | 248);
+		rcs_catc (pre, (wc >> 18 & 63) | 128);
+		rcs_catc (pre, (wc >> 12 & 63) | 128);
+		rcs_catc (pre, (wc >> 6 & 63) | 128);
+		rcs_catc (pre, (wc & 63) | 128);
 	}
 	else if (wc <= 0x7FFFFFFF)
 	{
-		rcs_catc(pre,wc >> 30 | 252);
-		rcs_catc(pre,(wc >> 24 & 63) | 128);
-		rcs_catc(pre,(wc >> 18 & 63) | 128);
-		rcs_catc(pre,(wc >> 12 & 63) | 128);
-		rcs_catc(pre,(wc >> 6 & 63) | 128);
-		rcs_catc(pre,(wc & 63) | 128);
+		rcs_catc (pre, wc >> 30 | 252);
+		rcs_catc (pre, (wc >> 24 & 63) | 128);
+		rcs_catc (pre, (wc >> 18 & 63) | 128);
+		rcs_catc (pre, (wc >> 12 & 63) | 128);
+		rcs_catc (pre, (wc >> 6 & 63) | 128);
+		rcs_catc (pre, (wc & 63) | 128);
 	}
 	return RS_OK;
 }
@@ -610,14 +610,16 @@ rcs_catc (rcstring * pre, const char c)
 
 
 rcstring *
-rcs_wrap (char * cs)
+rcs_wrap (char *cs)
 {
-	assert(cs != NULL);
+	assert (cs != NULL);
 
-	rcstring *wrapper = malloc (sizeof (rcstring));
+	rcstring *wrapper;
+	wrapper = malloc (sizeof (rcstring));
 	if (wrapper == NULL)
 		return NULL;
-	wrapper->max = wrapper->length = strlen (cs);
+	wrapper->length = strlen (cs);
+	wrapper->max = wrapper->length;
 	wrapper->text = cs;
 	return wrapper;
 }
@@ -633,5 +635,3 @@ rcs_unwrap (rcstring * rcs)
 	free (rcs);
 	return out;
 }
-
-
