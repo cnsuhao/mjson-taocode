@@ -2942,7 +2942,6 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 	{
 		switch (text[pos])
 		{
-		case L'\x0':	/*TODO check if this is the way to go */
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
@@ -3717,7 +3716,6 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'0':
 			jsps->string_length_limit_reached = 0;
 			jsps->state = 17;	/* parse number: 0 */
-			assert (jsps->temp != NULL);	/*FIXIT just for debuging purposes */
 			if ((jsps->temp = rws_create (1)) == NULL)
 			{
 				return JSON_MEMORY;
@@ -3739,7 +3737,6 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'9':
 			jsps->string_length_limit_reached = 0;
 			jsps->state = 24;	/* parse number: decimal */
-			assert (jsps->temp != NULL);	/*FIXIT just for debuging purposes */
 			if ((jsps->temp = rws_create (1)) == NULL)
 			{
 				return JSON_MEMORY;
@@ -3748,7 +3745,6 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			{
 				return JSON_MEMORY;
 			}
-			//wcsncat (jsps->temp, &c, 1);
 			break;
 
 		case L'-':

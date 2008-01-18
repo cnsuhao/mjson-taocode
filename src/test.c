@@ -30,18 +30,52 @@
 #include <string.h>
 
 #include "json.h"
-#include "rstring.h"
+#include "json_helper.h"
 
+#define BUFFER 80
 
 int
 main (void)
 {
 	/* set the variables */
 	setlocale (LC_CTYPE, "");
-	rwstring *test;
-	test = rws_create(L"text");
-	printf("%ls\n",test->text);
+	wchar_t buffer[BUFFER];
+	FILE *file;
 
-	rws_free(&test);
+	struct json_parsing_info jpi;
+	jpi.cursor = NULL;
+	jpi.temp = NULL;
+	jpi.state = 0;
+	enum json_error error = JSON_OK;
+
+	// open the file
+	file = fopen ("documents/test6.json", "r");
+	if (file == NULL)
+	{
+		printf ("error opening file\n");
+		return 1;
+	}
+	fwide (file, 1);
+
+	// parse the file
+	while ((fgetws (buffer, BUFFER, file) != NULL) && (error == JSON_OK || error == JSON_INCOMPLETE_DOCUMENT))
+	{
+		error = json_parse_string (&jpi, buffer, wcslen (buffer) - 1);
+		switch (error)
+		{
+		case JSON_INCOMPLETE_DOCUMENT:
+		case JSON_OK:
+			break;
+
+		default:
+			printf ("some error\n");
+			return EXIT_FAILURE;
+			break;
+		}
+	}
+	fclose (file);
+
+	// cleanup
+	json_free_value (&jpi.cursor);
 	return EXIT_SUCCESS;
 }

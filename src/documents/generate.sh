@@ -1,6 +1,6 @@
 #! /bin/bash
 
-node="\"field\":{\"label\":\"value\", \"number\": 123, \"status\": true }";
+node="\"fieldfield\":{\"labellabel\":\"valuevalue\", \"number\": 123456.456789e789012, \"statusstatus\":[true, false, null] }";
 if [ -n "$1" ]
 then
 	limit=$1

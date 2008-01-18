@@ -26,7 +26,6 @@
 struct rui_wstring
 {
 	wchar_t *text;		///<! wchar_t c-string
-	size_t length;		///<! current length of s
 	size_t max;		///<! maximum length of s, according to the allocated memory
 };
 
@@ -35,7 +34,6 @@ typedef struct rui_wstring rwstring;
 struct rui_cstring
 {
 	char *text;		///<! char c-string
-	size_t length;		///<! current length of s
 	size_t max;		///<! maximum length of s, according to the allocated memory
 };
 
