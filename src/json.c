@@ -52,6 +52,7 @@ json_t *
 json_new_string (const wchar_t * text)
 {
 	json_t *new_object;
+	char *temp;
 	assert (text != NULL);
 
 	/* allocate memory for the new object */
@@ -60,10 +61,10 @@ json_new_string (const wchar_t * text)
 		return NULL;
 
 	/* initialize members */
-	new_object->text = wchar_to_utf8(text, utf8wcslen(text));
-	if (new_object->text == NULL)
+	temp  = wchar_to_utf8(text, wcslen(text));
+	if (temp == NULL)
 		return NULL;
-
+	new_object->text = rcs_wrap(temp);
 	new_object->parent = NULL;
 	new_object->child = NULL;
 	new_object->child_end = NULL;
@@ -78,6 +79,7 @@ json_t *
 json_new_number (const wchar_t * text)
 {
 	json_t *new_object;
+	char *temp;
 	assert (text != NULL);
 
 	/* allocate memory for the new object */
@@ -86,10 +88,11 @@ json_new_number (const wchar_t * text)
 		return NULL;
 
 	/* initialize members */
-	new_object->text = wchar_to_utf8(text, utf8wcslen(text));
-	if (new_object->text == NULL)
+	temp = wchar_to_utf8(text, utf8wcslen(text));
+	if (temp == NULL)
 		return NULL;
 
+	new_object->text = rcs_wrap(temp);
 	new_object->parent = NULL;
 	new_object->child = NULL;
 	new_object->child_end = NULL;
@@ -318,16 +321,14 @@ enum json_error
 json_tree_to_string (json_t * root, wchar_t ** text)
 {
 	json_t *cursor;
-	wchar_t *output, *temp;
-	size_t length;
+	rwstring *output, *temp;
 	assert (root != NULL);
 	assert (text != NULL);
 
 	cursor = root;
-	/* set up the output string */
-	output = NULL;
-	temp = NULL;		/* temp pointer to use with all the realloc() calls */
-	length = 0;		/* temp length variable to help define the realloc() new size */
+	/* set up the output and temporary rwstrings */
+	output = rws_create(1);
+	temp = rws_create(1);
 
 	/* start the convoluted fun */
       state1:			/* open value */
@@ -335,42 +336,28 @@ json_tree_to_string (json_t * root, wchar_t ** text)
 		if ((cursor->previous) && (cursor != root))	/*if cursor is children and not root than it is a followup sibling */
 		{
 			/* append comma */
-			length = 2;
-			if (output)
-				length += wcslen (output);
-			if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
+			if( rws_catwc(output, L',') != RS_OK)
 			{
-				text = NULL;
 				return JSON_MEMORY;
 			}
-			output = temp;
-			wcsncat (output, L",", 1);
 		}
 		switch (cursor->type)
 		{
 		case JSON_STRING:
 			/* append the "text"\0, which means 1 + wcslen(cursor->text) + 1 + 1 */
 			/* set the new output size */
-			length = 3;
-			if (output)
-				length += wcslen (output);
-			if (cursor->text)
-				length += utf8cslen (cursor->text);
-			/* reserve the memory */
-			if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
+			if( rws_catwc(output, L'\"') != RS_OK)
 			{
-				text = NULL;
 				return JSON_MEMORY;
 			}
-			output = temp;
-			temp = utf8_to_wchar(cursor->text, utf8cslen(cursor->text));	/* converts from UTF8 to wchar_t */
-			if(temp == NULL)
+			if( rws_catrcs(output, cursor->text) != RS_OK)
 			{
-				/*TODO add cleanup code */
+				return JSON_MEMORY;
 			}
-			wcsncat (output, L"\"", 1);
-			wcsncat (output, temp, wcslen (temp));
-			wcsncat (output, L"\"", 1);
+			if( rws_catwc(output, L'\"') != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
 
 			if (cursor->parent != NULL)
 			{
@@ -379,17 +366,15 @@ json_tree_to_string (json_t * root, wchar_t ** text)
 					/* error checking: if parent is object and cursor is string then cursor must have a single child */
 					if (cursor->child != NULL)
 					{
-						if ((temp = realloc (output, sizeof (wchar_t) * (wcslen (output) + 2))) == NULL)
+						if( rws_catwc(output, L':') != RS_OK)
 						{
-							return JSON_MEMORY;
+							return JSON_MEMORY;	
 						}
-						output = temp;
-						wcsncat (output, L":", 1);
 					}
 					else
 					{
 						/* malformed document tree: label without value in label:value pair */
-						free (output);
+						rws_free (&output);
 						text = NULL;
 						return JSON_BAD_TREE_STRUCTURE;
 					}
@@ -399,17 +384,15 @@ json_tree_to_string (json_t * root, wchar_t ** text)
 			{
 				if (cursor->child != NULL)	/* is root label in label:value pair */
 				{
-					if ((temp = realloc (output, sizeof (wchar_t) * (wcslen (output) + 2))) == NULL)
+					if(rws_catwc(output,L':') != RS_OK)
 					{
-						return JSON_MEMORY;
+						return JSON_MEMORY;	
 					}
-					output = temp;
-					wcsncat (output, L":", 1);
 				}
 				else
 				{
 					/* malformed document tree: label without value in label:value pair */
-					free (output);
+					rws_free (&output);
 					text = NULL;
 					return JSON_BAD_TREE_STRUCTURE;
 				}
@@ -419,39 +402,18 @@ json_tree_to_string (json_t * root, wchar_t ** text)
 		case JSON_NUMBER:
 			/* must not have any children */
 			/* set the new size */
-			length = 1;
-			if (output)
-				length += wcslen (output);
-			if (cursor->text)
-				length += utf8cslen (cursor->text);
-			/* reallocate */
-			if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
+			if(rws_catrcs(output, cursor->text) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
-			output = temp;
-			temp = utf8_to_wchar(cursor->text, utf8cslen(cursor->text));
-			if(temp == NULL)
-			{
-				/*TODO add cleanup code */
-			}
-			wcsncat (output, temp, wcslen (temp));
 			goto state2;	/* close value */
 			break;
 
 		case JSON_OBJECT:
-			length = 2;
-			if (output)
-			{
-				length += wcslen (output);
-			}
-
-			if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
+			if(rws_catwc(output, L'{') != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
-			output = temp;
-			wcsncat (output, L"{", 1);
 
 			if (cursor->child)
 			{
@@ -465,16 +427,11 @@ json_tree_to_string (json_t * root, wchar_t ** text)
 			break;
 
 		case JSON_ARRAY:
-			length = 2;
-			if (output)
-				length += wcslen (output);
-
-			if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
+			if(rws_catwc(output, L'[') != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
-			output = temp;
-			wcsncat (output, L"[", 1);
+
 			if (cursor->child != NULL)
 			{
 				cursor = cursor->child;
@@ -488,44 +445,28 @@ json_tree_to_string (json_t * root, wchar_t ** text)
 
 		case JSON_TRUE:
 			/* must not have any children */
-			length = 5;	/* wcslen(L"true") + 1 */
-			if (output)
-				length += wcslen (output);
-			if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
+			if(rws_catwcs(output, L"true", 4) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
-			output = temp;
-			wcsncat (output, L"true", 4);
 			goto state2;	/* close value */
 			break;
 
 		case JSON_FALSE:
 			/* must not have any children */
-			length = 6;	/* wcslen(L"false") + 1 */
-			if (output)
-				length += wcslen (output);
-			if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
+			if(rws_catwcs(output, L"false", 5) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
-			output = temp;
-			wcsncat (output, L"false", 6);
 			goto state2;	/* close value */
 			break;
 
 		case JSON_NULL:
 			/* must not have any children */
-			length = 5;
-			if (output)
-				length += wcslen (output);
-			if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
+			if( rws_catwcs(output, L"null", 4) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
-			output = temp;
-			wcsncat (output, L"null", 4);
-
 			goto state2;	/* close value */
 			break;
 
@@ -549,26 +490,17 @@ json_tree_to_string (json_t * root, wchar_t ** text)
 		switch (cursor->type)
 		{
 		case JSON_OBJECT:
-			length = 2;
-			if (output)
-				length += wcslen (output);
-			if ((realloc (output, sizeof (wchar_t) * length)) == NULL)
+			if( rws_catwc(output, L'}') != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
-			wcsncat (output, L"}", 1);
 			break;
 
 		case JSON_ARRAY:
-			length = 2;
-			if (output)
-				length += wcslen (output);
-			if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
+			if( rws_catwc(output, L']') != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
-			output = temp;
-			wcsncat (output, L"]", 1);
 			break;
 
 		case JSON_STRING:
@@ -602,14 +534,13 @@ json_tree_to_string (json_t * root, wchar_t ** text)
 
       error:
 	{
-		free (output);
-		text = NULL;
+		rws_free (&output);
 		return JSON_UNKNOWN_PROBLEM;
 	}
 
       end:
 	{
-		*text = output;
+		*text = output->text;
 		return JSON_OK;
 	}
 }
@@ -1206,10 +1137,9 @@ json_escape_to_ascii (wchar_t * text)
 
 
 enum json_error
-json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
+json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length)
 {
-	size_t pos, length;
-	char *tmp;		/* temporary string */
+	size_t pos;
 	/*/todo sanitize the state numbers. */
 	/*
 	   redundant states which were eliminated:
@@ -1221,7 +1151,6 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 
 	/* setup the initial values */
 	pos = 0;
-	length = n;
 
 	/* go to the state that we should be to resume parsing */
 	switch (info->state)	/* list of valid states in json_parse_string() */
@@ -1766,22 +1695,12 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 		case L'\\':	/* escaped characters */
 			if (!info->string_length_limit_reached)
 			{
-				if (utf8cslen (info->temp->text) < JSON_MAX_STRING_LENGTH - 6)	/* 6 = \u[:xdigit:]{4} */
+				if (rcs_length(info->temp->text) < JSON_MAX_STRING_LENGTH - 6)	/* 6 = \u[:xdigit:]{4} */
 				{
-					if ((tmp = realloc (info->temp->text, sizeof (char) * (utf8cslen (info->temp->text) + 2))) == NULL)
+					if( rcs_catc(info->temp->text, '\\') != RS_OK)
 					{
-						if (info->temp != NULL)
-							free (info->temp), info->temp = NULL;
-						if (info->cursor != NULL)
-						{
-							while (info->cursor->parent != NULL)
-								info->cursor = info->cursor->parent;
-							json_free_value (&info->cursor);
-						}
 						return JSON_MEMORY;
 					}
-					info->temp->text = tmp;
-					strncat (info->temp->text, "\\", 1);
 				}
 				else
 				{
@@ -1940,27 +1859,12 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 		default:
 			if (!info->string_length_limit_reached)
 			{
-				if (utf8cslen (info->temp->text) < JSON_MAX_STRING_LENGTH)
+				if (rcs_length(info->temp->text) < JSON_MAX_STRING_LENGTH)
 				{
-					if ((tmp = realloc (info->temp->text, sizeof (char) * (utf8cslen (info->temp->text) + 2))) == NULL)
+					if(rcs_catwc(info->temp->text, text[pos]) != RS_OK)
 					{
-						if (info->temp != NULL)
-							free (info->temp), info->temp = NULL;
-						if (info->cursor != NULL)
-						{
-							while (info->cursor->parent != NULL)
-								info->cursor = info->cursor->parent;
-							json_free_value (&info->cursor);
-						}
 						return JSON_MEMORY;
 					}
-					info->temp->text = tmp;
-					tmp = wchar_to_utf8(&text[pos],1);	
-					if(tmp == NULL)
-					{
-						/*TODO cleanup code needed */
-					}
-					strncat (info->temp->text, tmp, strlen(tmp));
 				}
 				else
 				{
@@ -1991,27 +1895,12 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 		case L't':
 			if (!info->string_length_limit_reached)
 			{
-				if (utf8cslen (info->temp->text) < JSON_MAX_STRING_LENGTH - 5)
+				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH - 5)
 				{
-					if ((tmp = realloc (info->temp->text, sizeof (char) * (strlen (info->temp->text) + 2))) == NULL)
+					if(rcs_catc(info->temp->text, text[pos]) != RS_OK)
 					{
-						if (info->temp != NULL)
-							free (info->temp), info->temp = NULL;
-						if (info->cursor != NULL)
-						{
-							while (info->cursor->parent != NULL)
-								info->cursor = info->cursor->parent;
-							json_free_value (&info->cursor);
-						}
 						return JSON_MEMORY;
 					}
-					info->temp->text = tmp;
-					tmp = wchar_to_utf8(&text[pos], 1);
-					if(tmp == NULL)
-					{
-						/*TODO needs cleanup code */
-					}
-					strncat (info->temp->text, tmp, 1);
 				}
 				else
 				{
@@ -2029,27 +1918,12 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 		case L'u':
 			if (!info->string_length_limit_reached)
 			{
-				if (utf8cslen (info->temp->text) < JSON_MAX_STRING_LENGTH - 4)
+				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH - 4)
 				{
-					if ((tmp = realloc (info->temp->text, sizeof (char) * (strlen (info->temp->text) + 2))) == NULL)
+					if(rcs_catwc(info->temp->text, text[pos]) != RS_OK)
 					{
-						if (info->temp != NULL)
-							free (info->temp), info->temp = NULL;
-						if (info->cursor != NULL)
-						{
-							while (info->cursor->parent != NULL)
-								info->cursor = info->cursor->parent;
-							json_free_value (&info->cursor);
-						}
 						return JSON_MEMORY;
 					}
-					info->temp->text = tmp;
-					tmp = wchar_to_utf8(&text[pos], 1);
-					if(tmp == NULL)
-					{
-						/*TODO needs cleanup code */
-					}
-					strncat (info->temp->text, tmp, 1);
 				}
 				else
 				{
@@ -2105,27 +1979,12 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 		case L'F':
 			if (!info->string_length_limit_reached)
 			{
-				if (utf8cslen (info->temp->text) < JSON_MAX_STRING_LENGTH - 3)
+				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH - 3)
 				{
-					if ((tmp = realloc (info->temp->text, sizeof (char) * (strlen (info->temp->text) + 2))) == NULL)
+					if(rcs_catwc(info->temp->text, text[pos]) != RS_OK)
 					{
-						if (info->temp != NULL)
-							json_free_value (&info->temp);
-						if (info->cursor != NULL)
-						{
-							while (info->cursor->parent != NULL)
-								info->cursor = info->cursor->parent;
-							json_free_value (&info->cursor);
-						}
 						return JSON_MEMORY;
 					}
-					info->temp->text = tmp;
-					tmp = wchar_to_utf8(&text[pos], 1);
-					if(tmp == NULL)
-					{
-						/*TODO needs cleanup code */
-					}
-					strncat (info->temp->text, tmp, 1);
 				}
 				else
 				{
@@ -2184,27 +2043,12 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 		case L'F':
 			if (!info->string_length_limit_reached)
 			{
-				if (utf8cslen (info->temp->text) < JSON_MAX_STRING_LENGTH - 2)
+				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH - 2)
 				{
-					if ((tmp = realloc (info->temp->text, sizeof (char) * (strlen (info->temp->text) + 2))) == NULL)
+					if(rcs_catwc(info->temp->text, text[pos]) != RS_OK)
 					{
-						if (info->temp != NULL)
-							json_free_value (&info->temp);
-						if (info->cursor != NULL)
-						{
-							while (info->cursor->parent != NULL)
-								info->cursor = info->cursor->parent;
-							json_free_value (&info->cursor);
-						}
 						return JSON_MEMORY;
 					}
-					info->temp->text = tmp;
-					tmp = wchar_to_utf8(&text[pos], 1);
-					if(tmp == NULL)
-					{
-						/*TODO needs cleanup code */
-					}
-					strncat (info->temp->text, tmp, 1);
 				}
 				else
 				{
@@ -2263,27 +2107,12 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 		case L'F':
 			if (!info->string_length_limit_reached)
 			{
-				if (utf8cslen (info->temp->text) < JSON_MAX_STRING_LENGTH - 1)
+				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH - 1)
 				{
-					if ((tmp = realloc (info->temp->text, sizeof (char) * (strlen (info->temp->text) + 2))) == NULL)
+					if(rcs_catwc(info->temp->text, text[pos]) != RS_OK)
 					{
-						if (info->temp != NULL)
-							json_free_value (&info->temp);
-						if (info->cursor != NULL)
-						{
-							while (info->cursor->parent != NULL)
-								info->cursor = info->cursor->parent;
-							json_free_value (&info->cursor);
-						}
 						return JSON_MEMORY;
 					}
-					info->temp->text = tmp;
-					tmp = wchar_to_utf8(&text[pos], 1);
-					if(tmp == NULL)
-					{
-						/*TODO needs cleanup code */
-					}
-					strncat (info->temp->text, tmp, 1);
 				}
 				else
 				{
@@ -2335,27 +2164,12 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 		case L'F':
 			if (!info->string_length_limit_reached)
 			{
-				if (utf8cslen (info->temp->text) < JSON_MAX_STRING_LENGTH)
+				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH)
 				{
-					if ((tmp = realloc (info->temp->text, sizeof (char) * (strlen (info->temp->text) + 2))) == NULL)
+					if(rcs_catwc(info->temp->text, text[pos]) != RS_OK)
 					{
-						if (info->temp != NULL)
-							json_free_value (&info->temp);
-						if (info->cursor != NULL)
-						{
-							while (info->cursor->parent != NULL)
-								info->cursor = info->cursor->parent;
-							json_free_value (&info->cursor);
-						}
 						return JSON_MEMORY;
 					}
-					info->temp->text = tmp;
-					tmp = wchar_to_utf8(&text[pos], 1);
-					if(tmp == NULL)
-					{
-						/*TODO needs cleanup code */
-					}
-					strncat (info->temp->text, tmp, 1);
 				}
 				else
 				{
@@ -2654,20 +2468,10 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 		switch (text[pos])
 		{
 		case L'0':
-			if ((tmp = realloc (info->temp->text, sizeof (char) * (strlen (info->temp->text) + 2))) == NULL)
+			if(rcs_catc(info->temp->text,'0') != RS_OK)
 			{
-				if (info->temp != NULL)
-					json_free_value (&info->temp);
-				if (info->cursor != NULL)
-				{
-					while (info->cursor->parent != NULL)
-						info->cursor = info->cursor->parent;
-					json_free_value (&info->cursor);
-				}
 				return JSON_MEMORY;
 			}
-			info->temp->text = tmp;
-			strncat (info->temp->text, "0", 1);
 
 			info->state = 15;
 			pos++;
@@ -2687,25 +2491,10 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 		case L'7':
 		case L'8':
 		case L'9':
-			if ((tmp = realloc (info->temp->text, sizeof (char) * (strlen (info->temp->text) + 2))) == NULL)
+			if(rcs_catwc(info->temp->text,text[pos]) != RS_OK)
 			{
-				if (info->temp != NULL)
-					json_free_value (&info->temp);
-				if (info->cursor != NULL)
-				{
-					while (info->cursor->parent != NULL)
-						info->cursor = info->cursor->parent;
-					json_free_value (&info->cursor);
-				}
 				return JSON_MEMORY;
 			}
-			info->temp->text = tmp;
-			tmp = wchar_to_utf8(&text[pos], 1);
-			if(tmp == NULL)
-			{
-				/*TODO needs cleanup code */
-			}
-			strncat (info->temp->text, tmp, 1);
 
 			info->state = 16;	/* number: decimal part */
 			pos++;
@@ -2733,20 +2522,11 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 		switch (text[pos])
 		{
 		case L'.':
-			if ((tmp = realloc (info->temp->text, sizeof (char) * (strlen (info->temp->text) + 2))) == NULL)
+			if(rcs_catc(info->temp->text,'.') != RS_OK)
 			{
-				if (info->temp != NULL)
-					json_free_value (&info->temp);
-				if (info->cursor != NULL)
-				{
-					while (info->cursor->parent != NULL)
-						info->cursor = info->cursor->parent;
-					json_free_value (&info->cursor);
-				}
 				return JSON_MEMORY;
 			}
-			info->temp->text = tmp;
-			strncat (info->temp->text, ".", 1);
+
 
 			info->state = 17;
 			pos++;
@@ -2795,27 +2575,13 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 		case L'9':
 			if (!info->string_length_limit_reached)
 			{
-				if (utf8cslen (info->temp->text) < JSON_MAX_STRING_LENGTH / 2)
+				if (rcs_length(info->temp->text) < JSON_MAX_STRING_LENGTH / 2)
 				{
-					if ((tmp = realloc (info->temp->text, sizeof (char) * (strlen (info->temp->text) + 2))) == NULL)
+					if(rcs_catwc(info->temp->text,text[pos]) != RS_OK)
 					{
-						if (info->temp != NULL)
-							json_free_value (&info->temp);
-						if (info->cursor != NULL)
-						{
-							while (info->cursor->parent != NULL)
-								info->cursor = info->cursor->parent;
-							json_free_value (&info->cursor);
-						}
 						return JSON_MEMORY;
 					}
-					info->temp->text = tmp;
-					tmp = wchar_to_utf8(&text[pos], 1);
-					if(tmp == NULL)
-					{
-						/*TODO needs cleanup code */
-					}
-					strncat (info->temp->text, tmp, 1);
+
 				}
 				else
 				{
@@ -2833,20 +2599,10 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 
 		case L'.':
 			info->string_length_limit_reached = 0;
-			if ((tmp = realloc (info->temp->text, sizeof (char) * (strlen (info->temp->text) + 2))) == NULL)
+			if(rcs_catc(info->temp->text,'.') != RS_OK)
 			{
-				if (info->temp != NULL)
-					json_free_value (&info->temp);
-				if (info->cursor != NULL)
-				{
-					while (info->cursor->parent != NULL)
-						info->cursor = info->cursor->parent;
-					json_free_value (&info->cursor);
-				}
 				return JSON_MEMORY;
 			}
-			info->temp->text = tmp;
-			strncat (info->temp->text, ".", 1);
 
 			info->state = 17;
 			pos++;
@@ -2857,25 +2613,11 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 
 		case L'e':
 		case L'E':
-			if ((tmp = realloc (info->temp->text, sizeof (char) * (strlen (info->temp->text) + 2))) == NULL)
+			if(rcs_catwc(info->temp->text,text[pos]) != RS_OK)
 			{
-				if (info->temp != NULL)
-					json_free_value (&info->temp);
-				if (info->cursor != NULL)
-				{
-					while (info->cursor->parent != NULL)
-						info->cursor = info->cursor->parent;
-					json_free_value (&info->cursor);
-				}
 				return JSON_MEMORY;
 			}
-			info->temp->text = tmp;
-			tmp = wchar_to_utf8(&text[pos],1);
-			if(tmp == NULL)
-			{
-				/*TODO cleanup code */
-			}
-			strncat (info->temp->text, tmp, 1);
+
 			info->state = 19;
 			pos++;
 			if (pos > length)	/* current string buffer ended */
@@ -2923,27 +2665,13 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 		case L'9':
 			if (!info->string_length_limit_reached)
 			{
-				if (utf8cslen (info->temp->text) < JSON_MAX_STRING_LENGTH / 2)
+				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH / 2)
 				{
-					if ((tmp = realloc (info->temp->text, sizeof (char) * (strlen (info->temp->text) + 2))) == NULL)
+					if(rcs_catwc(info->temp->text,text[pos]) != RS_OK)
 					{
-						if (info->temp != NULL)
-							json_free_value (&info->temp);
-						if (info->cursor != NULL)
-						{
-							while (info->cursor->parent != NULL)
-								info->cursor = info->cursor->parent;
-							json_free_value (&info->cursor);
-						}
 						return JSON_MEMORY;
 					}
-					info->temp->text = tmp;
-					tmp = wchar_to_utf8(&text[pos],1);
-					if(tmp == NULL)
-					{
-						/*TODO cleanup code */
-					}
-					strncat (info->temp->text, tmp, 1);
+
 				}
 				else
 				{
@@ -2988,27 +2716,13 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 		case L'9':
 			if (!info->string_length_limit_reached)
 			{
-				if (utf8cslen (info->temp->text) < JSON_MAX_STRING_LENGTH / 2)
+				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH / 2)
 				{
-					if ((tmp = realloc (info->temp->text, sizeof (char) * (strlen (info->temp->text) + 2))) == NULL)
+					if(rcs_catwc(info->temp->text,text[pos]) != RS_OK)
 					{
-						if (info->temp != NULL)
-							json_free_value (&info->temp);
-						if (info->cursor != NULL)
-						{
-							while (info->cursor->parent != NULL)
-								info->cursor = info->cursor->parent;
-							json_free_value (&info->cursor);
-						}
 						return JSON_MEMORY;
 					}
-					info->temp->text = tmp;
-					tmp = wchar_to_utf8(&text[pos],1);
-					if(tmp == NULL)
-					{
-						/*TODO cleanup code */
-					}
-					strncat (info->temp->text, tmp, 1);
+
 				}
 				else
 				{
@@ -3026,25 +2740,11 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 
 		case L'e':
 		case L'E':
-			if ((tmp = realloc (info->temp->text, sizeof (char) * (strlen (info->temp->text) + 2))) == NULL)
+			if(rcs_catwc(info->temp->text,text[pos])!= RS_OK)
 			{
-				if (info->temp != NULL)
-					json_free_value (&info->temp);
-				if (info->cursor != NULL)
-				{
-					while (info->cursor->parent != NULL)
-						info->cursor = info->cursor->parent;
-					json_free_value (&info->cursor);
-				}
 				return JSON_MEMORY;
 			}
-			info->temp->text = tmp;
-			tmp = wchar_to_utf8(&text[pos],1);
-			if(tmp == NULL)
-			{
-				/*TODO cleanup code */
-			}
-			strncat (info->temp->text, tmp, 1);
+
 
 			info->state = 19;
 			pos++;
@@ -3084,25 +2784,11 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 		{
 		case L'+':
 		case L'-':
-			if ((tmp = realloc (info->temp->text, sizeof (char) * (strlen (info->temp->text) + 2))) == NULL)
+			if(rcs_catwc(info->temp->text,text[pos])!= RS_OK)
 			{
-				if (info->temp != NULL)
-					json_free_value (&info->temp);
-				if (info->cursor != NULL)
-				{
-					while (info->cursor->parent != NULL)
-						info->cursor = info->cursor->parent;
-					json_free_value (&info->cursor);
-				}
 				return JSON_MEMORY;
 			}
-			info->temp->text = tmp;
-			tmp = wchar_to_utf8(&text[pos],1);
-			if(tmp == NULL)
-			{
-				/*TODO cleanup code */
-			}
-			strncat (info->temp->text, tmp, 1);
+
 
 			info->state = 20;
 			pos++;
@@ -3122,25 +2808,10 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 		case L'7':
 		case L'8':
 		case L'9':
-			if ((tmp = realloc (info->temp->text, sizeof (char) * (strlen (info->temp->text) + 2))) == NULL)
+			if(rcs_catwc(info->temp->text,text[pos])!= RS_OK)
 			{
-				if (info->temp != NULL)
-					json_free_value (&info->temp);
-				if (info->cursor != NULL)
-				{
-					while (info->cursor->parent != NULL)
-						info->cursor = info->cursor->parent;
-					json_free_value (&info->cursor);
-				}
 				return JSON_MEMORY;
 			}
-			info->temp->text = tmp;
-			tmp = wchar_to_utf8(&text[pos],1);
-			if(tmp == NULL)
-			{
-				/*TODO cleanup code */
-			}
-			strncat (info->temp->text, tmp, 1);
 
 
 			info->state = 21;
@@ -3178,26 +2849,11 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 		case L'7':
 		case L'8':
 		case L'9':
-			if ((tmp = realloc (info->temp->text, sizeof (char) * (strlen (info->temp->text) + 2))) == NULL)
+			if(rcs_catwc(info->temp->text,text[pos])!= RS_OK)
 			{
-				if (info->temp != NULL)
-					json_free_value (&info->temp);
-				if (info->cursor != NULL)
-				{
-					while (info->cursor->parent != NULL)
-						info->cursor = info->cursor->parent;
-					json_free_value (&info->cursor);
-				}
 				return JSON_MEMORY;
 			}
-			info->temp->text = tmp;
 
-			tmp = wchar_to_utf8(&text[pos],1);
-			if(tmp == NULL)
-			{
-				/*TODO cleanup code */
-			}
-			strncat (info->temp->text, tmp, 1);
 			info->state = 21;
 			pos++;
 			if (pos > length)	/* current string buffer ended */
@@ -3235,27 +2891,13 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 		case L'9':
 			if (!info->string_length_limit_reached)
 			{
-				if (utf8cslen (info->temp->text) < JSON_MAX_STRING_LENGTH)
+				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH)
 				{
-					if ((tmp = realloc (info->temp->text, sizeof (char) * (strlen (info->temp->text) + 2))) == NULL)
+					if(rcs_catwc(info->temp->text,text[pos])!= RS_OK)
 					{
-						if (info->temp != NULL)
-							json_free_value (&info->temp);
-						if (info->cursor != NULL)
-						{
-							while (info->cursor->parent != NULL)
-								info->cursor = info->cursor->parent;
-							json_free_value (&info->cursor);
-						}
 						return JSON_MEMORY;
 					}
-					info->temp->text = tmp;
-					tmp = wchar_to_utf8(&text[pos],1);
-					if(tmp == NULL)
-					{
-						/*TODO cleanup code */
-					}
-					strncat (info->temp->text, tmp, 1);
+
 				}
 				else
 				{
@@ -3298,7 +2940,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 	{
 		switch (text[pos])
 		{
-		case L'\x0':	/*/todo check if this is the way to go */
+		case L'\x0':	/*TODO check if this is the way to go */
 		case L'\x20':
 		case L'\x09':
 		case L'\x0A':
@@ -3593,9 +3235,21 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n)
 
 		default:
 			if (info->temp != NULL)
+			{
 				json_free_value (&info->temp);
+			}
+
 			if (info->cursor != NULL)
 			{
+				if(info->cursor->parent == NULL)
+				{
+					/* JSON document consists of a single text label */
+					info->state = 22;
+					if (pos > length)	/* current string buffer ended */
+						return JSON_INCOMPLETE_DOCUMENT;
+					else
+						goto state22;	/* pair */
+				}
 				while (info->cursor->parent != NULL)
 					info->cursor = info->cursor->parent;
 				json_free_value (&info->cursor);
@@ -3896,10 +3550,12 @@ enum json_error
 json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_functions *jsf, wchar_t c)
 {
 	/* temp variables */
-	wchar_t *temp;
+	rwstring *temp;
+
 	/* make sure everything is in it's place */
 	assert (jsps != NULL);
 	assert (jsf != NULL);
+	temp = NULL;
 
 	/* goto where we left off */
 	switch (jsps->state)
@@ -4006,7 +3662,6 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'\"':	/* starting a string */
 			jsps->string_length_limit_reached = 0;
 			jsps->state = 1;
-			jsps->temp = NULL;
 			break;
 
 		case L'{':
@@ -4060,12 +3715,15 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'0':
 			jsps->string_length_limit_reached = 0;
 			jsps->state = 17;	/* parse number: 0 */
-			jsps->temp = NULL;
-			if ((jsps->temp = calloc (sizeof (wchar_t), wcslen (jsps->temp) + 2)) == NULL)
+			assert(jsps->temp != NULL);	/*FIXIT just for debuging purposes */
+			if( (jsps->temp = rws_create(1)) == NULL)
 			{
 				return JSON_MEMORY;
 			}
-			wcsncat (jsps->temp, L"0", 1);
+			if( rws_catwc(jsps->temp, L'0') != RS_OK)
+			{
+				return JSON_MEMORY;
+			} 
 			break;
 
 		case L'1':
@@ -4079,23 +3737,31 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'9':
 			jsps->string_length_limit_reached = 0;
 			jsps->state = 24;	/* parse number: decimal */
-			jsps->temp = NULL;
-			if ((jsps->temp = calloc (sizeof (wchar_t), wcslen (jsps->temp) + 2)) == NULL)
+			assert(jsps->temp != NULL);	/*FIXIT just for debuging purposes */
+			if((jsps->temp = rws_create(1)) == NULL)
 			{
 				return JSON_MEMORY;
 			}
-			wcsncat (jsps->temp, &c, 1);
+			if(rws_catwc(jsps->temp,c) != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
+			//wcsncat (jsps->temp, &c, 1);
 			break;
 
 		case L'-':
 			jsps->string_length_limit_reached = 0;
 			jsps->state = 23;	/* number: */
 			jsps->temp = NULL;
-			if ((jsps->temp = calloc (sizeof (wchar_t), wcslen (jsps->temp) + 2)) == NULL)
+			if((jsps->temp = rws_create(1)) == NULL)
 			{
 				return JSON_MEMORY;
 			}
-			wcsncat (jsps->temp, L"-", 1);
+			if( rws_catwc(jsps->temp, L'-') != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
+
 			break;
 
 		default:
@@ -4112,14 +3778,12 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'\\':
 			if (!jsps->string_length_limit_reached)
 			{
-				if (wcslen (jsps->temp) < JSON_MAX_STRING_LENGTH - 1)	/* check if there is space for a two character escape sequence */
+				if (rws_length (jsps->temp) < JSON_MAX_STRING_LENGTH - 1)	/* check if there is space for a two character escape sequence */
 				{
-					if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
+					if(rws_catwc(jsps->temp, L'\\') != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
-					jsps->temp = temp;
-					wcsncat (jsps->temp, L"\\", 1);
 				}
 				else
 				{
@@ -4134,9 +3798,8 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			{
 				jsps->state = 0;	/* starting point */
 				if (jsf->new_string != NULL)
-					jsf->new_string (jsps->temp);	/*copied or integral? */
-				free (jsps->temp);
-				jsps->temp = NULL;
+					jsf->new_string (jsps->temp->text);	/*copied or integral? */
+				rws_free (&jsps->temp);
 			}
 			else
 				return JSON_UNKNOWN_PROBLEM;
@@ -4145,14 +3808,12 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		default:
 			if (!jsps->string_length_limit_reached)
 			{
-				if (wcslen (jsps->temp) < JSON_MAX_STRING_LENGTH)	/* check if there is space for a two character escape sequence */
+				if (rws_length (jsps->temp) < JSON_MAX_STRING_LENGTH)	/* check if there is space for a two character escape sequence */
 				{
-					if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
+					if( rws_catwc(jsps->temp,c) != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
-					jsps->temp = temp;
-					wcsncat (jsps->temp, &c, 1);
 				}
 				else
 				{
@@ -4178,14 +3839,12 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L't':
 			if (!jsps->string_length_limit_reached)
 			{
-				if (wcslen (jsps->temp) < JSON_MAX_STRING_LENGTH)
+				if (rws_length (jsps->temp) < JSON_MAX_STRING_LENGTH)
 				{
-					if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
+					if( rws_catwc(jsps->temp,c) != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
-					jsps->temp = temp;
-					wcsncat (jsps->temp, &c, 1);
 				}
 				else
 				{
@@ -4197,14 +3856,12 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'u':
 			if (!jsps->string_length_limit_reached)
 			{
-				if (wcslen (jsps->temp) < JSON_MAX_STRING_LENGTH - 4)
+				if (rws_length (jsps->temp) < JSON_MAX_STRING_LENGTH - 4)
 				{
-					if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
+					if( rws_catwc(jsps->temp, L'u') != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
-					jsps->temp = temp;
-					wcsncat (jsps->temp, L"u", 1);
 				}
 				else
 				{
@@ -4249,14 +3906,12 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'F':
 			if (!jsps->string_length_limit_reached)
 			{
-				if (wcslen (jsps->temp) < JSON_MAX_STRING_LENGTH - 3)
+				if (rws_length (jsps->temp) < JSON_MAX_STRING_LENGTH - 3)
 				{
-					if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
+					if( rws_catwc(jsps->temp,L'u') != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
-					jsps->temp = temp;
-					wcsncat (jsps->temp, &c, 1);
 				}
 				else
 				{
@@ -4300,14 +3955,12 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'F':
 			if (!jsps->string_length_limit_reached)
 			{
-				if (wcslen (jsps->temp) < JSON_MAX_STRING_LENGTH - 2)
+				if (rws_length (jsps->temp) < JSON_MAX_STRING_LENGTH - 2)
 				{
-					if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
+					if( rws_catwc(jsps->temp, c) != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
-					jsps->temp = temp;
-					wcsncat (jsps->temp, &c, 1);
 				}
 				else
 				{
@@ -4351,14 +4004,12 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'F':
 			if (!jsps->string_length_limit_reached)
 			{
-				if (wcslen (jsps->temp) < JSON_MAX_STRING_LENGTH - 1)
+				if (rws_length (jsps->temp) < JSON_MAX_STRING_LENGTH - 1)
 				{
-					if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
+					if( rws_catwc(jsps->temp, c) != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
-					jsps->temp = temp;
-					wcsncat (jsps->temp, &c, 1);
 				}
 				else
 				{
@@ -4402,14 +4053,12 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'F':
 			if (!jsps->string_length_limit_reached)
 			{
-				if (wcslen (jsps->temp) < JSON_MAX_STRING_LENGTH)
+				if (rws_length (jsps->temp) < JSON_MAX_STRING_LENGTH)
 				{
-					if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
+					if( rws_catwc(jsps->temp, c) != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
-					jsps->temp = temp;
-					wcsncat (jsps->temp, &c, 1);
 				}
 				else
 				{
@@ -4546,12 +4195,14 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		switch (c)
 		{
 		case L'.':
-			if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
+			if( (jsps->temp = rws_create(1)) == NULL)
 			{
 				return JSON_MEMORY;
 			}
-			jsps->temp = temp;
-			wcsncat (jsps->temp, L".", 1);
+			if( rws_catwc(jsps->temp, L'.') != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
 			jsps->state = 18;	/* parse number: fraccional part */
 			break;
 
@@ -4563,10 +4214,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				return JSON_MEMORY;
 			if (jsf->new_number != NULL)
 			{
-				jsf->new_number (jsps->temp);
+				jsf->new_number (jsps->temp->text);
 			}
-			free (jsps->temp);
-			jsps->temp = NULL;
+			rws_free (&jsps->temp);
 
 			jsps->state = 0;
 			break;
@@ -4576,10 +4226,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				return JSON_MEMORY;
 			if (jsf->new_number != NULL)
 			{
-				jsf->new_number (jsps->temp);
+				jsf->new_number (jsps->temp->text);
 			}
-			free (jsps->temp);
-			jsps->temp = NULL;
+			rws_free (&jsps->temp);
 
 			if (jsf->open_object != NULL)
 				jsf->close_object ();
@@ -4592,10 +4241,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				return JSON_MEMORY;
 			if (jsf->new_number != NULL)
 			{
-				jsf->new_number (jsps->temp);
+				jsf->new_number (jsps->temp->text);
 			}
-			free (jsps->temp);
-			jsps->temp = NULL;
+			rws_free (&jsps->temp);
 
 			if (jsf->open_object != NULL)
 				jsf->close_array ();
@@ -4608,10 +4256,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				return JSON_MEMORY;
 			if (jsf->new_number != NULL)
 			{
-				jsf->new_number (jsps->temp);
+				jsf->new_number (jsps->temp->text);
 			}
-			free (jsps->temp);
-			jsps->temp = NULL;
+			rws_free (&jsps->temp);
 
 			if (jsf->open_object != NULL)
 				jsf->label_value_separator ();
@@ -4642,14 +4289,12 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'9':
 			if (!jsps->string_length_limit_reached)
 			{
-				if (wcslen (jsps->temp) < JSON_MAX_STRING_LENGTH / 2)
+				if (rws_length (jsps->temp) < JSON_MAX_STRING_LENGTH / 2)
 				{
-					if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
+					if( rws_catwc(jsps->temp, c) != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
-					jsps->temp = temp;
-					wcsncat (jsps->temp, &c, 1);
 				}
 				else
 				{
@@ -4682,14 +4327,12 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'9':
 			if (!jsps->string_length_limit_reached)
 			{
-				if (wcslen (jsps->temp) < JSON_MAX_STRING_LENGTH / 2)
+				if (rws_length (jsps->temp) < JSON_MAX_STRING_LENGTH / 2)
 				{
-					if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
+					if( rws_catwc(jsps->temp, c) != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
-					jsps->temp = temp;
-					wcsncat (jsps->temp, &c, 1);
 				}
 				else
 				{
@@ -4701,12 +4344,10 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 
 		case L'e':
 		case L'E':
-			if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
+			if( rws_catwc(jsps->temp, c) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
-			jsps->temp = temp;
-			wcsncat (jsps->temp, &c, 1);
 
 			jsps->state = 20;	/* parse number: start exponent part */
 			break;
@@ -4721,10 +4362,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				return JSON_MEMORY;
 			if (jsf->new_number != NULL)
 			{
-				jsf->new_number (jsps->temp);
+				jsf->new_number (jsps->temp->text);
 			}
-			free (jsps->temp);
-			jsps->temp = NULL;
+			rws_free (&jsps->temp);
 
 			jsps->state = 0;
 			break;
@@ -4735,11 +4375,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				return JSON_MEMORY;
 			if (jsf->new_number != NULL)
 			{
-				jsf->new_number (jsps->temp);
+				jsf->new_number (jsps->temp->text);
 			}
-			free (jsps->temp);
-			jsps->temp = NULL;
-
+			rws_free (&jsps->temp);
 
 			if (jsf->open_object != NULL)
 				jsf->close_object ();
@@ -4751,13 +4389,12 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			{
 				if (jsps->temp == NULL)
 					return JSON_MEMORY;
-				jsf->new_number (jsps->temp);
-				free (jsps->temp);
-				jsps->temp = NULL;
+				jsf->new_number (jsps->temp->text);
+				rws_free (&jsps->temp);
 			}
 			else
 			{
-				free (jsps->temp);
+				rws_free (&jsps->temp);
 				jsps->temp = NULL;
 			}
 			if (jsf->open_object != NULL)
@@ -4771,11 +4408,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				return JSON_MEMORY;
 			if (jsf->new_number != NULL)
 			{
-				jsf->new_number (jsps->temp);
+				jsf->new_number (jsps->temp->text);
 			}
-			free (jsps->temp);
-			jsps->temp = NULL;
-
+			rws_free (&jsps->temp);
 
 			if (jsf->label_value_separator != NULL)
 				jsf->label_value_separator ();
@@ -4797,12 +4432,10 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'+':
 		case L'-':
 			jsps->string_length_limit_reached = 0;
-			if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
+			if( rws_catwc(jsps->temp, c) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
-			jsps->temp = temp;
-			wcsncat (jsps->temp, &c, 1);
 
 			jsps->state = 22;	/* parse number: exponent sign part */
 			break;
@@ -4819,14 +4452,13 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'9':
 			if (!jsps->string_length_limit_reached)
 			{
-				if (wcslen (jsps->temp) < JSON_MAX_STRING_LENGTH)
+				if (rws_length (jsps->temp) < JSON_MAX_STRING_LENGTH)
 				{
-					if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
+					if( rws_catwc(jsps->temp, c) != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
-					jsps->temp = temp;
-					wcsncat (jsps->temp, &c, 1);
+
 				}
 				else
 				{
@@ -4859,14 +4491,12 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'9':
 			if (!jsps->string_length_limit_reached)
 			{
-				if (wcslen (jsps->temp) < JSON_MAX_STRING_LENGTH)
+				if (rws_length (jsps->temp) < JSON_MAX_STRING_LENGTH)
 				{
-					if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
+					if( rws_catwc(jsps->temp, c) != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
-					jsps->temp = temp;
-					wcsncat (jsps->temp, &c, 1);
 				}
 				else
 				{
@@ -4885,10 +4515,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				return JSON_MEMORY;
 			if (jsf->new_number != NULL)
 			{
-				jsf->new_number (jsps->temp);
+				jsf->new_number (jsps->temp->text);
 			}
-			free (jsps->temp);
-			jsps->temp = NULL;
+			rws_free (&jsps->temp);
 
 			jsps->state = 0;
 			break;
@@ -4898,10 +4527,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				return JSON_MEMORY;
 			if (jsf->new_number != NULL)
 			{
-				jsf->new_number (jsps->temp);
+				jsf->new_number (jsps->temp->text);
 			}
-			free (jsps->temp);
-			jsps->temp = NULL;
+			rws_free (&jsps->temp);
 
 			if (jsf->open_object != NULL)
 				jsf->close_object ();
@@ -4913,7 +4541,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			{
 				if (jsps->temp == NULL)
 					return JSON_MEMORY;
-				jsf->new_number (jsps->temp);
+				jsf->new_number (jsps->temp->text);
 				free (jsps->temp);
 				jsps->temp = NULL;
 			}
@@ -4932,7 +4560,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			{
 				if (jsps->temp == NULL)
 					return JSON_MEMORY;
-				jsf->new_number (jsps->temp);
+				jsf->new_number (jsps->temp->text);
 				free (jsps->temp);
 				jsps->temp = NULL;
 			}
@@ -4969,14 +4597,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'9':
 			if (!jsps->string_length_limit_reached)
 			{
-				if (wcslen (jsps->temp) < JSON_MAX_STRING_LENGTH)
+				if (rws_length (jsps->temp) < JSON_MAX_STRING_LENGTH)
 				{
-					if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
-					{
-						return JSON_MEMORY;
-					}
-					jsps->temp = temp;
-					wcsncat (jsps->temp, &c, 1);
+					rws_catwc (jsps->temp, c);
 				}
 				else
 				{
@@ -4998,12 +4621,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		switch (c)
 		{
 		case L'0':
-			if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
-			{
-				return JSON_MEMORY;
-			}
-			jsps->temp = temp;
-			wcsncat (jsps->temp, &c, 1);
+			rws_catwc(jsps->temp, c);
 			jsps->state = 17;	/* parse number: 0 */
 			break;
 
@@ -5018,22 +4636,24 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'9':
 			if (!jsps->string_length_limit_reached)
 			{
-				if (wcslen (jsps->temp) < JSON_MAX_STRING_LENGTH / 2)
+				if (rws_length (jsps->temp) < JSON_MAX_STRING_LENGTH / 2)
 				{
-					if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
+					if( (jsps->temp = rws_create(1)) == NULL)
 					{
 						return JSON_MEMORY;
 					}
-					jsps->temp = temp;
-					wcsncat (jsps->temp, &c, 1);
-				}
-				else
-				{
-					jsps->string_length_limit_reached = 1;
+					if( rws_catwc(jsps->temp, c) != RS_OK)
+					{
+						return JSON_MEMORY;
+					}
+					else
+					{
+						jsps->string_length_limit_reached = 1;
+					}
 				}
 			}
-			jsps->state = 24;	/* parse number: start decimal part */
-			break;
+				jsps->state = 24;	/* parse number: start decimal part */
+				break;
 
 		default:
 			return JSON_ILLEGAL_CHARACTER;
@@ -5058,15 +4678,16 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'9':
 			if (!jsps->string_length_limit_reached)
 			{
-				if (wcslen (jsps->temp) < JSON_MAX_STRING_LENGTH / 2)
+				if (rws_length (jsps->temp) < JSON_MAX_STRING_LENGTH / 2)
 				{
-					if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
+					if( (jsps->temp = rws_create(1)) == NULL)
 					{
 						return JSON_MEMORY;
 					}
-					jsps->temp = temp;
-					wcsncat (jsps->temp, &c, 1);
-
+					if( rws_catwc(jsps->temp, c) != RS_OK)
+					{
+						return JSON_MEMORY;
+					}
 				}
 				else
 				{
@@ -5077,24 +4698,28 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			break;
 
 		case L'.':
-			if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
+			if( (jsps->temp = rws_create(1)) == NULL)
 			{
 				return JSON_MEMORY;
 			}
-			jsps->temp = temp;
-			wcsncat (jsps->temp, &c, 1);
+			if( rws_catwc(jsps->temp, L'.') != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
 
 			jsps->state = 18;	/* parse number: start exponent part */
 			break;
 
 		case L'e':
 		case L'E':
-			if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (wcslen (jsps->temp) + 2))) == NULL)
+			if( (jsps->temp = rws_create(1)) == NULL)
 			{
 				return JSON_MEMORY;
 			}
-			jsps->temp = temp;
-			wcsncat (jsps->temp, &c, 1);
+			if( rws_catwc(jsps->temp, c) != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
 
 			jsps->string_length_limit_reached = 0;	/* reset to accept the exponential part */
 			jsps->state = 20;	/* parse number: start exponent part */
@@ -5108,10 +4733,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				return JSON_MEMORY;
 			if (jsf->new_number != NULL)
 			{
-				jsf->new_number (jsps->temp);
+				jsf->new_number (jsps->temp->text);
 			}
-			free (jsps->temp);
-			jsps->temp = NULL;
+			rws_free (&jsps->temp);
 
 			jsps->state = 0;
 			break;
@@ -5121,10 +4745,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				return JSON_MEMORY;
 			if (jsf->new_number != NULL)
 			{
-				jsf->new_number (jsps->temp);
+				jsf->new_number (jsps->temp->text);
 			}
-			free (jsps->temp);
-			jsps->temp = NULL;
+			rws_free (&jsps->temp);
 
 			if (jsf->open_object != NULL)
 				jsf->close_object ();
@@ -5136,10 +4759,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				return JSON_MEMORY;
 			if (jsf->new_number != NULL)
 			{
-				jsf->new_number (jsps->temp);
+				jsf->new_number (jsps->temp->text);
 			}
-			free (jsps->temp);
-			jsps->temp = NULL;
+			rws_free (&jsps->temp);
 
 			if (jsf->open_object != NULL)
 				jsf->close_array ();
@@ -5151,10 +4773,9 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				return JSON_MEMORY;
 			if (jsf->new_number != NULL)
 			{
-				jsf->new_number (jsps->temp);
+				jsf->new_number (jsps->temp->text);
 			}
-			free (jsps->temp);
-			jsps->temp = NULL;
+			rws_free (&jsps->temp);
 
 			if (jsf->label_value_separator != NULL)
 				jsf->label_value_separator ();
@@ -5272,13 +4893,14 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 
 		case L'0':
 			jsps->state = 17;	/* parse number: 0 */
-			jsps->temp = NULL;
-			if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (2))) == NULL)
+			if( (jsps->temp = rws_create(1)) == NULL)
 			{
 				return JSON_MEMORY;
 			}
-			jsps->temp = temp;
-			wcsncat (jsps->temp, L"0", 1);
+			if( rws_catwc(jsps->temp, L'0') != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
 			break;
 
 		case L'1':
@@ -5291,24 +4913,26 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 		case L'8':
 		case L'9':
 			jsps->state = 24;	/* parse number: decimal */
-			jsps->temp = NULL;
-			if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (2))) == NULL)
+			if( (jsps->temp = rws_create(1)) == NULL)
 			{
 				return JSON_MEMORY;
 			}
-			jsps->temp = temp;
-			wcsncat (jsps->temp, &c, 1);
+			if( rws_catwc(jsps->temp, c) != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
 			break;
 
 		case L'-':
 			jsps->state = 23;	/* number: */
-			jsps->temp = NULL;
-			if ((temp = realloc (jsps->temp, sizeof (wchar_t) * (2))) == NULL)
+			if( (jsps->temp = rws_create(1)) == NULL)
 			{
 				return JSON_MEMORY;
 			}
-			jsps->temp = temp;
-			wcsncat (jsps->temp, L"-", 1);
+			if( rws_catwc(jsps->temp, L'-') != RS_OK)
+			{
+				return JSON_MEMORY;
+			}
 			break;
 
 		default:
@@ -5342,7 +4966,7 @@ json_find_first_label (const json_t * object, const wchar_t * text_label)
 			/* memory allocation problem */
 			return NULL;
 		}
-		if (strncmp (cursor->text, tmp,strlen(tmp)) == 0)
+		if (strncmp (cursor->text->text, tmp,strlen(tmp)) == 0)
 			return cursor;
 		cursor = cursor->next;
 	}
@@ -5394,66 +5018,59 @@ utf8wcslen (const wchar_t * intext)
 char *
 wchar_to_utf8 (const wchar_t * input, const size_t n)
 {
-	char *output;		/* utf8 string */
+	rcstring *output;		/* utf8 string */
 	size_t wpos;		/* input string position */
-	size_t utf8pos;		/* output string position */
 
 	assert (input != NULL);
-	/* allocate memory for the new string */
-	output = calloc (sizeof (char), n + 1);	/* length + '\0' */
-	if (output == NULL)
-	{
-		return NULL;
-	}
+
+	output = rcs_create(1);
 
 	/* convert the input string to the output string */
-	for (wpos = 0, utf8pos = 0; wpos < n; wpos++)
+	for (wpos = 0; wpos < n; wpos++)
 	{
 
 		if (input[wpos] <= 0x7F)
 		{
-			output[utf8pos] = input[wpos];
-			++utf8pos;
+			rcs_catwc(output,input[wpos]);
 		}
 		else if (input[wpos] <= 0x7FF)
 		{
-			output[utf8pos++] = (input[wpos] >> 6) | 192;
-			output[utf8pos++] = (input[wpos] & 63) | 128;
+			rcs_catwc(output,(input[wpos] >> 6) | 192);
+			rcs_catwc(output,(input[wpos] & 63) | 128);
 		}
 		else if (input[wpos] <= 0xFFFF)
 		{
-			output[utf8pos++] = input[wpos] >> 12 | 224;
-			output[utf8pos++] = (input[wpos] >> 6 & 63) | 128;
-			output[utf8pos++] = (input[wpos] & 63) | 128;
+			rcs_catwc(output,input[wpos] >> 12 | 224);
+			rcs_catwc(output,(input[wpos] >> 6 & 63) | 128);
+			rcs_catwc(output,(input[wpos] & 63) | 128);
 		}
 		else if (input[wpos] <= 0x1FFFFF)
 		{
-			output[utf8pos++] = input[wpos] >> 18 | 240;
-			output[utf8pos++] = (input[wpos] >> 12 & 63) | 128;
-			output[utf8pos++] = (input[wpos] >> 6 & 63) | 128;
-			output[utf8pos++] = (input[wpos] & 63) | 128;
+			rcs_catwc(output,input[wpos] >> 18 | 240);
+			rcs_catwc(output,(input[wpos] >> 12 & 63) | 128);
+			rcs_catwc(output,(input[wpos] >> 6 & 63) | 128);
+			rcs_catwc(output,(input[wpos] & 63) | 128);
 		}
 		else if (input[wpos] <= 0x3FFFFFF)
 		{
-			output[utf8pos++] = input[wpos] >> 24 | 248;
-			output[utf8pos++] = (input[wpos] >> 18 & 63) | 128;
-			output[utf8pos++] = (input[wpos] >> 12 & 63) | 128;
-			output[utf8pos++] = (input[wpos] >> 6 & 63) | 128;
-			output[utf8pos++] = (input[wpos] & 63) | 128;
+			rcs_catwc(output,input[wpos] >> 24 | 248);
+			rcs_catwc(output,(input[wpos] >> 18 & 63) | 128);
+			rcs_catwc(output,(input[wpos] >> 12 & 63) | 128);
+			rcs_catwc(output,(input[wpos] >> 6 & 63) | 128);
+			rcs_catwc(output,(input[wpos] & 63) | 128);
 		}
 		else if (input[wpos] <= 0x7FFFFFFF)
 		{
-			output[utf8pos++] = input[wpos] >> 30 | 252;
-			output[utf8pos++] = (input[wpos] >> 24 & 63) | 128;
-			output[utf8pos++] = (input[wpos] >> 18 & 63) | 128;
-			output[utf8pos++] = (input[wpos] >> 12 & 63) | 128;
-			output[utf8pos++] = (input[wpos] >> 6 & 63) | 128;
-			output[utf8pos++] = (input[wpos] & 63) | 128;
+			rcs_catwc(output,input[wpos] >> 30 | 252);
+			rcs_catwc(output,(input[wpos] >> 24 & 63) | 128);
+			rcs_catwc(output,(input[wpos] >> 18 & 63) | 128);
+			rcs_catwc(output,(input[wpos] >> 12 & 63) | 128);
+			rcs_catwc(output,(input[wpos] >> 6 & 63) | 128);
+			rcs_catwc(output,(input[wpos] & 63) | 128);
 		}
 	}
-	//output[utf8pos] = '\0';
 
-	return output;
+	return rcs_unwrap(output);
 }
 
 
