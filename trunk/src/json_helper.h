@@ -25,4 +25,3 @@ void json_render_tree (json_t * root);
 
 
 #endif
-
