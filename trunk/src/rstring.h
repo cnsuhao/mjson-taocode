@@ -43,16 +43,16 @@ typedef struct rui_cstring rcstring;
 
 
 enum rui_string_error_codes
-{ RS_MEMORY, RS_OK = 1 };
+{ RS_MEMORY, RS_OK = 1, RS_UNKNOWN };
 
 typedef enum rui_string_error_codes rstring_code;
 
 /**
-Creates and initializes a string
-\param cstring a c-string containing the initial string text
+Creates a new rwstring by allocating memory and setting up the variables
+\param length the allocated size for the new string
 \return a pointer to the newly created rwstring
 **/
-rwstring *rws_create (const wchar_t * cstring);
+rwstring *rws_create (size_t length);
 
 /**
 Frees the memory allocated to a rwstring
@@ -95,6 +95,13 @@ int rws_copywcs (rwstring * to, const wchar_t * from, const size_t length);
 **/
 int rws_catrws (rwstring * pre, const rwstring * pos);
 
+/** Concatenates a rcstring onto the end of a rwstring
+\param pre rwstring where to append to
+\param pos rtring where to append from
+\return result
+**/
+int rws_catrcs (rwstring * pre, const rcstring * pos);
+
 /** Concatenates a wchar_t string onto the end of a rwstring
 \param pre rwstring where to append to
 \param pos wchar_t string where to append from
@@ -102,6 +109,14 @@ int rws_catrws (rwstring * pre, const rwstring * pos);
 \return result
 **/
 int rws_catwcs (rwstring * pre, const wchar_t * pos, const size_t length);
+
+/** Concatenates an UTF-8 c-string onto the end of a rwstring
+\param pre rwstring where to append to
+\param pos UTF-8 c-string where to append from
+\param length the number of characters to be copied
+\return result
+**/
+int rws_catcs (rwstring * pre, const char * pos, const size_t length);
 
 /** Concatenates a single wchar_t onto the end of a rwstring
 \param pre rwstring where to append to
@@ -123,7 +138,7 @@ int rws_catc (rwstring * pre, const char c);
 **/
 rwstring *rws_wrap (wchar_t * wcs);
 
-/** Unwraps a rwstring from it's wchar_t string. Returns a pointer to the wchar_t string and frees everything else
+/** Unwraps a rwstring container from it's wchar_t string. Returns a pointer to the wchar_t string and frees everything else
 \param rws the rwstring structure to be unwrapped and freed
 \return a wchar_t string containing the text
 **/
@@ -131,11 +146,11 @@ wchar_t *rws_unwrap (rwstring * rws);
 
 
 /**
-Creates and initializes a string
-\param cstring a c-string containing the initial string text
+Creates a new rcstring by allocating memory and setting up the variables
+\param length the allocated size for the new string
 \return a pointer to the newly created rcstring
 **/
-rcstring *rcs_create (const char * cstring);
+rcstring *rcs_create (size_t length);
 
 /**
 Frees the memory allocated to a rcstring
@@ -200,13 +215,13 @@ int rcs_catwc (rcstring * pre, const wchar_t c);
 **/
 int rcs_catc (rcstring * pre, const char c);
 
-/** Wraps a char string with a rcstring structure, in order to offer a higher level string handling
-\param cs char structure which will be wrapped
+/** Wraps a c-string with a rcstring structure, in order to offer a higher level string handling
+\param cs char which will be wrapped
 \return a rcstring structure with the s pointer pointing towards cs
 **/
 rcstring *rcs_wrap (char * cs);
 
-/** Unwraps a rcstring from it's char string. Returns a pointer to the char string and frees everything else
+/** Unwraps a rcstring container from it's char string. Returns a pointer to the char string and frees everything else
 \param rcs the rcstring structure to be unwrapped and freed
 \return a char string containing the text
 **/

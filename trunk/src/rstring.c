@@ -28,21 +28,20 @@
 
 
 rwstring *
-rws_create (const wchar_t * wstring)
+rws_create (size_t length)
 {
-	assert (wstring != NULL);
-	rwstring *rws = malloc (sizeof (rwstring));	// allocates memory for a struct rwstring
+	rwstring *rws;
+	rws = malloc (sizeof (rwstring));	// allocates memory for a struct rwstring
 	if (rws == NULL)
 		return NULL;
 
-	rws->length = rws->max = wcslen (wstring);
+	rws->length = 0;
+	rws->max = length;
 
-//      rws->text = NULL;
-	rws->text = calloc (rws->length + 1, sizeof (wchar_t));
+	rws->text = calloc (rws->max + 1, sizeof (wchar_t));
 	if (rws->text == NULL)
 		return NULL;
 
-	wcsncpy (rws->text, wstring, rws->length);
 	return rws;
 }
 
@@ -168,6 +167,135 @@ rws_catrws (rwstring * pre, const rwstring * pos)
 }
 
 int
+rws_catrcs (rwstring * pre, const rcstring * pos)
+{
+	size_t utf8pos;
+	wchar_t wc;
+	char i;	/* static loop counter */
+
+	assert (pre != NULL);
+	assert (pos != NULL);
+	assert (strlen(pos->text) == pos->length);
+	assert (strlen(pos->text) == pos->length);
+
+	/* starting the conversion */
+	utf8pos = 0;
+
+	while (utf8pos < pos->length)
+	{
+		if ((pos->text[utf8pos] & 0x80) == 0)
+		{
+			if (rws_catc(pre, pos->text[utf8pos++]) != RS_OK)
+			{
+				return RS_MEMORY;
+			}
+		}
+		else if ((pos->text[utf8pos] & 0xE0) == 0xC0)
+		{
+			wc = (pos->text[utf8pos++] & 0x1F) << 6;
+			if ((pos->text[utf8pos] & 0xC0) == 0x80)
+			{
+				wc |= (pos->text[utf8pos++] & 63);
+
+			}
+			else
+			{	/* Invalid utf8 string */
+				return RS_UNKNOWN; 	/* malformed UTF8 string */
+			}
+			if (rws_catwc(pre, wc) != RS_OK)
+			{
+				return RS_MEMORY;
+			}
+		}
+		else if ((pos->text[utf8pos] & 0xF0) == 0xE0)
+		{
+			wc = pos->text[utf8pos++] & 0xF << 12;
+			for (i = 1; i >= 0; i--)
+			{
+				if ((pos->text[utf8pos] & 0xC0) == 0x80)
+				{
+					wc &= pos->text[utf8pos++] & 0x3F << i;
+				}
+				else
+				{	/* Invalid utf8 string */
+					return RS_UNKNOWN;
+				}
+			}
+			if (rws_catwc(pre, wc) != RS_OK)
+			{
+				return RS_MEMORY;
+			}
+
+		}
+		else if ((pos->text[utf8pos] & 0xF8) == 0xF0)
+		{
+			wc = pos->text[utf8pos++] & 0xF << 12;
+			for (i = 2; i >= 0; i--)
+			{
+				if ((pos->text[utf8pos] & 0xC0) == 0x80)
+				{
+					wc &= pos->text[utf8pos++] & 0x3F << i;
+				}
+				else
+				{	/* Invalid utf8 string */
+					return RS_UNKNOWN;
+					
+				}
+			}
+			if (rws_catwc(pre, wc) != RS_OK)
+			{
+				return RS_MEMORY;
+			}
+
+		}
+		else if ((pos->text[utf8pos] & 0xFC) == 0xF8)
+		{
+			for (i = 3; i >= 0; i--)
+			{
+				if ((pos->text[utf8pos] & 0xC0) == 0x80)
+				{
+					wc &= pos->text[utf8pos++] & 0x3F << i;
+				}
+				else
+				{	/* Invalid utf8 string */
+					return RS_UNKNOWN;
+					
+				}
+			}
+			if (rws_catwc(pre, wc) != RS_OK)
+			{
+				return RS_MEMORY;
+			}
+		}
+		else if ((pos->text[utf8pos] & 0xFE) == 0xFC)
+		{
+			for (i = 4; i >= 0; i--)
+			{
+				if ((pos->text[utf8pos] & 0xC0) == 0x80)
+				{
+					wc &= pos->text[utf8pos++] & 0x3F << i;
+				}
+				else
+				{	/* Invalid utf8 string */
+					return RS_UNKNOWN;
+				}
+			}
+			if (rws_catwc(pre, wc) != RS_OK)
+			{
+				return RS_MEMORY;
+			}
+		}
+		else		/* Invalid utf8 string */
+		{
+			return RS_UNKNOWN;
+		}
+	}
+	
+	return RS_OK;
+}
+
+
+int
 rws_catwcs (rwstring * pre, const wchar_t * pos, const size_t length)
 {
 	assert (pre != NULL);
@@ -249,21 +377,19 @@ rws_unwrap (rwstring * rws)
 
 
 rcstring *
-rcs_create (const char * cstring)
+rcs_create (size_t length)
 {
-	assert (cstring != NULL);
 	rcstring *rcs = malloc (sizeof (rcstring));	// allocates memory for a struct rcstring
 	if (rcs == NULL)
 		return NULL;
 
-	rcs->length = rcs->max = strlen (cstring);
+	rcs->length = 0;
+	rcs->max = length;
 
-//      rcs->text = NULL;
-	rcs->text = calloc (rcs->length + 1, sizeof (char));
+	rcs->text = calloc (rcs->max + 1, sizeof (char));
 	if (rcs->text == NULL)
 		return NULL;
 
-	strncpy (rcs->text, cstring, rcs->length);
 	return rcs;
 }
 
@@ -416,9 +542,48 @@ rcs_catcs (rcstring * pre, const char * pos, const size_t length)
 int
 rcs_catwc (rcstring * pre, const wchar_t wc)
 {
-	assert(0);
 	assert (pre != NULL);
 	/*TODO convert wc to multi-byte UTF8 string and append */
+
+	if (wc <= 0x7F)
+	{
+		rcs_catc(pre,wc);
+	}
+	else if (wc <= 0x7FF)
+	{
+		rcs_catc(pre,(wc >> 6) | 192);
+		rcs_catc(pre,(wc & 63) | 128);
+	}
+	else if (wc <= 0xFFFF)
+	{
+		rcs_catc(pre,wc >> 12 | 224);
+		rcs_catc(pre,(wc >> 6 & 63) | 128);
+		rcs_catc(pre,(wc & 63) | 128);
+	}
+	else if (wc <= 0x1FFFFF)
+	{
+		rcs_catc(pre,wc >> 18 | 240);
+		rcs_catc(pre,(wc >> 12 & 63) | 128);
+		rcs_catc(pre,(wc >> 6 & 63) | 128);
+		rcs_catc(pre,(wc & 63) | 128);
+	}
+	else if (wc <= 0x3FFFFFF)
+	{
+		rcs_catc(pre,wc >> 24 | 248);
+		rcs_catc(pre,(wc >> 18 & 63) | 128);
+		rcs_catc(pre,(wc >> 12 & 63) | 128);
+		rcs_catc(pre,(wc >> 6 & 63) | 128);
+		rcs_catc(pre,(wc & 63) | 128);
+	}
+	else if (wc <= 0x7FFFFFFF)
+	{
+		rcs_catc(pre,wc >> 30 | 252);
+		rcs_catc(pre,(wc >> 24 & 63) | 128);
+		rcs_catc(pre,(wc >> 18 & 63) | 128);
+		rcs_catc(pre,(wc >> 12 & 63) | 128);
+		rcs_catc(pre,(wc >> 6 & 63) | 128);
+		rcs_catc(pre,(wc & 63) | 128);
+	}
 	return RS_OK;
 }
 
@@ -447,8 +612,8 @@ rcs_catc (rcstring * pre, const char c)
 rcstring *
 rcs_wrap (char * cs)
 {
-	if (cs == NULL)
-		return NULL;
+	assert(cs != NULL);
+
 	rcstring *wrapper = malloc (sizeof (rcstring));
 	if (wrapper == NULL)
 		return NULL;
@@ -468,4 +633,5 @@ rcs_unwrap (rcstring * rcs)
 	free (rcs);
 	return out;
 }
+
 

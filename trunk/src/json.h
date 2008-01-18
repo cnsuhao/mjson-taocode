@@ -28,6 +28,8 @@
 
 #include <wchar.h>
 
+#include "rstring.h"
+
 #ifndef JSON_H
 #define JSON_H
 
@@ -62,7 +64,7 @@ The JSON document tree node, which is a basic JSON type
 struct json_value
 {
 	enum json_value_type type;	/*!< the type of node */
-	char *text;		/*!< The text stored by the node. It stores UTF-8 strings and is used exclusively by the JSON_STRING and JSON_NUMBER node types */
+	rcstring *text;		/*!< The text stored by the node. It stores UTF-8 strings and is used exclusively by the JSON_STRING and JSON_NUMBER node types */
 
 	/* FIFO queue data */
 	struct json_value *next;	/*!< The pointer pointing to the next element in the FIFO sibling list */
@@ -114,7 +116,7 @@ struct json_saxy_parser_status
 {
 	unsigned int state;	/*!< current parser state */
 	int string_length_limit_reached;	/*!< flag informing if the string limit length defined by JSON_MAX_STRING_LENGTH was reached */
-	wchar_t *temp;		/*!< temporary string which will be used to build up parsed strings between parser runs. */
+	rwstring *temp;		/*!< temporary string which will be used to build up parsed strings between parser runs. */
 };
 
 
@@ -257,10 +259,10 @@ wchar_t *json_escape_to_ascii (wchar_t * text);
 Produces a document tree from a JSON markup text string
 @param info the information necessary to resume parsing any incomplete document
 @param text a text string containing information described by the JSON language, partial or complete.
-@param n the number of characters that form text
+@param length the number of characters that form the input text
 @return a code describing how the operation ended up
 **/
-enum json_error json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t n);
+enum json_error json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length);
 
 
 /**

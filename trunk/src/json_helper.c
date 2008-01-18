@@ -28,10 +28,10 @@ json_render_tree_indented (json_t * root, int level)
 	switch (root->type)
 	{
 	case JSON_STRING:
-		printf ("STRING: %s\n", root->text);
+		printf ("STRING: %s\n", root->text->text);
 		break;
 	case JSON_NUMBER:
-		printf ("NUMBER: %s\n", root->text);
+		printf ("NUMBER: %s\n", root->text->text);
 		break;
 	case JSON_OBJECT:
 		printf ("OBJECT: \n");
