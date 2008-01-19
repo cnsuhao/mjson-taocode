@@ -91,9 +91,12 @@ json_new_number (const wchar_t * text)
 		return NULL;
 
 	/* initialize members */
-	temp = wchar_to_utf8 (text, utf8wcslen (text));
+	temp = wchar_to_utf8 (text, wcslen (text));
 	if (temp == NULL)
+	{
+		free (new_object);
 		return NULL;
+	}
 
 	new_object->text = rcs_wrap (temp);
 	new_object->parent = NULL;
@@ -144,6 +147,7 @@ json_new_false (void)
 void
 json_free_value (json_t ** value)
 {
+	assert (value != NULL);
 	assert ((*value) != NULL);
 
 	/* free each and every child node */
@@ -257,8 +261,6 @@ json_insert_child (json_t * parent, json_t * child)
 			break;
 
 		case JSON_OBJECT:
-			break;
-
 		case JSON_ARRAY:
 			break;
 		default:
@@ -327,6 +329,7 @@ json_tree_to_string (json_t * root, wchar_t ** text)
 	rwstring *output;
 	assert (root != NULL);
 	assert (text != NULL);
+	assert (*text != NULL);
 
 	cursor = root;
 	/* set up the output and temporary rwstrings */

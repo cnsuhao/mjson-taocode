@@ -38,27 +38,30 @@ int
 main (void)
 {
 	/* set the variables */
-	setlocale (LC_CTYPE, "");
 	wchar_t buffer[BUFFER];
 	FILE *file;
-
+	enum json_error error;
 	struct json_parsing_info jpi;
+
+	setlocale (LC_CTYPE, "");
 	jpi.cursor = NULL;
 	jpi.temp = NULL;
 	jpi.state = 0;
-	enum json_error error = JSON_OK;
+	error = JSON_OK;
 
-	// open the file
+	/* open the file */
+	/*
 	file = fopen ("documents/test6.json", "r");
 	if (file == NULL)
 	{
 		printf ("error opening file\n");
 		return 1;
 	}
+	*/
 	fwide (file, 1);
 
-	// parse the file
-	while ((fgetws (buffer, BUFFER, file) != NULL) && (error == JSON_OK || error == JSON_INCOMPLETE_DOCUMENT))
+	/* parse the file */
+	while ((fgetws (buffer, BUFFER, stdin) != NULL) && (error == JSON_OK || error == JSON_INCOMPLETE_DOCUMENT))
 	{
 		error = json_parse_string (&jpi, buffer, wcslen (buffer) - 1);
 		switch (error)
@@ -73,9 +76,10 @@ main (void)
 			break;
 		}
 	}
-	fclose (file);
+	/* fclose (file); */
+	json_render_tree (jpi.cursor);
 
-	// cleanup
+	/* cleanup */
 	json_free_value (&jpi.cursor);
 	return EXIT_SUCCESS;
 }
