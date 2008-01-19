@@ -21,7 +21,6 @@
 #include "rstring.h"
 
 #include <stdlib.h>
-#include <stdio.h>		// printf
 #include <string.h>
 #include <assert.h>
 #include <wchar.h>
@@ -31,7 +30,7 @@ rwstring *
 rws_create (size_t length)
 {
 	rwstring *rws;
-	rws = malloc (sizeof (rwstring));	// allocates memory for a struct rwstring
+	rws = malloc (sizeof (rwstring));	/* allocates memory for a struct rwstring */
 	if (rws == NULL)
 		return NULL;
 
@@ -65,8 +64,10 @@ rws_free (rwstring ** rws)
 rwstring *
 rws_duplicate (rwstring * copied)
 {
+	rwstring *copy;
 	assert (copied != NULL);
-	rwstring *copy = malloc (sizeof (rwstring));
+
+	copy = malloc (sizeof (rwstring));
 	if (copy == NULL)
 		return NULL;
 
@@ -94,9 +95,9 @@ rws_length (rwstring * rws)
 int
 rws_copyrws (rwstring * to, const rwstring * from)
 {
+	size_t from_length;
 	assert (from != NULL);
 	assert (to != NULL);
-	size_t from_length;
 
 	from_length = wcslen (from->text);
 	/*TODO implement intelligent memory allocation */
@@ -295,8 +296,9 @@ rws_catrcs (rwstring * pre, const rcstring * pos)
 int
 rws_catwcs (rwstring * pre, const wchar_t * pos, const size_t length)
 {
-	assert (pre != NULL);
 	size_t pre_length;
+
+	assert (pre != NULL);
 
 	pre_length = wcslen (pos);
 
@@ -322,13 +324,14 @@ rws_catwcs (rwstring * pre, const wchar_t * pos, const size_t length)
 int
 rws_catwc (rwstring * pre, const wchar_t c)
 {
-	assert (pre != NULL);
 	size_t pre_length;
+
+	assert (pre != NULL);
 
 	pre_length = wcslen (pre->text);
 	if (pre->max <= pre_length)
 	{
-		pre->text = realloc (pre->text, (pre_length + 2) * sizeof (wchar_t));	// 2 = new character + null character
+		pre->text = realloc (pre->text, (pre_length + 2) * sizeof (wchar_t));	/* 2 = new character + null character */
 		if (pre->text == NULL)
 		{
 			return RS_MEMORY;
@@ -346,8 +349,9 @@ rws_catwc (rwstring * pre, const wchar_t c)
 int
 rws_catc (rwstring * pre, const char c)
 {
-//      assert(pre != NULL);
 	wchar_t newc;
+
+	assert (pre != NULL);
 	mbtowc (&newc, &c, 1);
 	return rws_catwc (pre, newc);
 }
@@ -356,9 +360,10 @@ rws_catc (rwstring * pre, const char c)
 rwstring *
 rws_wrap (wchar_t * wcs)
 {
-	if (wcs == NULL)
-		return NULL;
-	rwstring *wrapper = malloc (sizeof (rwstring));
+	rwstring *wrapper;
+
+	assert (wcs != NULL);
+	wrapper = malloc (sizeof (rwstring));
 	if (wrapper == NULL)
 		return NULL;
 	wrapper->max = wcslen (wcs);
@@ -370,9 +375,9 @@ rws_wrap (wchar_t * wcs)
 wchar_t *
 rws_unwrap (rwstring * rws)
 {
-	if (rws == NULL)
-		return NULL;
-	wchar_t *out = rws->text;
+	wchar_t *out;
+	assert (rws != NULL);
+	out = rws->text;
 
 	free (rws);
 	return out;
@@ -382,7 +387,8 @@ rws_unwrap (rwstring * rws)
 rcstring *
 rcs_create (size_t length)
 {
-	rcstring *rcs = malloc (sizeof (rcstring));	// allocates memory for a struct rcstring
+	rcstring *rcs;
+	rcs = malloc (sizeof (rcstring));	/* allocates memory for a struct rcstring */
 	if (rcs == NULL)
 		return NULL;
 
@@ -390,7 +396,10 @@ rcs_create (size_t length)
 
 	rcs->text = calloc (rcs->max + 1, sizeof (char));
 	if (rcs->text == NULL)
+	{
+		free (rcs);
 		return NULL;
+	}
 
 	return rcs;
 }
@@ -416,15 +425,19 @@ rcs_free (rcstring ** rcs)
 rcstring *
 rcs_duplicate (rcstring * copied)
 {
+	rcstring *copy;
 	assert (copied != NULL);
-	rcstring *copy = malloc (sizeof (rcstring));
+	copy = malloc (sizeof (rcstring));
 	if (copy == NULL)
 		return NULL;
 
 	/*TODO check if this makes any sense */
 	copy->text = calloc (1, sizeof (char));
 	if (copy->text == NULL)
+	{
+		free (copy);
 		return NULL;
+	}
 	copy->text[0] = 0;
 	copy->max = 0;
 
@@ -446,10 +459,10 @@ rcs_length (rcstring * rcs)
 int
 rcs_copyrcs (rcstring * to, const rcstring * from)
 {
+	size_t from_length;
 	assert (from != NULL);
 	assert (to != NULL);
 
-	size_t from_length;
 	from_length = strlen (from->text);
 	/*TODO implement intelligent memory allocation */
 	if (to->max < from_length)
@@ -495,9 +508,9 @@ rcs_copycs (rcstring * to, const char *from, const size_t length)
 int
 rcs_catrcs (rcstring * pre, const rcstring * pos)
 {
+	size_t pre_length, pos_length;
 	assert (pre != NULL);
 	assert (pos != NULL);
-	size_t pre_length, pos_length;
 
 	pre_length = strlen (pre->text);
 	pos_length = strlen (pos->text);
@@ -600,7 +613,7 @@ rcs_catc (rcstring * pre, const char c)
 	pre_length = strlen (pre->text);
 	if (pre->max <= pre_length)
 	{
-		pre->text = realloc (pre->text, (pre_length + 2) * sizeof (char));	// 2 = new character + null character
+		pre->text = realloc (pre->text, (pre_length + 2) * sizeof (char));	/* 2 = new character + null character */
 		if (pre->text == NULL)
 		{
 			return RS_MEMORY;
@@ -617,9 +630,9 @@ rcs_catc (rcstring * pre, const char c)
 rcstring *
 rcs_wrap (char *cs)
 {
+	rcstring *wrapper;
 	assert (cs != NULL);
 
-	rcstring *wrapper;
 	wrapper = malloc (sizeof (rcstring));
 	if (wrapper == NULL)
 		return NULL;
@@ -632,9 +645,10 @@ rcs_wrap (char *cs)
 char *
 rcs_unwrap (rcstring * rcs)
 {
+	char *out;
 	if (rcs == NULL)
 		return NULL;
-	char *out = rcs->text;
+	out = rcs->text;
 
 	free (rcs);
 	return out;
