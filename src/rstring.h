@@ -26,7 +26,7 @@
 struct rui_wstring
 {
 	wchar_t *text;		/*<! wchar_t c-string */
-	size_t max;		/*<! maximum length of s, according to the allocated memory */
+	size_t max;		/*<! usable memory allocated to text minus the space for the nul character */
 };
 
 typedef struct rui_wstring rwstring;
@@ -34,7 +34,7 @@ typedef struct rui_wstring rwstring;
 struct rui_cstring
 {
 	char *text;		/*<! char c-string */
-	size_t max;		/*<! maximum length of s, according to the allocated memory */
+	size_t max;		/*<! usable memory allocated to text minus the space for the nul character */
 };
 
 typedef struct rui_cstring rcstring;
@@ -59,6 +59,14 @@ Frees the memory allocated to a rwstring
 void rws_free (rwstring ** rws);
 
 /**
+Resizes the maximum memory allocated to the rwstring's wchar_t string
+\param rws pointer to the rwstring to be resized
+\param length the new maximum memory allocated to rwstring's wchar_t string
+\return result
+**/
+rstring_code rws_resize (rwstring * rws, size_t length);
+
+/**
 Creates a duplicate string of copied
 \param copied the string that will be duplicated
 \return a duplicate of copied, NULL if the memory allocation failed
@@ -76,7 +84,7 @@ size_t rws_length (rwstring * rws);
 \param from rwstring where to copy from
 \return result
 **/
-int rws_copyrws (rwstring * to, const rwstring * from);
+rstring_code rws_copyrws (rwstring * to, const rwstring * from);
 
 /** Copies a wchar_t string into a rwstring
 \param to rwstring where to copy to
@@ -84,21 +92,21 @@ int rws_copyrws (rwstring * to, const rwstring * from);
 \param length the length to be copied
 \return result
 **/
-int rws_copywcs (rwstring * to, const wchar_t * from, const size_t length);
+rstring_code rws_copywcs (rwstring * to, const wchar_t * from, const size_t length);
 
 /** Concatenates a rwstring onto the end of a rwstring
 \param pre rwstring where to append to
 \param pos rtring where to append from
 \return result
 **/
-int rws_catrws (rwstring * pre, const rwstring * pos);
+rstring_code rws_catrws (rwstring * pre, const rwstring * pos);
 
 /** Concatenates a rcstring onto the end of a rwstring
 \param pre rwstring where to append to
 \param pos rtring where to append from
 \return result
 **/
-int rws_catrcs (rwstring * pre, const rcstring * pos);
+rstring_code rws_catrcs (rwstring * pre, const rcstring * pos);
 
 /** Concatenates a wchar_t string onto the end of a rwstring
 \param pre rwstring where to append to
@@ -106,7 +114,7 @@ int rws_catrcs (rwstring * pre, const rcstring * pos);
 \param length the length to be copied
 \return result
 **/
-int rws_catwcs (rwstring * pre, const wchar_t * pos, const size_t length);
+rstring_code rws_catwcs (rwstring * pre, const wchar_t * pos, const size_t length);
 
 /** Concatenates an UTF-8 c-string onto the end of a rwstring
 \param pre rwstring where to append to
@@ -114,21 +122,21 @@ int rws_catwcs (rwstring * pre, const wchar_t * pos, const size_t length);
 \param length the number of characters to be copied
 \return result
 **/
-int rws_catcs (rwstring * pre, const char *pos, const size_t length);
+rstring_code rws_catcs (rwstring * pre, const char *pos, const size_t length);
 
 /** Concatenates a single wchar_t onto the end of a rwstring
 \param pre rwstring where to append to
 \param c wchar_t to be appended
 \return result
 **/
-int rws_catwc (rwstring * pre, const wchar_t c);
+rstring_code rws_catwc (rwstring * pre, const wchar_t c);
 
 /** Concatenates a single char onto the end of a rwstring
 \param pre rwstring where to append to
 \param c char to be appended
 \return result
 **/
-int rws_catc (rwstring * pre, const char c);
+rstring_code rws_catc (rwstring * pre, const char c);
 
 /** Wraps a wchar_t string with a rwstring structure, in order to offer a higher level string handling
 \param wcs wchar_t structure which will be wrapped
@@ -157,6 +165,14 @@ Frees the memory allocated to a rcstring
 void rcs_free (rcstring ** rcs);
 
 /**
+Resizes the maximum memory allocated to the rcstring's char string
+\param rcs pointer to the rcstring to be resized
+\param length the new maximum memory allocated to rcstring's char string
+\return result
+**/
+rstring_code rcs_resize (rcstring * rcs, size_t length);
+
+/**
 Creates a duplicate string of copied
 \param copied the string that will be duplicated
 \return a duplicate of copied, NULL if the memory allocation failed
@@ -174,7 +190,7 @@ size_t rcs_length (rcstring * rcs);
 \param from rcstring where to copy from
 \return result
 **/
-int rcs_copyrcs (rcstring * to, const rcstring * from);
+rstring_code rcs_copyrcs (rcstring * to, const rcstring * from);
 
 /** Copies a char string into a rcstring
 \param to rcstring where to copy to
@@ -182,14 +198,14 @@ int rcs_copyrcs (rcstring * to, const rcstring * from);
 \param length the length to be copied
 \return result
 **/
-int rcs_copycs (rcstring * to, const char *from, const size_t length);
+rstring_code rcs_copycs (rcstring * to, const char *from, const size_t length);
 
 /** Concatenates a rcstring onto the end of a rcstring
 \param pre rcstring where to append to
 \param pos rtring where to append from
 \return result
 **/
-int rcs_catrcs (rcstring * pre, const rcstring * pos);
+rstring_code rcs_catrcs (rcstring * pre, const rcstring * pos);
 
 /** Concatenates a char string onto the end of a rcstring
 \param pre rcstring where to append to
@@ -197,21 +213,21 @@ int rcs_catrcs (rcstring * pre, const rcstring * pos);
 \param length the length to be copied
 \return result
 **/
-int rcs_catcs (rcstring * pre, const char *pos, const size_t length);
+rstring_code rcs_catcs (rcstring * pre, const char *pos, const size_t length);
 
 /** Concatenates a single char onto the end of a rcstring
 \param pre rcstring where to append to
 \param c char to be appended
 \return result
 **/
-int rcs_catwc (rcstring * pre, const wchar_t c);
+rstring_code rcs_catwc (rcstring * pre, const wchar_t c);
 
 /** Concatenates a single char onto the end of a rcstring
 \param pre rcstring where to append to
 \param c char to be appended
 \return result
 **/
-int rcs_catc (rcstring * pre, const char c);
+rstring_code rcs_catc (rcstring * pre, const char c);
 
 /** Wraps a c-string with a rcstring structure, in order to offer a higher level string handling
 \param cs char which will be wrapped

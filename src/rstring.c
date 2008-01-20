@@ -34,12 +34,14 @@ rws_create (size_t length)
 	if (rws == NULL)
 		return NULL;
 
-	rws->max = length;
-
-	rws->text = calloc (rws->max + 1, sizeof (wchar_t));
+	rws->text = calloc (length + 1, sizeof (wchar_t));	/* text[max] reserved for L'\0' */
 	if (rws->text == NULL)
+	{
+		free (rws);
 		return NULL;
+	}
 
+	rws->max = length;
 	return rws;
 }
 
@@ -61,26 +63,38 @@ rws_free (rwstring ** rws)
 
 }
 
+
+rstring_code
+rws_resize (rwstring * rws, size_t length)
+{
+	wchar_t *temp;
+	assert (rws != NULL);
+
+	temp = realloc (rws->text, sizeof (wchar_t) * (length + 1));	/* length plus L'\0' */
+	if (temp == NULL)
+	{
+		free (rws);
+		return RS_MEMORY;
+	}
+	rws->text = temp;
+	rws->max = length;
+	rws->text[rws->max] = L'\0';
+	return RS_OK;
+}
+
+
 rwstring *
 rws_duplicate (rwstring * copied)
 {
 	rwstring *copy;
 	assert (copied != NULL);
 
-	copy = malloc (sizeof (rwstring));
+	copy = rws_create (copy->max);
 	if (copy == NULL)
 		return NULL;
 
-	copy->text = calloc (1, sizeof (wchar_t));
-	if (copy->text == NULL)
-		return NULL;
-	copy->text[0] = 0;
-	copy->max = 0;
-
-	if (rws_copyrws (copy, copied) == RS_OK)
-		return copy;
-	else
-		return NULL;
+	wcsncpy (copy->text, copied->text, wcslen (copied->text));
+	return copy;
 }
 
 
@@ -92,7 +106,7 @@ rws_length (rwstring * rws)
 }
 
 
-int
+rstring_code
 rws_copyrws (rwstring * to, const rwstring * from)
 {
 	size_t from_length;
@@ -103,21 +117,16 @@ rws_copyrws (rwstring * to, const rwstring * from)
 	/*TODO implement intelligent memory allocation */
 	if (to->max < from_length)
 	{
-		to->text = realloc (to->text, (from_length + 1) * sizeof (wchar_t));
-		if (to->text == NULL)
-		{
+		if (rws_resize (to, from_length + 1) != RS_OK)
 			return RS_MEMORY;
-		}
-
-		to->max = from_length;
 	}
 	wcsncpy (to->text, from->text, from_length);
-	to->text[from_length] = L'0';
+	to->text[from_length] = L'\0';
 	return RS_OK;
 }
 
 
-int
+rstring_code
 rws_copywcs (rwstring * to, const wchar_t * from, const size_t length)
 {
 	assert (from != NULL);
@@ -126,20 +135,15 @@ rws_copywcs (rwstring * to, const wchar_t * from, const size_t length)
 	/*TODO implement intelligent memory allocation */
 	if (to->max < length)
 	{
-		to->text = realloc (to->text, (length + 1) * sizeof (wchar_t));
-		if (to->text == NULL)
-		{
+		if (rws_resize (to, length + 1) != RS_OK)
 			return RS_MEMORY;
-		}
-
-		to->max = length;
 	}
 	wcsncpy (to->text, from, length);
-	to->text[length] = L'0';
+	to->text[length] = L'\0';
 	return RS_OK;
 }
 
-int
+rstring_code
 rws_catrws (rwstring * pre, const rwstring * pos)
 {
 	size_t pre_length, pos_length;
@@ -153,20 +157,15 @@ rws_catrws (rwstring * pre, const rwstring * pos)
 
 	if (pre->max < pre_length + pos_length + 1)
 	{
-		pre->text = realloc (pre->text, (pre_length + pos_length + 1) * sizeof (wchar_t));
-		if (pre->text == NULL)
-		{
+		if (rws_resize (pre, pre_length + pos_length + 1) != RS_OK)
 			return RS_MEMORY;
-		}
-
-		pre->max = pre_length + pos_length;
 	}
 	wcsncpy (pre->text + pre_length, pos->text, pos_length);
-	pre->text[pre_length + pos_length] = L'0';
+	pre->text[pre_length + pos_length] = L'\0';
 	return RS_OK;
 }
 
-int
+rstring_code
 rws_catrcs (rwstring * pre, const rcstring * pos)
 {
 	size_t utf8pos;
@@ -293,7 +292,7 @@ rws_catrcs (rwstring * pre, const rcstring * pos)
 }
 
 
-int
+rstring_code
 rws_catwcs (rwstring * pre, const wchar_t * pos, const size_t length)
 {
 	size_t pre_length;
@@ -307,21 +306,16 @@ rws_catwcs (rwstring * pre, const wchar_t * pos, const size_t length)
 
 	if (pre->max < pre_length + length)
 	{
-		pre->text = realloc (pre->text, (pre_length + length + 1) * sizeof (wchar_t));
-		if (pre->text == NULL)
-		{
+		if (rws_resize (pre, pre_length + length + 1) != RS_OK)
 			return RS_MEMORY;
-		}
-
-		pre->max = pre_length + length;
 	}
 	wcsncpy (pre->text + pre_length, pos, length);
-	pre->text[pre_length + length] = L'0';
+	pre->text[pre_length + length] = L'\0';
 	return RS_OK;
 }
 
 
-int
+rstring_code
 rws_catwc (rwstring * pre, const wchar_t c)
 {
 	size_t pre_length;
@@ -331,13 +325,8 @@ rws_catwc (rwstring * pre, const wchar_t c)
 	pre_length = wcslen (pre->text);
 	if (pre->max <= pre_length)
 	{
-		pre->text = realloc (pre->text, (pre_length + 2) * sizeof (wchar_t));	/* 2 = new character + null character */
-		if (pre->text == NULL)
-		{
+		if (rws_resize (pre, pre_length + 1) != RS_OK)
 			return RS_MEMORY;
-		}
-
-		pre->max = pre_length + 1;
 	}
 	pre->text[pre_length] = c;
 	pre->text[pre_length + 1] = L'\0';
@@ -346,7 +335,7 @@ rws_catwc (rwstring * pre, const wchar_t c)
 }
 
 
-int
+rstring_code
 rws_catc (rwstring * pre, const char c)
 {
 	wchar_t newc;
@@ -422,41 +411,51 @@ rcs_free (rcstring ** rcs)
 
 }
 
+
+rstring_code
+rcs_resize (rcstring * rcs, size_t length)
+{
+	char *temp;
+	assert (rcs != NULL);
+
+	temp = realloc (rcs->text, sizeof (char) * (length + 1));	/* length plus L'\0' */
+	if (temp == NULL)
+	{
+		free (rcs);
+		return RS_MEMORY;
+	}
+	rcs->text = temp;
+	rcs->max = length;
+	rcs->text[rcs->max] = L'\0';
+	return RS_OK;
+}
+
+
 rcstring *
 rcs_duplicate (rcstring * copied)
 {
 	rcstring *copy;
 	assert (copied != NULL);
-	copy = malloc (sizeof (rcstring));
+
+	copy = rcs_create (copy->max);
 	if (copy == NULL)
 		return NULL;
 
-	/*TODO check if this makes any sense */
-	copy->text = calloc (1, sizeof (char));
-	if (copy->text == NULL)
-	{
-		free (copy);
-		return NULL;
-	}
-	copy->text[0] = 0;
-	copy->max = 0;
-
-	if (rcs_copyrcs (copy, copied) == RS_OK)
-		return copy;
-	else
-		return NULL;
+	strncpy (copy->text, copied->text, strlen (copied->text));
+	return copy;
 }
 
 
 size_t
 rcs_length (rcstring * rcs)
 {
+	/*TODO account for UTF8 */
 	assert (rcs != NULL);
 	return strlen (rcs->text);
 }
 
 
-int
+rstring_code
 rcs_copyrcs (rcstring * to, const rcstring * from)
 {
 	size_t from_length;
@@ -467,13 +466,8 @@ rcs_copyrcs (rcstring * to, const rcstring * from)
 	/*TODO implement intelligent memory allocation */
 	if (to->max < from_length)
 	{
-		to->text = realloc (to->text, (from_length + 1) * sizeof (char));
-		if (to->text == NULL)
-		{
+		if (rcs_resize (to, from_length + 1) != RS_OK)
 			return RS_MEMORY;
-		}
-
-		to->max = from_length;
 	}
 	strncpy (to->text, from->text, from_length);
 	to->text[from_length] = '\0';
@@ -481,7 +475,7 @@ rcs_copyrcs (rcstring * to, const rcstring * from)
 }
 
 
-int
+rstring_code
 rcs_copycs (rcstring * to, const char *from, const size_t length)
 {
 	assert (to != NULL);
@@ -492,20 +486,15 @@ rcs_copycs (rcstring * to, const char *from, const size_t length)
 	/*TODO implement intelligent memory allocation */
 	if (to->max < length)
 	{
-		to->text = realloc (to->text, (length + 1) * sizeof (char));
-		if (to->text == NULL)
-		{
+		if (rcs_resize (to, length + 1) != RS_OK)
 			return RS_MEMORY;
-		}
-
-		to->max = length;
 	}
 	strncpy (to->text, from, length);
 	to->text[length] = '\0';
 	return RS_OK;
 }
 
-int
+rstring_code
 rcs_catrcs (rcstring * pre, const rcstring * pos)
 {
 	size_t pre_length, pos_length;
@@ -517,20 +506,15 @@ rcs_catrcs (rcstring * pre, const rcstring * pos)
 
 	if (pre->max < pre_length + pos_length + 1)
 	{
-		pre->text = realloc (pre->text, (pre_length + pos_length + 1) * sizeof (char));
-		if (pre->text == NULL)
-		{
+		if (rcs_resize (pre, pre_length + pos_length + 1) != RS_OK)
 			return RS_MEMORY;
-		}
-
-		pre->max = pre_length + pos_length;
 	}
 	strncpy (pre->text + pre_length, pos->text, pos_length);
 	pre->text[pre_length + pos_length] = '\0';
 	return RS_OK;
 }
 
-int
+rstring_code
 rcs_catcs (rcstring * pre, const char *pos, const size_t length)
 {
 	size_t pre_length;
@@ -541,21 +525,16 @@ rcs_catcs (rcstring * pre, const char *pos, const size_t length)
 
 	if (pre->max < pre_length + length)
 	{
-		pre->text = realloc (pre->text, (pre_length + length + 1) * sizeof (char));
-		if (pre->text == NULL)
-		{
+		if (rcs_resize (pre, pre_length + length + 5) != RS_OK)
 			return RS_MEMORY;
-		}
-
-		pre->max = pre_length + length;
 	}
 	strncpy (pre->text + pre_length, pos, length);
-	pre->text[pre_length + length] = '0';
+	pre->text[pre_length + length] = '\0';
 	return RS_OK;
 }
 
 
-int
+rstring_code
 rcs_catwc (rcstring * pre, const wchar_t wc)
 {
 	assert (pre != NULL);
@@ -604,7 +583,7 @@ rcs_catwc (rcstring * pre, const wchar_t wc)
 }
 
 
-int
+rstring_code
 rcs_catc (rcstring * pre, const char c)
 {
 	size_t pre_length;
@@ -613,13 +592,9 @@ rcs_catc (rcstring * pre, const char c)
 	pre_length = strlen (pre->text);
 	if (pre->max <= pre_length)
 	{
-		pre->text = realloc (pre->text, (pre_length + 2) * sizeof (char));	/* 2 = new character + null character */
-		if (pre->text == NULL)
-		{
+		/*TODO implement intelligent memory allocation */
+		if (rcs_resize (pre, pre->max + 5) != RS_OK)
 			return RS_MEMORY;
-		}
-
-		pre->max = pre_length + 1;
 	}
 	pre->text[pre_length] = c;
 	pre->text[pre_length + 1] = '\0';
