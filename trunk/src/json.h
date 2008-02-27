@@ -223,11 +223,10 @@ int json_white_space (const wchar_t c);
 
 
 /**
-Strips all JSON white spaces from the given string
-@param text a wchar_t string holding a JSON formatted document
-@return a wchar_t string holding the stripped down document
+Strips all JSON white spaces from the text string
+@param text a wchar_t string holding a JSON document or document snippet 
 **/
-wchar_t *json_strip_white_spaces (wchar_t * text);
+void json_strip_white_spaces (wchar_t * text);
 
 
 /**
