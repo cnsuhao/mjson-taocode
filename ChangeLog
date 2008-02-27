@@ -1,4 +1,5 @@
 Version 0.8
+* rewritten json_strip_white_spaces()
 * fixed a bunch of bugs
 
 Version 0.7

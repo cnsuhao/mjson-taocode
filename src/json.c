@@ -567,106 +567,63 @@ json_white_space (const wchar_t c)
 }
 
 
-wchar_t *
+void 
 json_strip_white_spaces (wchar_t * text)
 {
-	size_t pos;
-	wchar_t *output;
-	wchar_t *temp;
-	size_t length;
-	char loop;
+	size_t in, out, length;
+	int state;
 
 	assert (text != NULL);
-	/* declaring the variables */
-	pos = 0;
-
-	output = NULL;
-	temp = NULL;
-	length = 0;
-
-	while (pos < wcslen (text))
+	
+	in = 0;
+	out = 0;
+	length = wcslen(text);
+	state = 0;	/* possible states: 0 -> document, 1 -> inside a string */
+	
+	while(in < length)
 	{
-		switch (text[pos])
+		switch(text[in])
 		{
-		case L'\x20':
-		case L'\x09':
-		case L'\x0A':
-		case L'\x0D':	/* JSON insignificant white spaces */
-			pos++;
-			break;
-
-		case L'\"':	/*open string */
-			length = 2;
-			if (output)
-				length += wcslen (output);
-			if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
-			{
-				return NULL;
-			}
-			output = temp;
-			wcsncat (output, L"\"", 1);
-
-			pos++;
-			loop = 1;	/* inner string loop trigger */
-			while (loop)	/* parse the inner part of the string */
-			{
-				if (text[pos] == L'\\')	/* escaped sequence */
+			case L'\x20':		/* space */
+			case L'\x09':		/* horizontal tab */
+			case L'\x0A':		/* line feed or new line */
+			case L'\x0D':		/* Carriage return */
+				if(state == 1)
 				{
-					if ((temp = realloc (output, sizeof (wchar_t) * (wcslen (output) + 2))) == NULL)
-					{
-						return NULL;
-					}
-					output = temp;
-					wcsncat (output, L"\\", 1);
+					text[out++] = text[in];
+				}
+				break;
 
-					pos++;
-					if (text[pos] == L'\"')	/* don't consider a \" escaped sequence as an end of string */
-					{
-						if ((temp = realloc (output, sizeof (wchar_t) * (wcslen (output) + 2))) == NULL)
+			case L'\"':
+				switch(state)
+				{
+					case 0:	/* not inside a JSON string */
+						state = 1;
+						break;
+
+					case 1: /* inside a JSON string */
+						if(text[in-1] != L'\\')
 						{
-							return NULL;
+							state = 0;
 						}
-						output = temp;
-						wcsncat (output, L"\"", 1);
-						pos++;
-					}
-				}
-				else if (text[pos] == L'\"')	/* reached end of string */
-				{
-					loop = 0;
-				}
+						break;
 
-				if ((temp = realloc (output, sizeof (wchar_t) * (wcslen (output) + 2))) == NULL)
-				{
-					return NULL;
+					default:
+						assert(0);
 				}
-				output = temp;
-				wcsncat (output, &text[pos], 1);
-				pos++;
-				if (pos >= wcslen (text))
-					loop = 0;
-			}
-			break;
+				text[out++] = text[in];
+				break;
 
-		default:
-			length = 2;
-			if (output)
-				length += wcslen (output);
-			if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
-			{
-				return NULL;
-			}
-			output = temp;
-			wcsncat (output, &text[pos], 1);
-			pos++;
-			break;
+			default:
+				text[out++] = text[in];
 		}
+		++in;
 	}
-	return output;
+	text[out] = L'\0';
 }
 
 
-wchar_t *
+	wchar_t *
 json_format_string (wchar_t * text)
 {
 	size_t pos = 0;
@@ -682,27 +639,27 @@ json_format_string (wchar_t * text)
 	{
 		switch (text[pos])
 		{
-		case L'\x20':
-		case L'\x09':
-		case L'\x0A':
-		case L'\x0D':	/* JSON insignificant white spaces */
-			pos++;
-			break;
+			case L'\x20':
+			case L'\x09':
+			case L'\x0A':
+			case L'\x0D':	/* JSON insignificant white spaces */
+				pos++;
+				break;
 
-		case L'{':
-			indentation++;
-			length = 3 + indentation;
-			if (output)
-				length += wcslen (output);
-			if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
-			{
-				return NULL;
-			}
-			output = temp;
-			wcsncat (output, L"{\n", 2);
-			for (i = 0; i < indentation; i++)	/*/todo find a better way */
-			{
-				wcsncat (output, L"\t", 1);
+			case L'{':
+				indentation++;
+				length = 3 + indentation;
+				if (output)
+					length += wcslen (output);
+				if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
+				{
+					return NULL;
+				}
+				output = temp;
+				wcsncat (output, L"{\n", 2);
+				for (i = 0; i < indentation; i++)	/*/todo find a better way */
+				{
+					wcsncat (output, L"\t", 1);
 			}
 
 			pos++;
