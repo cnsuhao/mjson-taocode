@@ -1238,6 +1238,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		goto state37;	/* start array */
 	case 38:
 		goto state38;	/* fix literal cursor position */
+	case 39:
+		goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 
 	default:
 		return JSON_UNKNOWN_PROBLEM;	/* IF THIS PART IS REACHED THEN THERE IS A BUG SOMEWHERE */
@@ -1298,15 +1300,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				free (info->temp), info->temp = NULL;
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;	/* return JSON_ILLEGAL_CHARACTER */
+			goto state39;
 			break;
 		}
 
@@ -1354,18 +1349,15 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 
 		case L',':
 			if (info->cursor == NULL)
-				return JSON_ILLEGAL_CHARACTER;
+			{
+				info->state = 39;
+				goto state39;	/* handle JSON_ILLEGAL_CHAR */
+			}
+
 			if (info->cursor->child_end == NULL)
 			{
-				if (info->temp != NULL)
-					free (info->temp), info->temp = NULL;
-				if (info->cursor != NULL)
-				{
-					while (info->cursor->parent != NULL)
-						info->cursor = info->cursor->parent;
-					json_free_value (&info->cursor);
-				}
-				return JSON_ILLEGAL_CHARACTER;
+				info->state = 39;
+				goto state39;	/* handle JSON_ILLEGAL_CHAR */
 			}
 
 			info->state = 24;	/* sibling */
@@ -1379,15 +1371,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				free (info->temp), info->temp = NULL;
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle JSON_ILLEGAL_CHAR */
 			break;
 		}
 	}
@@ -1399,15 +1384,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		{
 			if ((info->cursor->type != JSON_ARRAY) && (info->cursor->type != JSON_STRING))
 			{
-				if (info->temp != NULL)
-					free (info->temp), info->temp = NULL;
-				if (info->cursor != NULL)
-				{
-					while (info->cursor->parent != NULL)
-						info->cursor = info->cursor->parent;
-					json_free_value (&info->cursor);
-				}
-				return JSON_ILLEGAL_CHARACTER;
+				info->state = 39;
+				goto state39;	/* handle JSON_ILLEGAL_CHAR */
 			}
 		}
 
@@ -1431,19 +1409,17 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 	{
 		/* verify tree integrity */
 		if (info->cursor == NULL)
-			return JSON_ILLEGAL_CHARACTER;
+		{
+			info->state = 39;
+			goto state39;	/* handle JSON_ILLEGAL_CHAR */
+		}
+
 		if (info->cursor->type != JSON_OBJECT)
 		{
-			if (info->temp != NULL)
-				free (info->temp), info->temp = NULL;
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle JSON_ILLEGAL_CHAR */
 		}
+
 		if (info->cursor->parent == NULL)
 		{
 			info->state = 22;
@@ -1479,15 +1455,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				free (info->temp), info->temp = NULL;
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle JSON_ILLEGAL_CHAR */
 			break;
 		}
 
@@ -1505,15 +1474,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				free (info->temp), info->temp = NULL;
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_BAD_TREE_STRUCTURE;
+			info->state = 39;
+			goto state39;	/* handle JSON_ILLEGAL_CHAR */
 		}
 	}
 
@@ -1521,19 +1483,17 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 	{
 		/* verify tree integrity */
 		if (info->cursor == NULL)
-			return JSON_ILLEGAL_CHARACTER;
+		{
+			info->state = 39;
+			goto state39;	/* handle JSON_ILLEGAL_CHAR */
+		}
+
 		if (info->cursor->type != JSON_ARRAY)
 		{
-			if (info->temp != NULL)
-				free (info->temp), info->temp = NULL;
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle JSON_ILLEGAL_CHAR */
 		}
+
 		if (info->cursor->parent == NULL)
 		{
 			info->state = 22;
@@ -1627,29 +1587,15 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 				{
 					if (info->cursor->parent->type != JSON_OBJECT)	/*a parent of a parent string must be an object */
 					{
-						if (info->temp != NULL)
-							free (info->temp), info->temp = NULL;
-						if (info->cursor != NULL)
-						{
-							while (info->cursor->parent != NULL)
-								info->cursor = info->cursor->parent;
-							json_free_value (&info->cursor);
-						}
-						return JSON_ILLEGAL_CHARACTER;
+						info->state = 39;
+						goto state39;	/* handle JSON_ILLEGAL_CHAR */
 					}
 				}
 				break;
 
 			default:	/* ...otherwise, the tree is malformed */
-				if (info->temp != NULL)
-					free (info->temp), info->temp = NULL;
-				if (info->cursor != NULL)
-				{
-					while (info->cursor->parent != NULL)
-						info->cursor = info->cursor->parent;
-					json_free_value (&info->cursor);
-				}
-				return JSON_ILLEGAL_CHARACTER;
+				info->state = 39;
+				goto state39;	/* handle JSON_ILLEGAL_CHAR */
 			}
 		}
 
@@ -1849,16 +1795,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		case L'\x001d':
 		case L'\x001e':
 		case L'\x001f':
-
-			if (info->temp != NULL)
-				free (info->temp), info->temp = NULL;
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle JSON_ILLEGAL_CHAR */
 			break;
 
 		default:
@@ -1944,15 +1882,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				free (info->temp), info->temp = NULL;
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle JSON_ILLEGAL_CHAR */
 		}
 	}
 
@@ -2006,15 +1937,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle JSON_ILLEGAL_CHAR */
 		}
 		/* this part shouldn't be reached */
 		return JSON_UNKNOWN_PROBLEM;
@@ -2070,15 +1994,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle JSON_ILLEGAL_CHAR */
 		}
 		/* this section shouldn't be reached */
 		return JSON_UNKNOWN_PROBLEM;
@@ -2134,7 +2051,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle JSON_ILLEGAL_CHAR error */
 		}
 
 		/* this section shouldn't be reached */
@@ -2191,15 +2109,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle JSON_ILLEGAL_CHAR */
 		}
 		/* this section shouldn't be reached */
 		return JSON_UNKNOWN_PROBLEM;
@@ -2307,18 +2218,15 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 
 		case L',':
 			if (info->cursor == NULL)
-				return JSON_ILLEGAL_CHARACTER;
+			{
+				info->state = 39;
+				goto state39;	/* handle JSON_ILLEGAL_CHAR */
+			}
+
 			if (info->cursor->child_end == NULL)
 			{
-				if (info->temp != NULL)
-					json_free_value (&info->temp);
-				if (info->cursor != NULL)
-				{
-					while (info->cursor->parent != NULL)
-						info->cursor = info->cursor->parent;
-					json_free_value (&info->cursor);
-				}
-				return JSON_ILLEGAL_CHARACTER;
+				info->state = 39;
+				goto state39;	/* handle JSON_ILLEGAL_CHAR */
 			}
 
 			info->state = 24;	/* sibling */
@@ -2333,15 +2241,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 
 
 		default:
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle JSON_ILLEGAL_CHAR */
 			break;
 		}
 	}
@@ -2351,9 +2252,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		/* perform pre-condition sanity checks */
 		if (info->cursor == NULL)
 		{
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle JSON_ILLEGAL_CHAR error */
 		}
 		if (info->cursor->type != JSON_STRING)
 		{
@@ -2453,15 +2353,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 	}
 
@@ -2510,15 +2403,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 	}
 
@@ -2552,15 +2438,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 	}
 
@@ -2642,15 +2521,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 	}
 
@@ -2693,15 +2565,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 	}
 
@@ -2770,15 +2635,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 	}
 
@@ -2828,15 +2686,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 	}
 
@@ -2868,15 +2719,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 	}
 
@@ -2929,15 +2773,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 	}
 
@@ -2957,15 +2794,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 			break;
 		}
 	}
@@ -3015,15 +2845,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 	}
 
@@ -3128,15 +2951,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 	}
 
@@ -3144,15 +2960,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 	{
 		if (text[pos] != L'r')
 		{
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 
 		info->state = 26;
@@ -3168,15 +2977,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 	{
 		if (text[pos] != L'u')
 		{
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 
 		info->state = 27;
@@ -3192,15 +2994,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 	{
 		if (text[pos] != L'e')
 		{
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 		info->temp = json_new_true ();
 		info->state = 38;
@@ -3238,27 +3033,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-			{
-				json_free_value (&info->temp);
-			}
-
-			if (info->cursor != NULL)
-			{
-				if (info->cursor->parent == NULL)
-				{
-					/* JSON document consists of a single text label */
-					info->state = 22;
-					if (pos > length)	/* current string buffer ended */
-						return JSON_INCOMPLETE_DOCUMENT;
-					else
-						goto state22;	/* pair */
-				}
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle JSON_ILLEGAL_CHAR error */
 			break;
 		}
 	}
@@ -3267,15 +3043,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 	{
 		if (text[pos] != L'a')
 		{
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 		info->state = 30;
 		pos++;
@@ -3290,15 +3059,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 	{
 		if (text[pos] != L'l')
 		{
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 
 		info->state = 31;
@@ -3314,15 +3076,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 	{
 		if (text[pos] != L's')
 		{
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 
 		info->state = 32;
@@ -3338,15 +3093,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 	{
 		if (text[pos] != L'e')
 		{
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 		info->temp = json_new_false ();
 
@@ -3363,15 +3111,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 	{
 		if (text[pos] != L'u')
 		{
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 
 		info->state = 35;
@@ -3387,15 +3128,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 	{
 		if (text[pos] != L'l')
 		{
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 
 		info->state = 36;
@@ -3410,15 +3144,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 	{
 		if (text[pos] != L'l')
 		{
-			if (info->temp != NULL)
-				json_free_value (&info->temp);
-			if (info->cursor != NULL)
-			{
-				while (info->cursor->parent != NULL)
-					info->cursor = info->cursor->parent;
-				json_free_value (&info->cursor);
-			}
-			return JSON_ILLEGAL_CHARACTER;
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 		/* set up the temp */
 		info->temp = json_new_null ();
@@ -3438,15 +3165,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		{
 			if ((info->cursor->type != JSON_ARRAY) && (info->cursor->type != JSON_STRING))
 			{
-				if (info->temp != NULL)
-					json_free_value (&info->temp);
-				if (info->cursor != NULL)
-				{
-					while (info->cursor->parent != NULL)
-						info->cursor = info->cursor->parent;
-					json_free_value (&info->cursor);
-				}
-				return JSON_ILLEGAL_CHARACTER;
+				info->state = 39;
+				goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 			}
 		}
 
@@ -3522,6 +3242,19 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		/* move onto next state */
 		info->state = 23;
 		goto state23;	/* value followup */
+	}
+
+      state39:			/* handle the JSON_ILLEGAL_CHAR error */
+	{
+		if (info->temp != NULL)
+			free (info->temp), info->temp = NULL;
+		if (info->cursor != NULL)
+		{
+			while (info->cursor->parent != NULL)
+				info->cursor = info->cursor->parent;
+			json_free_value (&info->cursor);
+		}
+		return JSON_ILLEGAL_CHARACTER;
 	}
 
 	/* if the execution reached this part then we have a problem */

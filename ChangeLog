@@ -1,3 +1,6 @@
+Version 0.8
+* fixed a bunch of bugs
+
 Version 0.7
 * switched the internal unicode support from UCS-4-ish (wchar_t) to UTF-8
 * reintroduced the rstring library to simplify and cleanup string handling
