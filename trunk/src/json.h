@@ -84,6 +84,7 @@ The structure holding all information needed to resume parsing
 struct json_parsing_info
 {
 	unsigned int state;	/*!< the state where the parsing was left on the last parser run */
+	size_t pos;		/*!< the character from the given JSON document snippet being parsed */
 	int string_length_limit_reached;	/*!< flag informing if the string limit length defined by JSON_MAX_STRING_LENGTH was reached */
 	json_t *cursor;		/*!< pointers to nodes belonging to the document tree which aid the document parsing */
 	json_t *temp;		/*!< temporary node which the parser uses to build up the parsed document */
