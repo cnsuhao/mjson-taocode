@@ -631,10 +631,9 @@ json_format_string (wchar_t * text)
 	unsigned int i;		/* loop iterator variable */
 	char loop;
 
-	wchar_t *output = NULL;
-	wchar_t *temp = NULL;
-	size_t length = 0;	/* temp variable to calculate the new realloc size */
+	rwstring *output;
 
+	output = rws_create (wcslen (text));
 	while (pos < wcslen (text))
 	{
 		switch (text[pos])
@@ -648,112 +647,52 @@ json_format_string (wchar_t * text)
 
 		case L'{':
 			indentation++;
-			length = 3 + indentation;
-			if (output)
-				length += wcslen (output);
-			if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
+			rws_catwc (output, L'{');
+			for (i = 0; i < indentation; i++)
 			{
-				return NULL;
+				rws_catwc (output, L'\t');
 			}
-			output = temp;
-			wcsncat (output, L"{\n", 2);
-			for (i = 0; i < indentation; i++)	/*/todo find a better way */
-			{
-				wcsncat (output, L"\t", 1);
-			}
-
 			pos++;
 			break;
 
 		case L'}':
 			indentation--;
-			length = 3 + indentation;	/* \n + indent*\t + } + \0 */
-			if (output)
-				length += wcslen (output);
-			if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
-			{
-				return NULL;
-			}
-			output = temp;
-			wcsncat (output, L"\n", 1);
+			rws_catwc (output, L'\n');
 			for (i = 0; i < indentation; i++)
 			{
-				wcsncat (output, L"\t", 1);
+				rws_catwc (output, L'\t');
 			}
-			wcsncat (output, L"}", 1);
-
+			rws_catwc (output, L'}');
 			pos++;
 			break;
 
 		case L':':
-			length = 3;
-			if (output)
-				length += wcslen (output);
-			if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
-			{
-				return NULL;
-			}
-			output = temp;
-			wcsncat (output, L": ", 2);
-
+			rws_catwcs (output, L": ", 2);
 			pos++;
 			break;
 
 		case L',':
-			length = 3 + indentation;
-			if (output)
-				length += wcslen (output);
-			if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
-			{
-				return NULL;
-			}
-			output = temp;
-			wcsncat (output, L",\n", 2);
+			rws_catwcs (output, L",\n", 2);
 			for (i = 0; i < indentation; i++)
 			{
-				wcsncat (output, L"\t", 1);
+				rws_catwc (output, L'\t');
 			}
-
 			pos++;
 			break;
 
-		case L'\"':	/*open string   ///todo rethink this one */
-			length = 2;
-			if (output)
-				length += wcslen (output);
-			if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
-			{
-				return NULL;
-			}
-			output = temp;
-			wcsncat (output, &text[pos], 1);
-
+		case L'\"':	/* open string */
+			rws_catwc (output, text[pos]);
 			pos++;
 			loop = 1;	/* inner string loop trigger is enabled */
-			while (loop)	/* parse the inner part of the string   ///todo rethink this loop */
+			while (loop)	/* parse the inner part of the string   ///TODO rethink this loop */
 			{
 				if (text[pos] == L'\\')	/* escaped sequence */
 				{
-					length = 2;
-					if (output)
-						length += wcslen (output);
-					if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
-					{
-						return NULL;
-					}
-					output = temp;
-					wcsncat (output, L"\\", 1);
-
+					rws_catwc (output, L'\\');
 					pos++;
 					if (text[pos] == L'\"')	/* don't consider a \" escaped sequence as an end of string */
 					{
-						if ((temp = realloc (output, sizeof (wchar_t) * (wcslen (output) + 2))) == NULL)
-						{
-							return NULL;
-						}
-						output = temp;
-						wcsncat (output, L"\"", 1);
-
+						rws_catwc (output, L'\"');
 						pos++;
 					}
 				}
@@ -762,13 +701,7 @@ json_format_string (wchar_t * text)
 					loop = 0;
 				}
 
-
-				if ((temp = realloc (output, sizeof (wchar_t) * (wcslen (output) + 2))) == NULL)
-				{
-					return NULL;
-				}
-				output = temp;
-				wcsncat (output, &text[pos], 1);
+				rws_catwc (output, text[pos]);
 
 				pos++;
 				if (pos >= wcslen (text))
@@ -779,22 +712,13 @@ json_format_string (wchar_t * text)
 			break;
 
 		default:
-			length = 2;
-			if (output)
-				length += wcslen (output);
-			if ((temp = realloc (output, sizeof (wchar_t) * length)) == NULL)
-			{
-				return NULL;
-			}
-			output = temp;
-			wcsncat (output, &text[pos], 1);
-
+			rws_catwc (output, text[pos]);
 			pos++;
 			break;
 		}
 	}
 
-	return output;
+	return rws_unwrap (output);
 }
 
 
@@ -1101,7 +1025,7 @@ json_escape_to_ascii (wchar_t * text)
 enum json_error
 json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length)
 {
-	/*/todo sanitize the state numbers. */
+	/*/TODO sanitize the state numbers. */
 	/*
 	   redundant states which were eliminated:
 	   state33
@@ -1362,7 +1286,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 
       state3:			/* end object */
 	{
-		/* verify tree integrity */
+		/* document tree sanity check */
 		if (info->cursor == NULL)
 		{
 			info->state = 39;
@@ -1390,7 +1314,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		info->cursor = info->cursor->parent;
 
 		/* check if we descended into the root node */
-		switch (info->cursor->type)	/*/ todo rethink these switch statements */
+		switch (info->cursor->type)
 		{
 		case JSON_STRING:
 			if (info->cursor->parent == NULL)
@@ -1481,7 +1405,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		case JSON_ARRAY:
-			/*/todo finish this step */
+			/*/TODO finish this step */
 			break;
 
 		default:	/* The parent node of a JSON_ARRAY can only be a JSON_ARRAY or JSON_STRING */
@@ -1659,7 +1583,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 				info->temp = NULL;
 				if (info->cursor->parent != NULL)
 				{
-					/* todo perform tree sanity check */
+					/* TODO perform tree sanity check */
 					if (info->cursor->parent->type != JSON_OBJECT)
 					{
 						if (info->cursor != NULL)
@@ -3229,14 +3153,16 @@ json_parse_document (wchar_t * text)
 	error = json_parse_string (&jpi, text, wcslen (text));
 	if (error != JSON_OK)
 	{
-		/*/TODO check if jpi.temp is freed from within json_parse_string(); */
+		if (jpi.temp != NULL)
+			free (jpi.temp);
 		return NULL;
 	}
 	else
 	{
-		return jpi.cursor;	/*/todo test if this is really the root node */
+		return jpi.cursor;	/*/TODO test if this is really the root node */
 	}
 }
+
 
 enum json_error
 json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_functions *jsf, wchar_t c)
