@@ -26,6 +26,8 @@
 #include <wchar.h>
 
 
+#define RSTRING_INCSTEP 3
+
 rwstring *
 rws_create (size_t length)
 {
@@ -325,12 +327,12 @@ rws_catwc (rwstring * pre, const wchar_t c)
 	pre_length = wcslen (pre->text);
 	if (pre->max <= pre_length)
 	{
-		if (rws_resize (pre, pre_length + 1) != RS_OK)
+		pre->max += RSTRING_INCSTEP;
+		if (rws_resize (pre, pre->max ) != RS_OK)
 			return RS_MEMORY;
 	}
 	pre->text[pre_length] = c;
 	pre->text[pre_length + 1] = L'\0';
-	pre_length++;
 	return RS_OK;
 }
 
@@ -587,13 +589,14 @@ rstring_code
 rcs_catc (rcstring * pre, const char c)
 {
 	size_t pre_length;
+
 	assert (pre != NULL);
 
 	pre_length = strlen (pre->text);
 	if (pre->max <= pre_length)
 	{
-		/*TODO implement intelligent memory allocation */
-		if (rcs_resize (pre, pre->max + 5) != RS_OK)
+		pre->max += RSTRING_INCSTEP;
+		if (rcs_resize (pre, pre->max ) != RS_OK)
 			return RS_MEMORY;
 	}
 	pre->text[pre_length] = c;
