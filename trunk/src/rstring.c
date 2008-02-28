@@ -300,11 +300,9 @@ rws_catwcs (rwstring * pre, const wchar_t * pos, const size_t length)
 	size_t pre_length;
 
 	assert (pre != NULL);
+	assert (pos != NULL);
 
-	pre_length = wcslen (pos);
-
-	if (pos == NULL)
-		return RS_OK;
+	pre_length = wcslen (pre->text);
 
 	if (pre->max < pre_length + length)
 	{
@@ -368,8 +366,10 @@ rws_unwrap (rwstring * rws)
 {
 	wchar_t *out;
 	assert (rws != NULL);
-	out = rws->text;
-
+	if(rws->text == NULL)
+		out = NULL;
+	else
+		out = realloc(rws->text, sizeof(wchar_t)*(wcslen(rws->text)+1));
 	free (rws);
 	return out;
 }
@@ -520,6 +520,7 @@ rstring_code
 rcs_catcs (rcstring * pre, const char *pos, const size_t length)
 {
 	size_t pre_length;
+
 	assert (pre != NULL);
 	assert (pos != NULL);
 
@@ -624,9 +625,12 @@ char *
 rcs_unwrap (rcstring * rcs)
 {
 	char *out;
-	if (rcs == NULL)
-		return NULL;
-	out = rcs->text;
+	assert(rcs != NULL);
+
+	if(rcs->text == NULL)
+		out = NULL;
+	else
+		out = realloc(rcs->text, sizeof(char)*(strlen(rcs->text)+1));
 
 	free (rcs);
 	return out;
