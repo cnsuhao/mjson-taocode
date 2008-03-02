@@ -27,6 +27,7 @@
 */
 
 #include <wchar.h>
+#include <string.h>
 
 #ifndef JSON_H
 #define JSON_H
@@ -132,7 +133,7 @@ Creates a new JSON string and defines it's text
 @param text the value's text
 @return a pointer to the newly created JSON string value
 **/
-json_t *json_new_string (const wchar_t * text);
+json_t *json_new_string (const char * text);
 
 
 /**
@@ -140,7 +141,7 @@ Creates a new JSON number and defines it's text. The user is responsible for the
 @param text the value's number
 @return a pointer to the newly created JSON string value
 **/
-json_t *json_new_number (const wchar_t * text);
+json_t *json_new_number (const char * text);
 
 
 /**
@@ -197,20 +198,20 @@ enum json_error json_insert_child (json_t * parent, json_t * child);
 /**
 Inserts a label:value pair into a parent node, as well as performs some document tree integrity checks.
 @param parent the parent node
-@param text_label a wchar_t string which serves as the label in the label:value pair
+@param text_label a char string which serves as the label in the label:value pair
 @param value the value in the label:value pair
 @return the error code corresponding to the operation result
 **/
-enum json_error json_insert_pair_into_object (json_t * parent, wchar_t * text_label, json_t * value);
+enum json_error json_insert_pair_into_object (json_t * parent, const char * text_label, json_t * value);
 
 
 /**
 Produces a JSON markup text document from a document tree
 @param root The document's root node
-@param text a pointer to a wchar_t string that will hold the JSON document text.
+@param text a pointer to a char string that will hold the JSON document text.
 @return  a json_error code describing how the operation went
 **/
-enum json_error json_tree_to_string (json_t * root, wchar_t ** text);
+enum json_error json_tree_to_string (json_t * root, char ** text);
 
 
 /**
@@ -223,17 +224,17 @@ int json_white_space (const wchar_t c);
 
 /**
 Strips all JSON white spaces from the text string
-@param text a wchar_t string holding a JSON document or document snippet 
+@param text a char string holding a JSON document or document snippet 
 **/
-void json_strip_white_spaces (wchar_t * text);
+void json_strip_white_spaces (char * text);
 
 
 /**
 Formats a JSON markup text contained in the given string
 @param text a JSON formatted document
-@return a wchar_t string holding the formated document
+@return a char string holding the formated document
 **/
-wchar_t *json_format_string (wchar_t * text);
+char *json_format_string (char * text);
 
 
 /**
@@ -241,16 +242,16 @@ Outputs a new UTF8 c-string which holds the same characters as the given string 
 @param text a wchar_t text string
 @return an UTF-8 c-string holding the same text string but with escaped characters
 **/
-wchar_t *json_escape (wchar_t * text);
+char *json_escape (wchar_t * text);
 
 
 /**
 This function performs the same tast as json_escape() but it also escapes non-ASCII characters
 As with json_escape(), the produced string, if unaccounted for, may contribute to memory leaks.
 @param text a wchar_t text string
-@return a wchar_t string holding the same text string but composed of ASCII characters
+@return a char string holding the same text string but composed solely of ASCII characters
 **/
-wchar_t *json_escape_to_ascii (wchar_t * text);
+char *json_escape_to_ascii (wchar_t * text);
 
 
 /**
@@ -260,15 +261,15 @@ Produces a document tree from a JSON markup text string
 @param length the number of characters that form the input text
 @return a code describing how the operation ended up
 **/
-enum json_error json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length);
+enum json_error json_parse_string (struct json_parsing_info *info, const char * text, size_t length);
 
 
 /**
 Produces a document tree from a JSON markup text string that contains a complete document
-@param text a text string containing a complete JSON text document
+@param text a c-string containing a complete JSON text document
 @return a pointer to the new document tree or NULL if some error occurred
 **/
-json_t *json_parse_document (wchar_t * text);
+json_t *json_parse_document (const char * text);
 
 
 /**
@@ -284,44 +285,10 @@ enum json_error json_saxy_parse (struct json_saxy_parser_status *jsps, struct js
 /**
 Searches through the object's children for a label holding the text text_label
 @param object a json_value of type JSON_OBJECT
-@param text_label the text label to search for through the object's child labels
+@param text_label the c-string to search for through the object's child labels
 @return a pointer to the first label holding a text equal to text_label or NULL if there is no such label or if object has no children
 **/
-json_t *json_find_first_label (const json_t * object, const wchar_t * text_label);
-
-
-/**
-Returns the number of characters needed by a c-string to be able to contain the text stored in the given wchar_t string in UTF-8 format.
-@param input a wchar_t string
-@return the number of characters in a c-string needed to store the given text in UTF-8 format or zero, if an error occurs
-**/
-size_t utf8wcslen (const wchar_t * intext);
-
-/**
-Creates an UTF-8 string holding the text contained in a given wchar_t string
-@param input a wchar_t string
-@param n the number of characters to convert
-@return a c-string holding the same piece of text described in the UTF-8 format
- **/
-char *wchar_to_utf8 (const wchar_t * input, const size_t n);
-
-
-/**
-Returns the number of characters contained in a given UTF-8 c-string
-@param input a c-string holding UTF-8 text
-@return the number of characters contained in that string or zero, if an error occurs
-**/
-size_t utf8cslen (const char *input);
-
-
-/**
-Creates a wchar_t string holding the text contained in a given UTF-8 c-string
-@param input a c-string storing UTF-8 text
-@param n the number of characters to convert
-@return a wchar_t string holding the same piece of text
-**/
-wchar_t *utf8_to_wchar (const char *input, const size_t n);
-
+json_t *json_find_first_label (const json_t * object, const char * text_label);
 
 
 #endif
