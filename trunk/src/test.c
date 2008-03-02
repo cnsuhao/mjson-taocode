@@ -38,7 +38,7 @@ int
 main (void)
 {
 	/* set the variables */
-	wchar_t buffer[BUFFER];
+	char buffer[BUFFER];
 	enum json_error error;
 	struct json_parsing_info jpi;
 
@@ -57,12 +57,12 @@ main (void)
 		return 1;
 	}
 	*/
-	fwide (stdin, 1);
+	// fwide (stdin, 1);
 
 	/* parse the file */
-	while ((fgetws (buffer, BUFFER, stdin) != NULL) && (error == JSON_OK || error == JSON_INCOMPLETE_DOCUMENT))
+	while ((fgets (buffer, BUFFER, stdin) != NULL) && (error == JSON_OK || error == JSON_INCOMPLETE_DOCUMENT))
 	{
-		error = json_parse_string (&jpi, buffer, wcslen (buffer) - 1);
+		error = json_parse_string (&jpi, buffer, strlen (buffer) - 1);
 		switch (error)
 		{
 		case JSON_INCOMPLETE_DOCUMENT:
