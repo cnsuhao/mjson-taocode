@@ -28,8 +28,6 @@
 
 #include <wchar.h>
 
-#include "rstring.h"
-
 #ifndef JSON_H
 #define JSON_H
 
@@ -117,7 +115,7 @@ struct json_saxy_parser_status
 {
 	unsigned int state;	/*!< current parser state */
 	int string_length_limit_reached;	/*!< flag informing if the string limit length defined by JSON_MAX_STRING_LENGTH was reached */
-	rwstring *temp;		/*!< temporary string which will be used to build up parsed strings between parser runs. */
+	void *temp;		/*!< temporary string which will be used to build up parsed strings between parser runs. */
 };
 
 
