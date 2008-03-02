@@ -28,6 +28,7 @@
 
 #define RSTRING_INCSTEP 3
 
+
 rwstring *
 rws_create (size_t length)
 {
@@ -145,6 +146,7 @@ rws_copywcs (rwstring * to, const wchar_t * from, const size_t length)
 	return RS_OK;
 }
 
+
 rstring_code
 rws_catrws (rwstring * pre, const rwstring * pos)
 {
@@ -166,6 +168,7 @@ rws_catrws (rwstring * pre, const rwstring * pos)
 	pre->text[pre_length + pos_length] = L'\0';
 	return RS_OK;
 }
+
 
 rstring_code
 rws_catrcs (rwstring * pre, const rcstring * pos)
@@ -517,6 +520,7 @@ rcs_copycs (rcstring * to, const char *from, const size_t length)
 	return RS_OK;
 }
 
+
 rstring_code
 rcs_catrcs (rcstring * pre, const rcstring * pos)
 {
@@ -537,6 +541,7 @@ rcs_catrcs (rcstring * pre, const rcstring * pos)
 	return RS_OK;
 }
 
+
 rstring_code
 rcs_catcs (rcstring * pre, const char *pos, const size_t length)
 {
@@ -554,6 +559,27 @@ rcs_catcs (rcstring * pre, const char *pos, const size_t length)
 	}
 	strncpy (pre->text + pre_length, pos, length);
 	pre->text[pre_length + length] = '\0';
+	return RS_OK;
+}
+
+
+rstring_code
+rcs_catwcs (rcstring * pre, const wchar_t * pos, const size_t length)
+{
+	size_t i;
+	rstring_code code;
+	assert (pre != NULL);
+	assert (pos != NULL);
+
+	for (i = 0; i < length; i++)
+	{
+		code = rcs_catwc (pre, pos[i]);
+		if (code != RS_OK)
+		{
+			return code;
+		}
+	}
+
 	return RS_OK;
 }
 
