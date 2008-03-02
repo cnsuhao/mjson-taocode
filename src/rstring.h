@@ -215,6 +215,14 @@ rstring_code rcs_catrcs (rcstring * pre, const rcstring * pos);
 **/
 rstring_code rcs_catcs (rcstring * pre, const char *pos, const size_t length);
 
+/** Concatenates a wchar_t string onto the end of a rcstring
+\param pre rcstring where to append to
+\param pos wchar_t string where to append from
+\param length the length to be copied
+\return result
+**/
+rstring_code rcs_catwcs (rcstring * pre, const wchar_t * pos, const size_t length);
+
 /** Concatenates a single char onto the end of a rcstring
 \param pre rcstring where to append to
 \param c char to be appended
