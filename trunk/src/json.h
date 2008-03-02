@@ -64,7 +64,7 @@ The JSON document tree node, which is a basic JSON type
 struct json_value
 {
 	enum json_value_type type;	/*!< the type of node */
-	rcstring *text;		/*!< The text stored by the node. It stores UTF-8 strings and is used exclusively by the JSON_STRING and JSON_NUMBER node types */
+	char *text;		/*!< The text stored by the node. It stores UTF-8 strings and is used exclusively by the JSON_STRING and JSON_NUMBER node types */
 
 	/* FIFO queue data */
 	struct json_value *next;	/*!< The pointer pointing to the next element in the FIFO sibling list */
@@ -87,7 +87,7 @@ struct json_parsing_info
 	size_t pos;		/*!< the character from the given JSON document snippet being parsed */
 	int string_length_limit_reached;	/*!< flag informing if the string limit length defined by JSON_MAX_STRING_LENGTH was reached */
 	json_t *cursor;		/*!< pointers to nodes belonging to the document tree which aid the document parsing */
-	json_t *temp;		/*!< temporary node which the parser uses to build up the parsed document */
+	void *temp;		/*!< pointer to a temporary string which the parser uses to build up the parsed document */
 };
 
 

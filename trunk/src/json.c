@@ -52,7 +52,7 @@ json_t *
 json_new_string (const wchar_t * text)
 {
 	json_t *new_object;
-	char *temp;
+	
 	assert (text != NULL);
 
 	/* allocate memory for the new object */
@@ -61,13 +61,12 @@ json_new_string (const wchar_t * text)
 		return NULL;
 
 	/* initialize members */
-	temp = wchar_to_utf8 (text, wcslen (text));
-	if (temp == NULL)
+	new_object->text = wchar_to_utf8 (text, wcslen (text));
+	if (new_object->text == NULL)
 	{
 		free (new_object);
 		return NULL;
 	}
-	new_object->text = rcs_wrap (temp);
 	new_object->parent = NULL;
 	new_object->child = NULL;
 	new_object->child_end = NULL;
@@ -82,7 +81,7 @@ json_t *
 json_new_number (const wchar_t * text)
 {
 	json_t *new_object;
-	char *temp;
+	
 	assert (text != NULL);
 
 	/* allocate memory for the new object */
@@ -91,14 +90,13 @@ json_new_number (const wchar_t * text)
 		return NULL;
 
 	/* initialize members */
-	temp = wchar_to_utf8 (text, wcslen (text));
-	if (temp == NULL)
+	new_object->text = wchar_to_utf8 (text, wcslen (text));
+	if (new_object->text == NULL)
 	{
 		free (new_object);
 		return NULL;
 	}
 
-	new_object->text = rcs_wrap (temp);
 	new_object->parent = NULL;
 	new_object->child = NULL;
 	new_object->child_end = NULL;
@@ -202,7 +200,7 @@ json_free_value (json_t ** value)
 	/*finally, freeing the memory allocated for this value */
 	if ((*value)->text != NULL)
 	{
-		rcs_free (&(*value)->text);
+		free ((*value)->text);
 	}
 	free (*value);		/* the json value */
 	(*value) = NULL;
@@ -355,7 +353,7 @@ json_tree_to_string (json_t * root, wchar_t ** text)
 			{
 				return JSON_MEMORY;
 			}
-			if (rws_catrcs (output, cursor->text) != RS_OK)
+			if (rws_catcs (output, cursor->text, strlen(cursor->text)) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -407,7 +405,7 @@ json_tree_to_string (json_t * root, wchar_t ** text)
 		case JSON_NUMBER:
 			/* must not have any children */
 			/* set the new size */
-			if (rws_catrcs (output, cursor->text) != RS_OK)
+			if (rws_catcs (output, cursor->text, strlen(cursor->text)) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -1259,6 +1257,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
       state2:			/* start object */
 	{
 		/* tree integrity checking */
+		json_t *object;
 		if (info->cursor)	/* cursor will be the parent node of this structure */
 		{
 			if ((info->cursor->type != JSON_ARRAY) && (info->cursor->type != JSON_STRING))
@@ -1269,16 +1268,15 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		}
 
 		/* create the new children objects */
-		info->temp = json_new_object ();
+		object = json_new_object ();
 
 		/* create new tree node and add as child */
 		if (info->cursor != NULL)
 		{
-			json_insert_child (info->cursor, info->temp);
+			json_insert_child (info->cursor, object);
 		}
 		/* traverse cursor up child node */
-		info->cursor = info->temp;
-		info->temp = NULL;
+		info->cursor = object;
 
 		info->state = 1;
 		goto state1;	/* start label string in object */
@@ -1409,9 +1407,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:	/* The parent node of a JSON_ARRAY can only be a JSON_ARRAY or JSON_STRING */
-
-			if (info->temp != NULL)
-				free (info->temp), info->temp = NULL;
+			assert(info->temp == NULL);	/*if info->temp isn't NULL at this point then there is a bug somewhere */
 			if (info->cursor != NULL)
 			{
 				while (info->cursor->parent != NULL)
@@ -1439,8 +1435,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			break;
 
 		default:
-			if (info->temp != NULL)
-				free (info->temp), info->temp = NULL;
+			assert(info->temp == NULL);	/*if info->temp isn't NULL at this point then there is some other bug somewhere */
 			if (info->cursor != NULL)
 			{
 				while (info->cursor->parent != NULL)
@@ -1481,7 +1476,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		/* prepare the temporary node to get the string */
 		if (info->temp == NULL)
 		{
-			info->temp = json_new_string (L"");
+			info->temp = rcs_create(5);
 			if (info->temp == NULL)
 			{
 				if (info->cursor != NULL)
@@ -1525,9 +1520,9 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		case L'\\':	/* escaped characters */
 			if (!info->string_length_limit_reached)
 			{
-				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH - 6)	/* 6 = \u[:xdigit:]{4} */
+				if (strlen ( ( (rcstring*) info->temp)->text) < JSON_MAX_STRING_LENGTH - 6)	/* 6 = \u[:xdigit:]{4} */
 				{
-					if (rcs_catc (info->temp->text, '\\') != RS_OK)
+					if (rcs_catc ( (rcstring*)info->temp , '\\') != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
@@ -1551,7 +1546,18 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		case L'"':	/* closing string */
 			if (info->cursor == NULL)	/* this string will be the root node */
 			{
-				info->cursor = info->temp;
+				if(info->temp == NULL)
+				{
+					/*TODO this should not happen */
+					return JSON_UNKNOWN_PROBLEM;
+				}
+				info->cursor = json_new_value(JSON_STRING);
+				info->cursor->text = rcs_unwrap( (rcstring *)info->temp);
+				if(info->cursor->text == NULL)
+				{
+					/*TODO memory error */
+					return JSON_MEMORY;
+				}
 				info->temp = NULL;
 
 				info->state = 28;
@@ -1561,9 +1567,24 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 				else
 					goto state28;	/* label string followup */
 			}
-
-			/* append the child string to the parent node */
-			json_insert_child (info->cursor, info->temp);
+			else  /* append the child string to the parent node */
+			{
+				json_t *temp = json_new_value(JSON_STRING);
+				if (temp == NULL)
+				{
+					/*TODO memory error*/
+					return JSON_MEMORY;
+				}
+				temp->text = rcs_unwrap((rcstring *)info->temp);
+				if (temp->text == NULL)
+				{
+					/*TODO memory error*/
+					free(temp);
+					return JSON_MEMORY;
+				}
+				json_insert_child (info->cursor, temp);
+				info->temp = NULL;
+			}
 
 			/* make sure the cursor points to a valid parent node */
 			switch (info->cursor->type)
@@ -1618,8 +1639,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 				break;
 
 			case JSON_OBJECT:
-				info->cursor = info->temp;	/* point cursor at inserted child label */
-				info->temp = NULL;
+				info->cursor = info->cursor->child;	/* point cursor at inserted child label */
 
 				info->state = 28;
 				++info->pos;
@@ -1631,7 +1651,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 
 			default:
 				if (info->temp != NULL)
-					free (info->temp), info->temp = NULL;
+					rcs_free ((rcstring **)&info->temp), info->temp = NULL;
 				if (info->cursor != NULL)
 				{
 					while (info->cursor->parent != NULL)
@@ -1681,9 +1701,9 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		default:
 			if (!info->string_length_limit_reached)
 			{
-				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH)
+				if (strlen ( ((rcstring *)info->temp)->text) < JSON_MAX_STRING_LENGTH)
 				{
-					if (rcs_catwc (info->temp->text, text[info->pos]) != RS_OK)
+					if (rcs_catwc ( (rcstring *)info->temp, text[info->pos]) != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
@@ -1717,9 +1737,9 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		case L't':
 			if (!info->string_length_limit_reached)
 			{
-				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH - 5)
+				if (strlen ( ((rcstring *)info->temp)->text) < JSON_MAX_STRING_LENGTH - 5)
 				{
-					if (rcs_catc (info->temp->text, text[info->pos]) != RS_OK)
+					if (rcs_catc ((rcstring *)info->temp, text[info->pos]) != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
@@ -1740,9 +1760,9 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		case L'u':
 			if (!info->string_length_limit_reached)
 			{
-				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH - 4)
+				if (strlen (((rcstring *)info->temp)->text) < JSON_MAX_STRING_LENGTH - 4)
 				{
-					if (rcs_catwc (info->temp->text, text[info->pos]) != RS_OK)
+					if (rcs_catwc ((rcstring *)info->temp, text[info->pos]) != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
@@ -1794,9 +1814,9 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		case L'F':
 			if (!info->string_length_limit_reached)
 			{
-				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH - 3)
+				if (strlen (((rcstring *)info->temp)->text) < JSON_MAX_STRING_LENGTH - 3)
 				{
-					if (rcs_catwc (info->temp->text, text[info->pos]) != RS_OK)
+					if (rcs_catwc ((rcstring *)info->temp, text[info->pos]) != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
@@ -1851,9 +1871,9 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		case L'F':
 			if (!info->string_length_limit_reached)
 			{
-				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH - 2)
+				if (strlen (((rcstring *)info->temp)->text) < JSON_MAX_STRING_LENGTH - 2)
 				{
-					if (rcs_catwc (info->temp->text, text[info->pos]) != RS_OK)
+					if (rcs_catwc ((rcstring *)info->temp, text[info->pos]) != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
@@ -1908,9 +1928,9 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		case L'F':
 			if (!info->string_length_limit_reached)
 			{
-				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH - 1)
+				if (strlen (((rcstring *)info->temp)->text) < JSON_MAX_STRING_LENGTH - 1)
 				{
-					if (rcs_catwc (info->temp->text, text[info->pos]) != RS_OK)
+					if (rcs_catwc ((rcstring *)info->temp, text[info->pos]) != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
@@ -1966,9 +1986,9 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		case L'F':
 			if (!info->string_length_limit_reached)
 			{
-				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH)
+				if (strlen (((rcstring *)info->temp)->text) < JSON_MAX_STRING_LENGTH)
 				{
-					if (rcs_catwc (info->temp->text, text[info->pos]) != RS_OK)
+					if (rcs_catwc ((rcstring *)info->temp, text[info->pos]) != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
@@ -2136,8 +2156,9 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		}
 		if (info->cursor->type != JSON_STRING)
 		{
+			/*TODO info->temp should be NULL at this point */
 			if (info->temp != NULL)
-				json_free_value (&info->temp);
+				rcs_free((rcstring **)&info->temp);
 			if (info->cursor != NULL)
 			{
 				while (info->cursor->parent != NULL)
@@ -2239,13 +2260,13 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 
       state14:			/* start number */
 	{
-		info->temp = json_new_number (L"");
+		info->temp = rcs_create(5);
 		info->string_length_limit_reached = 0;
 		/* start number */
 		switch (text[info->pos])
 		{
 		case L'0':
-			if (rcs_catc (info->temp->text, '0') != RS_OK)
+			if (rcs_catc ((rcstring *)info->temp, '0') != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -2268,7 +2289,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		case L'7':
 		case L'8':
 		case L'9':
-			if (rcs_catwc (info->temp->text, text[info->pos]) != RS_OK)
+			if (rcs_catwc ((rcstring *)info->temp, text[info->pos]) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -2292,7 +2313,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		switch (text[info->pos])
 		{
 		case L'.':
-			if (rcs_catc (info->temp->text, '.') != RS_OK)
+			if (rcs_catc ((rcstring *)info->temp, '.') != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -2338,9 +2359,9 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		case L'9':
 			if (!info->string_length_limit_reached)
 			{
-				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH / 2)
+				if (strlen (((rcstring *)info->temp)->text) < JSON_MAX_STRING_LENGTH / 2)
 				{
-					if (rcs_catwc (info->temp->text, text[info->pos]) != RS_OK)
+					if (rcs_catwc ((rcstring *)info->temp, text[info->pos]) != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
@@ -2362,7 +2383,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 
 		case L'.':
 			info->string_length_limit_reached = 0;
-			if (rcs_catc (info->temp->text, '.') != RS_OK)
+			if (rcs_catc ((rcstring *)info->temp, '.') != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -2376,7 +2397,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 
 		case L'e':
 		case L'E':
-			if (rcs_catwc (info->temp->text, text[info->pos]) != RS_OK)
+			if (rcs_catwc ((rcstring *)info->temp, text[info->pos]) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -2421,9 +2442,9 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		case L'9':
 			if (!info->string_length_limit_reached)
 			{
-				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH / 2)
+				if (strlen ( ((rcstring *)info->temp)->text) < JSON_MAX_STRING_LENGTH / 2)
 				{
-					if (rcs_catwc (info->temp->text, text[info->pos]) != RS_OK)
+					if (rcs_catwc ( (rcstring *)info->temp, text[info->pos]) != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
@@ -2465,9 +2486,9 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		case L'9':
 			if (!info->string_length_limit_reached)
 			{
-				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH / 2)
+				if (strlen (((rcstring *)info->temp)->text) < JSON_MAX_STRING_LENGTH / 2)
 				{
-					if (rcs_catwc (info->temp->text, text[info->pos]) != RS_OK)
+					if (rcs_catwc ((rcstring *)info->temp, text[info->pos]) != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
@@ -2489,7 +2510,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 
 		case L'e':
 		case L'E':
-			if (rcs_catwc (info->temp->text, text[info->pos]) != RS_OK)
+			if (rcs_catwc ((rcstring *)info->temp, text[info->pos]) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -2526,7 +2547,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		{
 		case L'+':
 		case L'-':
-			if (rcs_catwc (info->temp->text, text[info->pos]) != RS_OK)
+			if (rcs_catwc ( (rcstring *)info->temp, text[info->pos]) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -2550,7 +2571,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		case L'7':
 		case L'8':
 		case L'9':
-			if (rcs_catwc (info->temp->text, text[info->pos]) != RS_OK)
+			if (rcs_catwc ((rcstring *)info->temp, text[info->pos]) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -2584,7 +2605,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		case L'7':
 		case L'8':
 		case L'9':
-			if (rcs_catwc (info->temp->text, text[info->pos]) != RS_OK)
+			if (rcs_catwc ((rcstring *)info->temp, text[info->pos]) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -2619,9 +2640,9 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		case L'9':
 			if (!info->string_length_limit_reached)
 			{
-				if (rcs_length (info->temp->text) < JSON_MAX_STRING_LENGTH)
+				if (strlen (((rcstring *)info->temp)->text) < JSON_MAX_STRING_LENGTH)
 				{
-					if (rcs_catwc (info->temp->text, text[info->pos]) != RS_OK)
+					if (rcs_catwc ((rcstring *)info->temp, text[info->pos]) != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
@@ -2736,7 +2757,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		if ((info->cursor->type != JSON_OBJECT) && (info->cursor->type != JSON_ARRAY))
 		{
 			if (info->temp != NULL)
-				json_free_value (&info->temp);
+				rcs_free ((rcstring **)&info->temp);
 			if (info->cursor != NULL)
 			{
 				while (info->cursor->parent != NULL)
@@ -2876,7 +2897,10 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			info->state = 39;
 			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
+
+		assert(info->temp == NULL);
 		info->temp = json_new_true ();
+
 		info->state = 38;
 		++info->pos;
 		if (info->pos > length)	/* current string buffer ended */
@@ -2975,6 +2999,8 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			info->state = 39;
 			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
+
+		assert(info->temp == NULL);
 		info->temp = json_new_false ();
 
 		/* fix the loose strings */
@@ -3027,6 +3053,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
 		}
 		/* set up the temp */
+		assert(info->temp == NULL);
 		info->temp = json_new_null ();
 		/* move onto the next one */
 		info->state = 38;
@@ -3039,6 +3066,7 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 
       state37:			/* start array */
 	{
+		json_t *new_array;
 		/* tree integrity checking */
 		if (info->cursor)	/* cursor will be the parent node of this structure */
 		{
@@ -3050,26 +3078,31 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 		}
 
 		/* create the new children objects */
-		info->temp = json_new_array ();
+		new_array = json_new_array ();
+		if(new_array == NULL)
+		{
+			/*TODO finish this step */
+			return JSON_MEMORY;
+		}
 
 		/* create new tree node and add as child */
 		if (info->cursor != NULL)
 		{
-			json_insert_child (info->cursor, info->temp);
+			json_insert_child (info->cursor, new_array);
 		}
 		/* traverse cursor up child node */
-		info->cursor = info->temp;
-		info->temp = NULL;
+		info->cursor = new_array;
 
 		info->state = 12;	/* start value in array */
 		goto state12;	/* start value in array */
 	}
 
-      state38:			/* fix literal cursor position */
+      state38:		/* fix literal cursor position */
 	{
 		/* set the value */
 		if (info->cursor == NULL)
 		{
+			/*TODO there is something wrong with this step */
 			info->cursor = info->temp;
 			info->temp = NULL;
 
@@ -3107,7 +3140,9 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
 
 		default:
 			if (info->temp != NULL)
-				json_free_value (&info->temp);
+			{
+				free(info->temp);	/* when handling a literal value, info->temp points to a (json_t *) */
+			}
 			if (info->cursor != NULL)
 			{
 				while (info->cursor->parent != NULL)
@@ -3126,7 +3161,9 @@ json_parse_string (struct json_parsing_info *info, wchar_t * text, size_t length
       state39:			/* handle the JSON_ILLEGAL_CHAR error */
 	{
 		if (info->temp != NULL)
-			free (info->temp), info->temp = NULL;
+		{
+			rcs_free((rcstring **)&info->temp);
+		}
 		if (info->cursor != NULL)
 		{
 			while (info->cursor->parent != NULL)
@@ -3167,6 +3204,7 @@ json_parse_document (wchar_t * text)
 enum json_error
 json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_functions *jsf, wchar_t c)
 {
+	/*TODO handle a string instead of a single char */
 	/* temp variables */
 	rwstring *temp;
 
@@ -4581,7 +4619,7 @@ json_find_first_label (const json_t * object, const wchar_t * text_label)
 			/* memory allocation problem */
 			return NULL;
 		}
-		if (strncmp (cursor->text->text, tmp, strlen (tmp)) == 0)
+		if (strncmp (cursor->text, tmp, strlen (tmp)) == 0)
 			return cursor;
 		cursor = cursor->next;
 	}
