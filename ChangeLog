@@ -5,3 +5,4 @@ Version 0.8
 * Added a size_t pos field to struct json_parsing_info, to be able to pintpoint any bad character
 * rewritten json_strip_white_spaces()
 * added the extern C guard
+* added my personalized commit routine
