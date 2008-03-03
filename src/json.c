@@ -51,7 +51,7 @@ json_new_value (const enum json_value_type type)
 
 
 json_t *
-json_new_string (const char * text)
+json_new_string (const char *text)
 {
 	json_t *new_object;
 	size_t length;
@@ -64,14 +64,14 @@ json_new_string (const char * text)
 		return NULL;
 
 	/* initialize members */
-	length = strlen(text)+1;
-	new_object->text = calloc(sizeof(char), length);
+	length = strlen (text) + 1;
+	new_object->text = calloc (sizeof (char), length);
 	if (new_object->text == NULL)
 	{
 		free (new_object);
 		return NULL;
 	}
-	strncpy(new_object->text, text, length);
+	strncpy (new_object->text, text, length);
 	new_object->parent = NULL;
 	new_object->child = NULL;
 	new_object->child_end = NULL;
@@ -83,7 +83,7 @@ json_new_string (const char * text)
 
 
 json_t *
-json_new_number (const char * text)
+json_new_number (const char *text)
 {
 	json_t *new_object;
 	size_t length;
@@ -96,14 +96,14 @@ json_new_number (const char * text)
 		return NULL;
 
 	/* initialize members */
-	length = strlen(text)+1;
-	new_object->text = calloc(sizeof(char), length);
+	length = strlen (text) + 1;
+	new_object->text = calloc (sizeof (char), length);
 	if (new_object->text == NULL)
 	{
 		free (new_object);
 		return NULL;
 	}
-	strncpy(new_object->text, text, length);
+	strncpy (new_object->text, text, length);
 	new_object->parent = NULL;
 	new_object->child = NULL;
 	new_object->child_end = NULL;
@@ -217,6 +217,7 @@ json_free_value (json_t ** value)
 enum json_error
 json_insert_child (json_t * parent, json_t * child)
 {
+	/*TODO change the child list from FIFO to LIFO, in order to get rid of the child_end pointer */
 	assert (parent != NULL);	/* the parent must exist */
 	assert (child != NULL);	/* the child must exist */
 	assert (parent != child);	/* parent and child must not be the same. if they are, it will enter an infinite loop */
@@ -295,7 +296,7 @@ json_insert_child (json_t * parent, json_t * child)
 
 
 enum json_error
-json_insert_pair_into_object (json_t * parent, const char * text_label, json_t * value)
+json_insert_pair_into_object (json_t * parent, const char *text_label, json_t * value)
 {
 	enum json_error error;
 	json_t *label;
@@ -328,7 +329,7 @@ json_insert_pair_into_object (json_t * parent, const char * text_label, json_t *
 
 
 enum json_error
-json_tree_to_string (json_t * root, char ** text)
+json_tree_to_string (json_t * root, char **text)
 {
 	json_t *cursor;
 	rcstring *output;
@@ -573,7 +574,7 @@ json_white_space (const wchar_t c)
 
 
 void
-json_strip_white_spaces (char * text)
+json_strip_white_spaces (char *text)
 {
 	size_t in, out, length;
 	int state;
@@ -629,7 +630,7 @@ json_strip_white_spaces (char * text)
 
 
 char *
-json_format_string (char * text)
+json_format_string (char *text)
 {
 	size_t pos = 0;
 	unsigned int indentation = 0;	/* the current indentation level */
@@ -736,14 +737,14 @@ json_escape (wchar_t * text)
 	assert (text != NULL);
 
 	/* defining the temporary variables */
-	output = rcs_create(wcslen(text));
-	if(output == NULL)
+	output = rcs_create (wcslen (text));
+	if (output == NULL)
 		return NULL;
 	for (i = 0; i < wcslen (text); i++)
 	{
 		if (text[i] == L'\\')
 		{
-			rcs_catwcs(output,L"\\\\",2);
+			rcs_catwcs (output, L"\\\\", 2);
 		}
 		else if (text[i] == L'\"')
 		{
@@ -785,7 +786,7 @@ json_escape (wchar_t * text)
 			rcs_catwc (output, text[i]);
 		}
 	}
-	return rcs_unwrap(output);
+	return rcs_unwrap (output);
 }
 
 
@@ -798,14 +799,14 @@ json_escape_to_ascii (wchar_t * text)
 	assert (text != NULL);
 
 	/* defining the temporary variables */
-	output = rcs_create(wcslen(text));
-	if(output == NULL)
+	output = rcs_create (wcslen (text));
+	if (output == NULL)
 		return NULL;
 	for (i = 0; i < wcslen (text); i++)
 	{
 		if (text[i] == L'\\')
 		{
-			rcs_catwcs(output,L"\\\\",2);
+			rcs_catwcs (output, L"\\\\", 2);
 		}
 		else if (text[i] == L'\"')
 		{
@@ -854,12 +855,12 @@ json_escape_to_ascii (wchar_t * text)
 			rcs_catwc (output, text[i]);
 		}
 	}
-	return rcs_unwrap(output);
+	return rcs_unwrap (output);
 }
 
 
 enum json_error
-json_parse_string (struct json_parsing_info *info, const char * text, size_t length)
+json_parse_string (struct json_parsing_info *info, const char *text, size_t length)
 {
 	/*/TODO sanitize the state numbers. */
 	/*
@@ -3022,7 +3023,7 @@ json_parse_string (struct json_parsing_info *info, const char * text, size_t len
 
 
 json_t *
-json_parse_document (const char * text)
+json_parse_document (const char *text)
 {
 	struct json_parsing_info jpi;
 	enum json_error error;
@@ -4443,7 +4444,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 
 
 json_t *
-json_find_first_label (const json_t * object, const char * text_label)
+json_find_first_label (const json_t * object, const char *text_label)
 {
 	json_t *cursor;
 
@@ -4462,4 +4463,3 @@ json_find_first_label (const json_t * object, const char * text_label)
 	}
 	return NULL;
 }
-

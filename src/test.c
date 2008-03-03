@@ -50,13 +50,13 @@ main (void)
 
 	/* open the file */
 	/*
-	file = fopen ("documents/test6.json", "r");
-	if (file == NULL)
-	{
-		printf ("error opening file\n");
-		return 1;
-	}
-	*/
+	   file = fopen ("documents/test6.json", "r");
+	   if (file == NULL)
+	   {
+	   printf ("error opening file\n");
+	   return 1;
+	   }
+	 */
 	// fwide (stdin, 1);
 
 	/* parse the file */
