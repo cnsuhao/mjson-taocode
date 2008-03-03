@@ -32,92 +32,97 @@
 #ifndef JSON_H
 #define JSON_H
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #define JSON_MAX_STRING_LENGTH 4096
 
 /**
 The descriptions of the json_value node type
 **/
-enum json_value_type
-{ JSON_STRING = 0, JSON_NUMBER, JSON_OBJECT, JSON_ARRAY, JSON_TRUE, JSON_FALSE, JSON_NULL };
+	enum json_value_type
+	{ JSON_STRING = 0, JSON_NUMBER, JSON_OBJECT, JSON_ARRAY, JSON_TRUE, JSON_FALSE, JSON_NULL };
 
 
 /**
 The error messages produced by the JSON parsers
 **/
-enum json_error
-{
-	JSON_INCOMPLETE_DOCUMENT = 0,	/*!< the parsed document didn't ended */
-	JSON_OK = 1,		/*!< everything went smoothly */
-	JSON_INCOMPATIBLE_TYPE,	/*!< the currently parsed type does not belong here */
-	JSON_MEMORY,		/*!< an error occurred when allocating memory */
-	JSON_ILLEGAL_CHARACTER,	/*!< the currently parsed character does not belong here */
-	JSON_BAD_TREE_STRUCTURE,	/*!< the currently parsed tree is malformed */
-	JSON_MAXIMUM_LENGTH,	/*!< the parsed string reached the maximum allowed size */
-	JSON_UNKNOWN_PROBLEM	/*!< some random, unaccounted problem occurred */
-};
+	enum json_error
+	{
+		JSON_INCOMPLETE_DOCUMENT = 0,	/*!< the parsed document didn't ended */
+		JSON_OK = 1,	/*!< everything went smoothly */
+		JSON_INCOMPATIBLE_TYPE,	/*!< the currently parsed type does not belong here */
+		JSON_MEMORY,	/*!< an error occurred when allocating memory */
+		JSON_ILLEGAL_CHARACTER,	/*!< the currently parsed character does not belong here */
+		JSON_BAD_TREE_STRUCTURE,	/*!< the currently parsed tree is malformed */
+		JSON_MAXIMUM_LENGTH,	/*!< the parsed string reached the maximum allowed size */
+		JSON_UNKNOWN_PROBLEM	/*!< some random, unaccounted problem occurred */
+	};
 
 
 /**
 The JSON document tree node, which is a basic JSON type
 **/
-struct json_value
-{
-	enum json_value_type type;	/*!< the type of node */
-	char *text;		/*!< The text stored by the node. It stores UTF-8 strings and is used exclusively by the JSON_STRING and JSON_NUMBER node types */
+	struct json_value
+	{
+		enum json_value_type type;	/*!< the type of node */
+		char *text;	/*!< The text stored by the node. It stores UTF-8 strings and is used exclusively by the JSON_STRING and JSON_NUMBER node types */
 
-	/* FIFO queue data */
-	struct json_value *next;	/*!< The pointer pointing to the next element in the FIFO sibling list */
-	struct json_value *previous;	/*!< The pointer pointing to the previous element in the FIFO sibling list */
-	struct json_value *parent;	/*!< The pointer pointing to the parent node in the document tree */
-	struct json_value *child;	/*!< The pointer pointing to the first child node in the document tree */
-	struct json_value *child_end;	/*!< The pointer pointing to the last child node in the document tree */
-};
+		/* FIFO queue data */
+		struct json_value *next;	/*!< The pointer pointing to the next element in the FIFO sibling list */
+		struct json_value *previous;	/*!< The pointer pointing to the previous element in the FIFO sibling list */
+		struct json_value *parent;	/*!< The pointer pointing to the parent node in the document tree */
+		struct json_value *child;	/*!< The pointer pointing to the first child node in the document tree */
+		struct json_value *child_end;	/*!< The pointer pointing to the last child node in the document tree */
+	};
 
 
-typedef struct json_value json_t;
+	typedef struct json_value json_t;
 
 
 /**
 The structure holding all information needed to resume parsing
 **/
-struct json_parsing_info
-{
-	unsigned int state;	/*!< the state where the parsing was left on the last parser run */
-	size_t pos;		/*!< the character from the given JSON document snippet being parsed */
-	int string_length_limit_reached;	/*!< flag informing if the string limit length defined by JSON_MAX_STRING_LENGTH was reached */
-	json_t *cursor;		/*!< pointers to nodes belonging to the document tree which aid the document parsing */
-	void *temp;		/*!< pointer to a temporary string which the parser uses to build up the parsed document */
-};
+	struct json_parsing_info
+	{
+		unsigned int state;	/*!< the state where the parsing was left on the last parser run */
+		size_t pos;	/*!< the character from the given JSON document snippet being parsed */
+		int string_length_limit_reached;	/*!< flag informing if the string limit length defined by JSON_MAX_STRING_LENGTH was reached */
+		json_t *cursor;	/*!< pointers to nodes belonging to the document tree which aid the document parsing */
+		void *temp;	/*!< pointer to a temporary string which the parser uses to build up the parsed document */
+	};
 
 
 /**
 The structure which holds the pointers to the functions that will be called by the saxy parser whenever their evens are triggered
 **/
-struct json_saxy_functions
-{
-	int (*open_object) ();
-	int (*close_object) ();
-	int (*open_array) ();
-	int (*close_array) ();
-	int (*new_string) (wchar_t * text);
-	int (*new_number) (wchar_t * text);
-	int (*new_true) ();
-	int (*new_false) ();
-	int (*new_null) ();
-	int (*label_value_separator) ();
-	int (*sibling_separator) ();
-};
+	struct json_saxy_functions
+	{
+		int (*open_object) ();
+		int (*close_object) ();
+		int (*open_array) ();
+		int (*close_array) ();
+		int (*new_string) (wchar_t * text);
+		int (*new_number) (wchar_t * text);
+		int (*new_true) ();
+		int (*new_false) ();
+		int (*new_null) ();
+		int (*label_value_separator) ();
+		int (*sibling_separator) ();
+	};
 
 
 /**
 The structure holding the information needed for json_saxy_parse to resume parsing
 **/
-struct json_saxy_parser_status
-{
-	unsigned int state;	/*!< current parser state */
-	int string_length_limit_reached;	/*!< flag informing if the string limit length defined by JSON_MAX_STRING_LENGTH was reached */
-	void *temp;		/*!< temporary string which will be used to build up parsed strings between parser runs. */
-};
+	struct json_saxy_parser_status
+	{
+		unsigned int state;	/*!< current parser state */
+		int string_length_limit_reached;	/*!< flag informing if the string limit length defined by JSON_MAX_STRING_LENGTH was reached */
+		void *temp;	/*!< temporary string which will be used to build up parsed strings between parser runs. */
+	};
 
 
 /**
@@ -125,7 +130,7 @@ Creates a new JSON value and defines it's type
 @param type the value's type
 @return a pointer to the newly created value structure
 **/
-json_t *json_new_value (const enum json_value_type type);
+	json_t *json_new_value (const enum json_value_type type);
 
 
 /**
@@ -133,7 +138,7 @@ Creates a new JSON string and defines it's text
 @param text the value's text
 @return a pointer to the newly created JSON string value
 **/
-json_t *json_new_string (const char * text);
+	json_t *json_new_string (const char *text);
 
 
 /**
@@ -141,49 +146,49 @@ Creates a new JSON number and defines it's text. The user is responsible for the
 @param text the value's number
 @return a pointer to the newly created JSON string value
 **/
-json_t *json_new_number (const char * text);
+	json_t *json_new_number (const char *text);
 
 
 /**
 Creates a new JSON object
 @return a pointer to the newly created JSON object value
 **/
-json_t *json_new_object (void);
+	json_t *json_new_object (void);
 
 
 /**
 Creates a new JSON array
 @return a pointer to the newly created JSON array value
 **/
-json_t *json_new_array (void);
+	json_t *json_new_array (void);
 
 
 /**
 Creates a new JSON null
 @return a pointer to the newly created JSON null value
 **/
-json_t *json_new_null (void);
+	json_t *json_new_null (void);
 
 
 /**
 Creates a new JSON true
 @return a pointer to the newly created JSON true value
 **/
-json_t *json_new_true (void);
+	json_t *json_new_true (void);
 
 
 /**
 Creates a new JSON false
 @return a pointer to the newly created JSON false value
 **/
-json_t *json_new_false (void);
+	json_t *json_new_false (void);
 
 
 /**
 Frees the memory appointed to the value fed as the parameter, as well as all the child nodes
 @param value the root node of the tree being freed
 **/
-void json_free_value (json_t ** value);
+	void json_free_value (json_t ** value);
 
 
 /**
@@ -192,7 +197,7 @@ Inserts a child node into a parent node, as well as performs some document tree 
 @param child the node being added as a child to parent
 @return the error code corresponding to the operation result
 **/
-enum json_error json_insert_child (json_t * parent, json_t * child);
+	enum json_error json_insert_child (json_t * parent, json_t * child);
 
 
 /**
@@ -202,7 +207,7 @@ Inserts a label:value pair into a parent node, as well as performs some document
 @param value the value in the label:value pair
 @return the error code corresponding to the operation result
 **/
-enum json_error json_insert_pair_into_object (json_t * parent, const char * text_label, json_t * value);
+	enum json_error json_insert_pair_into_object (json_t * parent, const char *text_label, json_t * value);
 
 
 /**
@@ -211,7 +216,7 @@ Produces a JSON markup text document from a document tree
 @param text a pointer to a char string that will hold the JSON document text.
 @return  a json_error code describing how the operation went
 **/
-enum json_error json_tree_to_string (json_t * root, char ** text);
+	enum json_error json_tree_to_string (json_t * root, char **text);
 
 
 /**
@@ -219,14 +224,14 @@ Checks if the character in question is a JSON markup white space
 @param c the character to be analized
 @return 1 if it is, 0 if it isn't
 **/
-int json_white_space (const wchar_t c);
+	int json_white_space (const wchar_t c);
 
 
 /**
 Strips all JSON white spaces from the text string
 @param text a char string holding a JSON document or document snippet 
 **/
-void json_strip_white_spaces (char * text);
+	void json_strip_white_spaces (char *text);
 
 
 /**
@@ -234,7 +239,7 @@ Formats a JSON markup text contained in the given string
 @param text a JSON formatted document
 @return a char string holding the formated document
 **/
-char *json_format_string (char * text);
+	char *json_format_string (char *text);
 
 
 /**
@@ -242,7 +247,7 @@ Outputs a new UTF8 c-string which holds the same characters as the given string 
 @param text a wchar_t text string
 @return an UTF-8 c-string holding the same text string but with escaped characters
 **/
-char *json_escape (wchar_t * text);
+	char *json_escape (wchar_t * text);
 
 
 /**
@@ -251,7 +256,7 @@ As with json_escape(), the produced string, if unaccounted for, may contribute t
 @param text a wchar_t text string
 @return a char string holding the same text string but composed solely of ASCII characters
 **/
-char *json_escape_to_ascii (wchar_t * text);
+	char *json_escape_to_ascii (wchar_t * text);
 
 
 /**
@@ -261,7 +266,7 @@ Produces a document tree from a JSON markup text string
 @param length the number of characters that form the input text
 @return a code describing how the operation ended up
 **/
-enum json_error json_parse_string (struct json_parsing_info *info, const char * text, size_t length);
+	enum json_error json_parse_string (struct json_parsing_info *info, const char *text, size_t length);
 
 
 /**
@@ -269,7 +274,7 @@ Produces a document tree from a JSON markup text string that contains a complete
 @param text a c-string containing a complete JSON text document
 @return a pointer to the new document tree or NULL if some error occurred
 **/
-json_t *json_parse_document (const char * text);
+	json_t *json_parse_document (const char *text);
 
 
 /**
@@ -279,7 +284,7 @@ Function to perform a SAX-like parsing of any JSON document or document fragment
 @param c the character to be parsed
 @return a json_error code informing how the parsing went
 **/
-enum json_error json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_functions *jsf, wchar_t c);
+	enum json_error json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_functions *jsf, wchar_t c);
 
 
 /**
@@ -288,7 +293,10 @@ Searches through the object's children for a label holding the text text_label
 @param text_label the c-string to search for through the object's child labels
 @return a pointer to the first label holding a text equal to text_label or NULL if there is no such label or if object has no children
 **/
-json_t *json_find_first_label (const json_t * object, const char * text_label);
+	json_t *json_find_first_label (const json_t * object, const char *text_label);
 
 
+#ifdef __cplusplus
+}
+#endif
 #endif
