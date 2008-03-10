@@ -922,7 +922,7 @@ json_parse_string (struct json_parsing_info *info, const char *text, size_t leng
 	case 21:
 		goto state21;	/* number: exponential part */
 	case 22:
-		goto state22;	/* parse whitespaces until the end */
+		goto state22;	/* number: end*/
 	case 23:
 		goto state23;	/* value followup */
 	case 24:
@@ -943,8 +943,8 @@ json_parse_string (struct json_parsing_info *info, const char *text, size_t leng
 		goto state31;	/* false: l */
 	case 32:
 		goto state32;	/* false: s */
-/*      case 33:*/
-/*              goto state33:*/
+	case 33:
+		goto state33;	/* parse whitespaces until the end */
 	case 34:
 		goto state34;	/* null: n */
 	case 35:
@@ -1143,7 +1143,7 @@ json_parse_string (struct json_parsing_info *info, const char *text, size_t leng
 			if (info->pos > length)	/* current string buffer ended */
 				return JSON_OK;
 			else
-				goto state22;	/* parse whitespaces until the end */
+				goto state33;	/* parse whitespaces until the end */
 
 		}
 
@@ -1161,7 +1161,7 @@ json_parse_string (struct json_parsing_info *info, const char *text, size_t leng
 				if (info->pos > length)	/* current string buffer ended */
 					return JSON_OK;
 				else
-					goto state22;	/* parse whitespaces until the end */
+					goto state33;	/* parse whitespaces until the end */
 			}
 			else
 				info->cursor = info->cursor->parent;
@@ -1217,7 +1217,7 @@ json_parse_string (struct json_parsing_info *info, const char *text, size_t leng
 			if (info->pos > length)	/* current string buffer ended */
 				return JSON_OK;
 			else
-				goto state22;	/* parse whitespaces until the end */
+				goto state33;	/* parse whitespaces until the end */
 		}
 
 		/* move on down */
@@ -1235,7 +1235,7 @@ json_parse_string (struct json_parsing_info *info, const char *text, size_t leng
 				if (info->pos > length)	/* current string buffer ended */
 					return JSON_OK;
 				else
-					goto state22;	/* parse whitespaces until the end */
+					goto state33;	/* parse whitespaces until the end */
 			}
 			else
 				info->cursor = info->cursor->parent;	/* point the cursor to a parent node which supports children */
@@ -1337,21 +1337,7 @@ json_parse_string (struct json_parsing_info *info, const char *text, size_t leng
       state6:			/* continue string */
 	{
 		/* check if there is a valid temporary function */
-		if (info->temp == NULL)	/* something weird just happened. The temp variable is expected to be non-null */
-		{
-			/* cleanup */
-			if (info->cursor)
-			{
-				/* clean the current tree structure */
-				while (info->cursor->parent)	/* point info->cursor to the root node */
-				{
-					info->cursor = info->cursor->parent;
-				}
-				/* clean */
-				json_free_value (&info->cursor);
-			}
-			return JSON_UNKNOWN_PROBLEM;
-		}
+		assert(info->temp != NULL);
 
 		/* proceed with the string parsing */
 		switch (text[info->pos])
@@ -1383,26 +1369,24 @@ json_parse_string (struct json_parsing_info *info, const char *text, size_t leng
 			break;
 
 		case '"':	/* closing string */
+			{
+			json_t *temp = json_new_value (JSON_STRING);
+			if (temp == NULL)
+			{
+				/*TODO memory error */
+				return JSON_MEMORY;
+			}
+			temp->text = rcs_unwrap ((rcstring *) info->temp);
+			if (temp->text == NULL)
+			{
+				/*TODO memory error */
+				free (temp);
+				return JSON_MEMORY;
+			}
+			info->temp = NULL;
 			if (info->cursor == NULL)	/* this string will be the root node */
 			{
-				if (info->temp == NULL)
-				{
-					/*TODO this should not happen */
-					return JSON_UNKNOWN_PROBLEM;
-				}
-				info->cursor = json_new_value (JSON_STRING);
-				if (info->cursor == NULL)
-				{
-					rcs_free ((rcstring **) & info->temp);
-					return JSON_MEMORY;
-				}
-				info->cursor->text = rcs_unwrap ((rcstring *) info->temp);
-				if (info->cursor->text == NULL)
-				{
-					free (((rcstring *) info->temp)->text);
-					return JSON_MEMORY;
-				}
-				info->temp = NULL;
+				info->cursor = temp;
 
 				info->state = 28;
 				++info->pos;
@@ -1413,29 +1397,14 @@ json_parse_string (struct json_parsing_info *info, const char *text, size_t leng
 			}
 			else	/* append the child string to the parent node */
 			{
-				json_t *temp = json_new_value (JSON_STRING);
-				if (temp == NULL)
-				{
-					/*TODO memory error */
-					return JSON_MEMORY;
-				}
-				temp->text = rcs_unwrap ((rcstring *) info->temp);
-				if (temp->text == NULL)
-				{
-					/*TODO memory error */
-					free (temp);
-					return JSON_MEMORY;
-				}
-				json_insert_child (info->cursor, temp);
-				info->temp = NULL;
+
+				json_insert_child (info->cursor , temp);
 			}
 
 			/* make sure the cursor points to a valid parent node */
 			switch (info->cursor->type)
 			{
 			case JSON_ARRAY:
-				info->temp = NULL;
-
 				info->state = 12;
 				++info->pos;
 				if (info->pos > length)	/* current string buffer ended */
@@ -1445,7 +1414,6 @@ json_parse_string (struct json_parsing_info *info, const char *text, size_t leng
 				break;
 
 			case JSON_STRING:	/* parent is label in label:value pair */
-				info->temp = NULL;
 				if (info->cursor->parent != NULL)
 				{
 					/* TODO perform tree sanity check */
@@ -1478,12 +1446,12 @@ json_parse_string (struct json_parsing_info *info, const char *text, size_t leng
 					if (info->pos > length)	/* current string buffer ended */
 						return JSON_OK;
 					else
-						goto state22;	/* parse whitespaces until the end */
+						goto state33;	/* parse whitespaces until the end */
 				}
 				break;
 
 			case JSON_OBJECT:
-				info->cursor = info->cursor->child;	/* point cursor at inserted child label */
+				info->cursor = info->cursor->child_end;	/* point cursor at inserted child label */
 
 				info->state = 28;
 				++info->pos;
@@ -1503,6 +1471,7 @@ json_parse_string (struct json_parsing_info *info, const char *text, size_t leng
 					json_free_value (&info->cursor);
 				}
 				return JSON_BAD_TREE_STRUCTURE;
+			}
 			}
 			break;
 
@@ -2177,8 +2146,8 @@ json_parse_string (struct json_parsing_info *info, const char *text, size_t leng
 		case ',':
 		case '}':
 		case ']':
-			info->state = 38;
-			goto state38;	/* fix literal cursor position */
+			info->state = 22;
+			goto state22;	/* fix literal cursor position */
 			break;
 
 		default:
@@ -2260,8 +2229,8 @@ json_parse_string (struct json_parsing_info *info, const char *text, size_t leng
 		case ',':
 		case '}':
 		case ']':
-			info->state = 38;
-			goto state38;	/* fix literal cursor info->position */
+			info->state = 22;
+			goto state22;	/* fix literal cursor info->position */
 			break;
 
 		default:
@@ -2374,8 +2343,8 @@ json_parse_string (struct json_parsing_info *info, const char *text, size_t leng
 		case ',':	/* characters which mark the end of a number */
 		case '}':
 		case ']':
-			info->state = 38;
-			goto state38;	/* fix literal cursor position */
+			info->state = 22;
+			goto state22;	/* fix literal cursor position */
 			break;
 
 		default:
@@ -2512,8 +2481,8 @@ json_parse_string (struct json_parsing_info *info, const char *text, size_t leng
 		case ',':
 		case '}':
 		case ']':
-			info->state = 38;
-			goto state38;	/* fix literal cursor position */
+			info->state = 22;
+			goto state22;	/* fix literal cursor position */
 			break;
 
 		default:
@@ -2522,28 +2491,107 @@ json_parse_string (struct json_parsing_info *info, const char *text, size_t leng
 		}
 	}
 
-      state22:			/* parse whitespaces until the end */
+	state22:	/* number: end */
 	{
-		switch (text[info->pos])
+		json_t *temp;
+		if(info->temp == NULL)
 		{
-		case '\x20':
-		case '\x09':
-		case '\x0A':
-		case '\x0D':	/* JSON insignificant white spaces */
+			//TODO free memory
+			return JSON_UNKNOWN_PROBLEM;
+		}
+		temp = json_new_value(JSON_NUMBER);
+		if(temp == NULL)
+		{
+			//TODO handle memory error problem
+			return JSON_MEMORY;
+		}
+		temp->text = rcs_unwrap ((rcstring *) info->temp);
+		if(temp->text == NULL)
+		{
+			//TODO handle memory error problem
+			return JSON_MEMORY;
+		}
+		info->temp = NULL;
+		
+		/* append cursor to the tree */
+		if(info->cursor == NULL)
+		{
+			info->cursor = temp;
+			info->state = 33;
 			++info->pos;
 			if (info->pos > length)	/* current string buffer ended */
 				return JSON_OK;
 			else
-				goto state22;
-			break;
+				goto state33;	/* parse whitespaces until the end */
+		}
+		else
+		{
+			json_insert_child (info->cursor, temp);
+			switch(info->cursor->type)
+			{
+			case JSON_ARRAY:
+				info->temp = NULL;
 
-		default:
-			info->state = 39;
-			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
-			break;
+				info->state = 12;
+				++info->pos;
+				if (info->pos > length)	/* current string buffer ended */
+					return JSON_INCOMPLETE_DOCUMENT;
+				else
+					goto state12;	/* value in array */
+				break;
+
+			case JSON_STRING:	/* parent is label in label:value pair */
+				info->temp = NULL;
+				if (info->cursor->parent != NULL)
+				{
+					/* TODO perform tree sanity check */
+					if (info->cursor->parent->type != JSON_OBJECT)
+					{
+						if (info->cursor != NULL)
+						{
+							while (info->cursor->parent != NULL)
+								info->cursor = info->cursor->parent;
+							json_free_value (&info->cursor);
+						}
+						return JSON_BAD_TREE_STRUCTURE;
+					}
+
+					/* set cursor to continue parsing */
+					info->cursor = info->cursor->parent;
+
+					info->state = 1;
+					++info->pos;
+					if (info->pos > length)	/* current string buffer ended */
+						return JSON_OK;
+					else
+						goto state1;	/* start label string in object */
+				}
+				else
+				{
+					/* root node is JSON_STRING, new child node is JSON_STRING. There is no more document to parse. */
+					info->state = 22;
+					++info->pos;
+					if (info->pos > length)	/* current string buffer ended */
+						return JSON_OK;
+					else
+						goto state33;	/* parse whitespaces until the end */
+				}
+				break;
+
+			default:
+				if (info->temp != NULL)
+					rcs_free ((rcstring **) & info->temp), info->temp = NULL;
+				if (info->cursor != NULL)
+				{
+					while (info->cursor->parent != NULL)
+						info->cursor = info->cursor->parent;
+					json_free_value (&info->cursor);
+				}
+				return JSON_BAD_TREE_STRUCTURE;
+				break;
+			}
 		}
 	}
-
 
       state23:			/* value followup */
 	{
@@ -2856,6 +2904,28 @@ json_parse_string (struct json_parsing_info *info, const char *text, size_t leng
 			goto state38;	/* fix literal cursor position */
 	}
 
+      state33:			/* parse whitespaces until the end */
+	{
+		switch (text[info->pos])
+		{
+		case '\x20':
+		case '\x09':
+		case '\x0A':
+		case '\x0D':	/* JSON insignificant white spaces */
+			++info->pos;
+			if (info->pos > length)	/* current string buffer ended */
+				return JSON_OK;
+			else
+				goto state33;
+			break;
+
+		default:
+			info->state = 39;
+			goto state39;	/* handle the JSON_ILLEGAL_CHAR error */
+			break;
+		}
+	}
+
       state34:			/* null: n */
 	{
 		if (text[info->pos] != 'u')
@@ -2950,12 +3020,12 @@ json_parse_string (struct json_parsing_info *info, const char *text, size_t leng
 			info->cursor = info->temp;
 			info->temp = NULL;
 
-			info->state = 22;
+			info->state = 33;
 			++info->pos;
 			if (info->pos > length)	/* current string buffer ended */
 				return JSON_OK;
 			else
-				goto state22;	/* parse whitespaces until the end */
+				goto state33;	/* parse whitespaces until the end */
 		}
 		else
 		{
@@ -2973,7 +3043,7 @@ json_parse_string (struct json_parsing_info *info, const char *text, size_t leng
 				if (info->pos > length)	/* current string buffer ended */
 					return JSON_OK;
 				else
-					goto state22;	/* parse whitespaces until the end */
+					goto state33;	/* parse whitespaces until the end */
 			}
 
 			info->cursor = info->cursor->parent;
