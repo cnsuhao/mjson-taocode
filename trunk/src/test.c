@@ -46,34 +46,39 @@ main (void)
 	jpi.cursor = NULL;
 	jpi.temp = NULL;
 	jpi.state = 0;
-	error = JSON_OK;
+	error = JSON_INCOMPLETE_DOCUMENT;
 
-	/* open the file */
 	/*
-	   file = fopen ("documents/test6.json", "r");
+	   FILE *file;
+	   file = fopen ("test.json", "r");
 	   if (file == NULL)
 	   {
 	   printf ("error opening file\n");
 	   return 1;
 	   }
-	 */
-	// fwide (stdin, 1);
+	   */
 
 	/* parse the file */
-	while ((fgets (buffer, BUFFER, stdin) != NULL) && (error == JSON_OK || error == JSON_INCOMPLETE_DOCUMENT))
+	while (error == JSON_INCOMPLETE_DOCUMENT)
 	{
-		error = json_parse_string (&jpi, buffer, strlen (buffer) - 1);
-		switch (error)
+		if(fgets (buffer, BUFFER, stdin) != NULL)
 		{
-		case JSON_INCOMPLETE_DOCUMENT:
-		case JSON_OK:
-			break;
+			error = json_parse_string (&jpi, buffer, strlen (buffer) - 1);
+			switch (error)
+			{
+				case JSON_INCOMPLETE_DOCUMENT:
+				case JSON_OK:
+					break;
 
-		default:
-			printf ("some error\n");
-			return EXIT_FAILURE;
-			break;
+				default:
+					printf ("some error\n");
+					return EXIT_FAILURE;
+					break;
+			}
 		}
+		else
+			error = JSON_UNKNOWN_PROBLEM;
+
 	}
 	/* fclose (file); */
 	json_render_tree (jpi.cursor);
