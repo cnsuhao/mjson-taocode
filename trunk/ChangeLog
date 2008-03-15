@@ -6,3 +6,4 @@ Version 0.8
 * rewritten json_strip_white_spaces()
 * added the extern C guard
 * added my personalized commit routine
+* Replaced old parser with a brand-new, cleaner implementation
