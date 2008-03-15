@@ -794,9 +794,9 @@ json_escape (wchar_t * text)
 		else if (text[i] <= 0x1F)	/* escape the characters as declared in 2.5 of http://www.ietf.org/rfc/rfc4627.txt */
 		{
 			/*TODO replace swprintf() */
-			wchar_t tmp[6];
-			swprintf (tmp, 6, L"\\u%4x", text[i]);
-			rcs_catwcs (output, tmp, 6);
+			char tmp[6];
+			sprintf (tmp, "\\u%4x", text[i]);
+			rcs_catcs (output, tmp, 6);
 		}
 		else
 		{
@@ -856,16 +856,16 @@ json_escape_to_ascii (wchar_t * text)
 		else if (text[i] <= 0x1F)	/* escape the characters as declared in 2.5 of http://www.ietf.org/rfc/rfc4627.txt */
 		{
 			/*TODO replace swprintf() */
-			wchar_t tmp[6];
-			swprintf (tmp, 6, L"\\u%4x", text[i]);
-			rcs_catwcs (output, tmp, 6);
+			char tmp[6];
+			sprintf (tmp, "\\u%4x", text[i]);
+			rcs_catcs (output, tmp, 6);
 		}
 		else if (text[i] > 127)	/* escape the characters as declared in 2.5 of http://www.ietf.org/rfc/rfc4627.txt */
 		{
 			/*TODO replace swprintf() */
-			wchar_t tmp[6];
-			swprintf (tmp, 6, L"\\u%4x", text[i]);
-			rcs_catwcs (output, tmp, 6);
+			char tmp[6];
+			sprintf (tmp, "\\u%4x", text[i]);
+			rcs_catcs (output, tmp, 6);
 		}
 		else
 		{
@@ -876,9 +876,10 @@ json_escape_to_ascii (wchar_t * text)
 }
 
 
-inline void json_jpi_init(struct json_parsing_info *jpi)
+void
+json_jpi_init (struct json_parsing_info *jpi)
 {
-	assert(jpi != NULL);
+	assert (jpi != NULL);
 	jpi->state = 0;
 	jpi->lex_state = 0;
 	jpi->lex_text = NULL;
@@ -888,7 +889,7 @@ inline void json_jpi_init(struct json_parsing_info *jpi)
 }
 
 
-inline int
+int
 lexer (char *buffer, char **p, unsigned int *state, rcstring ** text)
 {
 	assert (buffer != NULL);
@@ -1851,11 +1852,11 @@ json_parse_string (struct json_parsing_info *info, char *buffer)
 
 		case 6:	/* label, pos name separator */
 			{
+				unsigned int value;	/* to avoid redundant code */
 				/* perform tree sanity checks */
 				assert (info->cursor != NULL);
 				assert (info->cursor->type == JSON_STRING);
 
-				unsigned int value;	/* to avoid redundant code */
 				switch (value = lexer (buffer, &info->p, &info->lex_state, (rcstring **) & info->lex_text))
 				{
 				case LEX_STRING:

@@ -267,7 +267,7 @@ This function takes care of the tedious task of initializing any instance of
 struct json_parsing_info
 @param jpi a pointer to a struct json_parsing_info instance
 **/
-inline void json_jpi_init(struct json_parsing_info *jpi);
+	void json_jpi_init (struct json_parsing_info *jpi);
 
 
 /**
