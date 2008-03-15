@@ -1,89 +1,45 @@
-/***************************************************************************
- *   Copyright (C) 2007 by Rui Maciel   *
- *   rui.maciel@gmail.com   *
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU Library General Public License as       *
- *   published by the Free Software Foundation; either version 2 of the    *
- *   License, or (at your option) any later version.                       *
- *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
- *   You should have received a copy of the GNU Library General Public     *
- *   License along with this program; if not, write to the                 *
- *   Free Software Foundation, Inc.,                                       *
- *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
- ***************************************************************************/
-
-
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#include <stdio.h>
+#include <assert.h>
 #include <stdlib.h>
-#include <wchar.h>
-#include <locale.h>
-#include <string.h>
+#include <stdio.h>
 
 #include "json.h"
 #include "json_helper.h"
 
-#define BUFFER 80
-
+#define BUFFER_SIZE 1024
 int
 main (void)
 {
-	/* set the variables */
-	char buffer[BUFFER];
-	enum json_error error;
-	struct json_parsing_info jpi;
+	char buffer[BUFFER_SIZE];
+	char *temp = NULL;
+	unsigned int error = JSON_INCOMPLETE_DOCUMENT;
 
-	setlocale (LC_CTYPE, "");
-	jpi.cursor = NULL;
-	jpi.temp = NULL;
-	jpi.state = 0;
-	error = JSON_INCOMPLETE_DOCUMENT;
+	struct json_parsing_info state;
 
-	/*
-	   FILE *file;
-	   file = fopen ("test.json", "r");
-	   if (file == NULL)
-	   {
-	   printf ("error opening file\n");
-	   return 1;
-	   }
-	   */
+	json_jpi_init(&state);
 
-	/* parse the file */
-	while (error == JSON_INCOMPLETE_DOCUMENT)
+	while  ( (error == JSON_WAITING_FOR_EOF) || (error == JSON_INCOMPLETE_DOCUMENT) )
 	{
-		if(fgets (buffer, BUFFER, stdin) != NULL)
+		if(fgets (buffer, BUFFER_SIZE, stdin) != NULL)
 		{
-			error = json_parse_string (&jpi, buffer, strlen (buffer) - 1);
-			switch (error)
+			switch(error = json_parse_string( &state, buffer))
 			{
-				case JSON_INCOMPLETE_DOCUMENT:
 				case JSON_OK:
+					printf("complete\n");
+					json_tree_to_string(state.cursor, &temp);
+					printf("%s\n",temp);
+					break;
+
+				case JSON_WAITING_FOR_EOF:
+				case JSON_INCOMPLETE_DOCUMENT:
 					break;
 
 				default:
-					printf ("some error\n");
-					return EXIT_FAILURE;
-					break;
+					printf("Some error occurred: %d\n", error);
 			}
 		}
 		else
 			error = JSON_UNKNOWN_PROBLEM;
-
 	}
-	/* fclose (file); */
-	json_render_tree (jpi.cursor);
-
-	/* cleanup */
-	json_free_value (&jpi.cursor);
-	return EXIT_SUCCESS;
+	/* perform cleanup */
+	return 0;
 }

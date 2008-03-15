@@ -29,6 +29,7 @@
 #include <wchar.h>
 #include <string.h>
 
+
 #ifndef JSON_H
 #define JSON_H
 
@@ -51,12 +52,14 @@ The error messages produced by the JSON parsers
 **/
 	enum json_error
 	{
-		JSON_INCOMPLETE_DOCUMENT = 0,	/*!< the parsed document didn't ended */
 		JSON_OK = 1,	/*!< everything went smoothly */
+		JSON_INCOMPLETE_DOCUMENT,	/*!< the parsed document didn't ended */
+		JSON_WAITING_FOR_EOF,	/*!< A complete JSON document tree was already finished but needs to get to EOF. Other characters beyond whitespaces produce errors */
+		JSON_MALFORMED_DOCUMENT,	/* the JSON document which was fed to this parser is malformed */
 		JSON_INCOMPATIBLE_TYPE,	/*!< the currently parsed type does not belong here */
 		JSON_MEMORY,	/*!< an error occurred when allocating memory */
 		JSON_ILLEGAL_CHARACTER,	/*!< the currently parsed character does not belong here */
-		JSON_BAD_TREE_STRUCTURE,	/*!< the currently parsed tree is malformed */
+		JSON_BAD_TREE_STRUCTURE,	/*!< the document tree structure is malformed */
 		JSON_MAXIMUM_LENGTH,	/*!< the parsed string reached the maximum allowed size */
 		JSON_UNKNOWN_PROBLEM	/*!< some random, unaccounted problem occurred */
 	};
@@ -88,10 +91,11 @@ The structure holding all information needed to resume parsing
 	struct json_parsing_info
 	{
 		unsigned int state;	/*!< the state where the parsing was left on the last parser run */
-		size_t pos;	/*!< the character from the given JSON document snippet being parsed */
+		unsigned int lex_state;
+		void *lex_text;
+		char *p;
 		int string_length_limit_reached;	/*!< flag informing if the string limit length defined by JSON_MAX_STRING_LENGTH was reached */
 		json_t *cursor;	/*!< pointers to nodes belonging to the document tree which aid the document parsing */
-		void *temp;	/*!< pointer to a temporary string which the parser uses to build up the parsed document */
 	};
 
 
@@ -123,7 +127,6 @@ The structure holding the information needed for json_saxy_parse to resume parsi
 		int string_length_limit_reached;	/*!< flag informing if the string limit length defined by JSON_MAX_STRING_LENGTH was reached */
 		void *temp;	/*!< temporary string which will be used to build up parsed strings between parser runs. */
 	};
-
 
 /**
 Creates a new JSON value and defines it's type
@@ -260,13 +263,20 @@ As with json_escape(), the produced string, if unaccounted for, may contribute t
 
 
 /**
+This function takes care of the tedious task of initializing any instance of 
+struct json_parsing_info
+@param jpi a pointer to a struct json_parsing_info instance
+**/
+inline void json_jpi_init(struct json_parsing_info *jpi);
+
+
+/**
 Produces a document tree from a JSON markup text string
 @param info the information necessary to resume parsing any incomplete document
-@param text a text string containing information described by the JSON language, partial or complete.
-@param length the number of characters that form the input text
+@param text a c-string containing information described by the JSON language, partial or complete.
 @return a code describing how the operation ended up
 **/
-	enum json_error json_parse_string (struct json_parsing_info *info, const char *text, size_t length);
+	enum json_error json_parse_string (struct json_parsing_info *info, char *buffer);
 
 
 /**
@@ -274,7 +284,7 @@ Produces a document tree from a JSON markup text string that contains a complete
 @param text a c-string containing a complete JSON text document
 @return a pointer to the new document tree or NULL if some error occurred
 **/
-	json_t *json_parse_document (const char *text);
+	json_t *json_parse_document (char *text);
 
 
 /**
