@@ -27,8 +27,7 @@
 */
 
 #include <wchar.h>
-#include <string.h>
-
+#include <stdint.h>
 
 #ifndef JSON_H
 #define JSON_H
@@ -38,7 +37,7 @@ extern "C"
 {
 #endif
 
-#define JSON_MAX_STRING_LENGTH 4096
+#define JSON_MAX_STRING_LENGTH SIZE_MAX-1
 
 /**
 The descriptions of the json_value node type
@@ -220,14 +219,6 @@ Produces a JSON markup text document from a document tree
 @return  a json_error code describing how the operation went
 **/
 	enum json_error json_tree_to_string (json_t * root, char **text);
-
-
-/**
-Checks if the character in question is a JSON markup white space
-@param c the character to be analized
-@return 1 if it is, 0 if it isn't
-**/
-	int json_white_space (const wchar_t c);
 
 
 /**

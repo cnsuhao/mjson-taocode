@@ -2233,9 +2233,9 @@ json_parse_document (char *text)
 {
 	struct json_parsing_info jpi;
 	enum json_error error;
-	jpi.state = 0;
-	jpi.p = NULL;
-	jpi.cursor = NULL;
+
+	/* initialize the parsing structure */
+	json_jpi_init (&jpi);
 
 	error = json_parse_string (&jpi, text);
 	if (error != JSON_OK)
