@@ -38,8 +38,22 @@ main (void)
 			}
 		}
 		else
-			error = JSON_UNKNOWN_PROBLEM;
+		{
+			if(error == JSON_WAITING_FOR_EOF)
+				error = JSON_OK;
+			else
+				error = JSON_UNKNOWN_PROBLEM;
+		}
+	}
+	if(error == JSON_OK)
+	{
+		json_render_tree(state.cursor);
+	}
+	else
+	{
+		printf("Document wasn't valid.\n");
 	}
 	/* perform cleanup */
+	json_free_value(&state.cursor);
 	return 0;
 }

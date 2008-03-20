@@ -1,9 +1,2 @@
-Version 0.8
+Version 0.9
 * fixed a bunch of bugs
-* switched the majority of functions from wchar_t to char
-* removed any rstring.h reference from json.h
-* Added a size_t pos field to struct json_parsing_info, to be able to pintpoint any bad character
-* rewritten json_strip_white_spaces()
-* added the extern C guard
-* added my personalized commit routine
-* Replaced old parser with a brand-new, cleaner implementation
