@@ -107,8 +107,8 @@ The structure which holds the pointers to the functions that will be called by t
 		int (*close_object) ();
 		int (*open_array) ();
 		int (*close_array) ();
-		int (*new_string) (wchar_t * text);
-		int (*new_number) (wchar_t * text);
+		int (*new_string) (char * text);
+		int (*new_number) (char * text);
 		int (*new_true) ();
 		int (*new_false) ();
 		int (*new_null) ();
@@ -262,20 +262,21 @@ struct json_parsing_info
 
 
 /**
-Produces a document tree from a JSON markup text string
+Produces a document tree sequentially from a JSON markup text fragment
 @param info the information necessary to resume parsing any incomplete document
-@param text a c-string containing information described by the JSON language, partial or complete.
+@param buffer a c-string containing a JSON document fragment
 @return a code describing how the operation ended up
 **/
-	enum json_error json_parse_string (struct json_parsing_info *info, char *buffer);
+	enum json_error json_parse_fragment (struct json_parsing_info *info, char *buffer);
 
 
 /**
 Produces a document tree from a JSON markup text string that contains a complete document
+@param root a reference to a json_t type that will hold the newly created JSON document tree. If you pass a pointer make sure you allocated memory to it.
 @param text a c-string containing a complete JSON text document
 @return a pointer to the new document tree or NULL if some error occurred
 **/
-	json_t *json_parse_document (char *text);
+	enum json_error json_parse_document (json_t *root, char *text);
 
 
 /**
@@ -285,7 +286,7 @@ Function to perform a SAX-like parsing of any JSON document or document fragment
 @param c the character to be parsed
 @return a json_error code informing how the parsing went
 **/
-	enum json_error json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_functions *jsf, wchar_t c);
+	enum json_error json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_functions *jsf, char c);
 
 
 /**
