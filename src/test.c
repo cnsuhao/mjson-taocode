@@ -21,7 +21,7 @@ main (void)
 	{
 		if(fgets (buffer, BUFFER_SIZE, stdin) != NULL)
 		{
-			switch(error = json_parse_string( &state, buffer))
+			switch(error = json_parse_fragment ( &state, buffer))
 			{
 				case JSON_OK:
 					printf("complete\n");

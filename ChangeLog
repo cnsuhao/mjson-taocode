@@ -1,2 +1,3 @@
 Version 0.9
 * fixed a bunch of bugs
+* Fixed the inability to parse a complete document contained in a c-string
