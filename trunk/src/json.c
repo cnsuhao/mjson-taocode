@@ -364,7 +364,7 @@ json_tree_to_string (json_t * root, char **text)
 		if ((cursor->previous) && (cursor != root))	/*if cursor is children and not root than it is a followup sibling */
 		{
 			/* append comma */
-			if (rcs_catwc (output, ',') != RS_OK)
+			if (rcs_catc (output, ',') != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -374,7 +374,7 @@ json_tree_to_string (json_t * root, char **text)
 		case JSON_STRING:
 			/* append the "text"\0, which means 1 + wcslen(cursor->text) + 1 + 1 */
 			/* set the new output size */
-			if (rcs_catwc (output, '\"') != RS_OK)
+			if (rcs_catc (output, '\"') != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -382,7 +382,7 @@ json_tree_to_string (json_t * root, char **text)
 			{
 				return JSON_MEMORY;
 			}
-			if (rcs_catwc (output, '\"') != RS_OK)
+			if (rcs_catc (output, '\"') != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -394,7 +394,7 @@ json_tree_to_string (json_t * root, char **text)
 					/* error checking: if parent is object and cursor is string then cursor must have a single child */
 					if (cursor->child != NULL)
 					{
-						if (rcs_catwc (output, ':') != RS_OK)
+						if (rcs_catc (output, ':') != RS_OK)
 						{
 							return JSON_MEMORY;
 						}
@@ -412,7 +412,7 @@ json_tree_to_string (json_t * root, char **text)
 			{
 				if (cursor->child != NULL)	/* is root label in label:value pair */
 				{
-					if (rcs_catwc (output, ':') != RS_OK)
+					if (rcs_catc (output, ':') != RS_OK)
 					{
 						return JSON_MEMORY;
 					}
@@ -438,7 +438,7 @@ json_tree_to_string (json_t * root, char **text)
 			break;
 
 		case JSON_OBJECT:
-			if (rcs_catwc (output, '{') != RS_OK)
+			if (rcs_catc (output, '{') != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -455,7 +455,7 @@ json_tree_to_string (json_t * root, char **text)
 			break;
 
 		case JSON_ARRAY:
-			if (rcs_catwc (output, '[') != RS_OK)
+			if (rcs_catc (output, '[') != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -473,7 +473,7 @@ json_tree_to_string (json_t * root, char **text)
 
 		case JSON_TRUE:
 			/* must not have any children */
-			if (rcs_catwcs (output, L"true", 4) != RS_OK)
+			if (rcs_catcs (output, "true", 4) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -482,7 +482,7 @@ json_tree_to_string (json_t * root, char **text)
 
 		case JSON_FALSE:
 			/* must not have any children */
-			if (rcs_catwcs (output, L"false", 5) != RS_OK)
+			if (rcs_catcs (output, "false", 5) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -491,7 +491,7 @@ json_tree_to_string (json_t * root, char **text)
 
 		case JSON_NULL:
 			/* must not have any children */
-			if (rcs_catwcs (output, L"null", 4) != RS_OK)
+			if (rcs_catcs (output, "null", 4) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -518,14 +518,14 @@ json_tree_to_string (json_t * root, char **text)
 		switch (cursor->type)
 		{
 		case JSON_OBJECT:
-			if (rcs_catwc (output, '}') != RS_OK)
+			if (rcs_catc (output, '}') != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
 			break;
 
 		case JSON_ARRAY:
-			if (rcs_catwc (output, ']') != RS_OK)
+			if (rcs_catc (output, ']') != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -570,22 +570,6 @@ json_tree_to_string (json_t * root, char **text)
 	{
 		*text = output->text;
 		return JSON_OK;
-	}
-}
-
-
-int
-json_white_space (const wchar_t c)
-{
-	switch (c)
-	{
-	case L'\x20':		/* space */
-	case L'\x09':		/* horizontal tab */
-	case L'\x0A':		/* line feed or new line */
-	case L'\x0D':		/* Carriage return */
-		return 1;
-	default:
-		return 0;
 	}
 }
 
@@ -746,130 +730,65 @@ json_format_string (char *text)
 
 
 char *
-json_escape (wchar_t * text)
+json_escape (char * text)
 {
 	rcstring *output;
-	size_t i;
+	size_t i, length;
+	char buffer[6];
 	/* check if pre-conditions are met */
 	assert (text != NULL);
 
 	/* defining the temporary variables */
-	output = rcs_create (wcslen (text));
+	length = strlen(text);
+	output = rcs_create (length);
 	if (output == NULL)
 		return NULL;
-	for (i = 0; i < wcslen (text); i++)
+	for (i = 0; i < length; i++)
 	{
-		if (text[i] == L'\\')
+		if (text[i] == '\\')
 		{
-			rcs_catwcs (output, L"\\\\", 2);
+			rcs_catcs (output, "\\\\", 2);
 		}
-		else if (text[i] == L'\"')
+		else if (text[i] == '\"')
 		{
-			rcs_catwcs (output, L"\\\"", 2);
+			rcs_catcs (output, "\\\"", 2);
 		}
-		else if (text[i] == L'/')
+		else if (text[i] == '/')
 		{
-			rcs_catwcs (output, L"\\/", 2);
+			rcs_catcs (output, "\\/", 2);
 		}
-		else if (text[i] == L'\b')
+		else if (text[i] == '\b')
 		{
-			rcs_catwcs (output, L"\\b", 2);
+			rcs_catcs (output, "\\b", 2);
 		}
-		else if (text[i] == L'\f')
+		else if (text[i] == '\f')
 		{
-			rcs_catwcs (output, L"\\f", 2);
+			rcs_catcs (output, "\\f", 2);
 		}
-		else if (text[i] == L'\n')
+		else if (text[i] == '\n')
 		{
-			rcs_catwcs (output, L"\\n", 2);
+			rcs_catcs (output, "\\n", 2);
 		}
-		else if (text[i] == L'\r')
+		else if (text[i] == '\r')
 		{
-			rcs_catwcs (output, L"\\r", 2);
+			rcs_catcs (output, "\\r", 2);
 		}
-		else if (text[i] == L'\t')
+		else if (text[i] == '\t')
 		{
-			rcs_catwcs (output, L"\\t", 2);
+			rcs_catcs (output, "\\t", 2);
 		}
-		else if (text[i] <= 0x1F)	/* escape the characters as declared in 2.5 of http://www.ietf.org/rfc/rfc4627.txt */
+		else if (text[i] < 0)	/* non-BMP character */
 		{
-			/*TODO replace swprintf() */
-			char tmp[6];
-			sprintf (tmp, "\\u%4x", text[i]);
-			rcs_catcs (output, tmp, 6);
+			rcs_catc (output, text[i]);
+		}
+		else if (text[i] < 0x20)
+		{
+			sprintf(buffer,"\\u%4.4x",text[i]);
+			rcs_catcs(output,buffer,6);
 		}
 		else
 		{
-			rcs_catwc (output, text[i]);
-		}
-	}
-	return rcs_unwrap (output);
-}
-
-
-char *
-json_escape_to_ascii (wchar_t * text)
-{
-	rcstring *output;
-	size_t i;
-	/* check if pre-conditions are met */
-	assert (text != NULL);
-
-	/* defining the temporary variables */
-	output = rcs_create (wcslen (text));
-	if (output == NULL)
-		return NULL;
-	for (i = 0; i < wcslen (text); i++)
-	{
-		if (text[i] == L'\\')
-		{
-			rcs_catwcs (output, L"\\\\", 2);
-		}
-		else if (text[i] == L'\"')
-		{
-			rcs_catwcs (output, L"\\\"", 2);
-		}
-		else if (text[i] == L'/')
-		{
-			rcs_catwcs (output, L"\\/", 2);
-		}
-		else if (text[i] == L'\b')
-		{
-			rcs_catwcs (output, L"\\b", 2);
-		}
-		else if (text[i] == L'\f')
-		{
-			rcs_catwcs (output, L"\\f", 2);
-		}
-		else if (text[i] == L'\n')
-		{
-			rcs_catwcs (output, L"\\n", 2);
-		}
-		else if (text[i] == L'\r')
-		{
-			rcs_catwcs (output, L"\\r", 2);
-		}
-		else if (text[i] == L'\t')
-		{
-			rcs_catwcs (output, L"\\t", 2);
-		}
-		else if (text[i] <= 0x1F)	/* escape the characters as declared in 2.5 of http://www.ietf.org/rfc/rfc4627.txt */
-		{
-			/*TODO replace swprintf() */
-			char tmp[6];
-			sprintf (tmp, "\\u%4x", text[i]);
-			rcs_catcs (output, tmp, 6);
-		}
-		else if (text[i] > 127)	/* escape the characters as declared in 2.5 of http://www.ietf.org/rfc/rfc4627.txt */
-		{
-			/*TODO replace swprintf() */
-			char tmp[6];
-			sprintf (tmp, "\\u%4x", text[i]);
-			rcs_catcs (output, tmp, 6);
-		}
-		else
-		{
-			rcs_catwc (output, text[i]);
+			rcs_catc (output, text[i]);
 		}
 	}
 	return rcs_unwrap (output);

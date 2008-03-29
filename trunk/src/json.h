@@ -237,20 +237,11 @@ Formats a JSON markup text contained in the given string
 
 
 /**
-Outputs a new UTF8 c-string which holds the same characters as the given string but replaces all non-BMP characters with the respective escape sequence.
-@param text a wchar_t text string
+Outputs a new UTF8 c-string which replaces all characters that must be escaped with their respective escaped versions
+@param text an UTF8 char text string
 @return an UTF-8 c-string holding the same text string but with escaped characters
 **/
-	char *json_escape (wchar_t * text);
-
-
-/**
-This function performs the same tast as json_escape() but it also escapes non-ASCII characters
-As with json_escape(), the produced string, if unaccounted for, may contribute to memory leaks.
-@param text a wchar_t text string
-@return a char string holding the same text string but composed solely of ASCII characters
-**/
-	char *json_escape_to_ascii (wchar_t * text);
+	char *json_escape (char * text);
 
 
 /**
