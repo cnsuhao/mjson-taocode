@@ -5,7 +5,14 @@
 #include "json.h"
 #include "json_helper.h"
 
+enum json_error json_tree_to_file (json_t * root, FILE *file)
+{
+}
+
+
+
 #define BUFFER_SIZE 1024
+
 int
 main (void)
 {
@@ -47,7 +54,8 @@ main (void)
 	}
 	if(error == JSON_OK)
 	{
-		json_render_tree(state.cursor);
+		printf("printing...\n");
+		json_tree_to_file(state.cursor, stdout);
 	}
 	else
 	{
