@@ -568,7 +568,7 @@ json_tree_to_string (json_t * root, char **text)
 
       end:
 	{
-		*text = output->text;
+		*text = rcs_unwrap(output);
 		return JSON_OK;
 	}
 }
@@ -2147,12 +2147,13 @@ json_parse_fragment (struct json_parsing_info *info, char *buffer)
 
 
 
-enum json_error json_parse_document (json_t *root, char *text)
+enum json_error json_parse_document (json_t **root, char *text)
 {
 	enum json_error error;
 	struct json_parsing_info *jpi;
 
 	assert(root != NULL);
+	assert(*root == NULL);
 	assert(text != NULL);
 
 	/* initialize the parsing structure */
@@ -2166,7 +2167,7 @@ enum json_error json_parse_document (json_t *root, char *text)
 	error = json_parse_fragment (jpi, text);
 	if ( (error == JSON_WAITING_FOR_EOF) || (error == JSON_OK))
 	{
-		*root = *jpi->cursor;
+		*root = jpi->cursor;
 		free(jpi);
 		return JSON_OK;
 	}
@@ -2178,7 +2179,7 @@ enum json_error json_parse_document (json_t *root, char *text)
 }
 
 
-enum json_error
+	enum json_error
 json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_functions *jsf, char c)
 {
 	/*TODO handle a string instead of a single char */

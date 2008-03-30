@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-if( !defined($ARGV[0]) or $ARGV[0] eq "--help" or $#ARGV > 0)
+if( !defined($ARGV[0]) or $ARGV[0] eq "--help" or $#ARGV > 1)
 {
 	print "usage: $0 \"commit description\"\n";
 	exit(0);

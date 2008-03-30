@@ -23,7 +23,7 @@
 
 \note error handling is only in a very rudimentary form.
 \author Rui Maciel	rui_maciel@users.sourceforge.net
-\version v0.8
+\version v0.9
 */
 
 #include <wchar.h>
@@ -222,6 +222,15 @@ Produces a JSON markup text document from a document tree
 
 
 /**
+Produces a JSON markup text document from a json_t document tree to a text stream 
+@param root The document's root node
+@param text a pointer to a char string that will hold the JSON document text.
+@return  a json_error code describing how the operation went
+**/
+/*	enum json_error json_tree_to_file (json_t * root, FILE *file); */
+
+
+/**
 Strips all JSON white spaces from the text string
 @param text a char string holding a JSON document or document snippet 
 **/
@@ -263,11 +272,11 @@ Produces a document tree sequentially from a JSON markup text fragment
 
 /**
 Produces a document tree from a JSON markup text string that contains a complete document
-@param root a reference to a json_t type that will hold the newly created JSON document tree. If you pass a pointer make sure you allocated memory to it.
+@param root a reference to a pointer to a json_t type. The function allocates memory to the passed pointer and sets up the value
 @param text a c-string containing a complete JSON text document
 @return a pointer to the new document tree or NULL if some error occurred
 **/
-	enum json_error json_parse_document (json_t *root, char *text);
+	enum json_error json_parse_document (json_t **root, char *text);
 
 
 /**

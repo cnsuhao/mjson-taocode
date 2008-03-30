@@ -1,4 +1,4 @@
 Version 0.9
 * fixed a bunch of bugs
-* Fixed the inability to parse a complete document contained in a c-string
 * MJSON is now completely free of any wchar_t reference
+* tweaked json_parse_document() and fixed a memory leak
