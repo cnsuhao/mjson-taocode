@@ -1269,8 +1269,17 @@ lexer (char *buffer, char **p, unsigned int *state, rcstring ** text)
 					if (rcs_catc (*text, **p) != RS_OK)
 						return LEX_MEMORY;
 					/*TODO finish this state */
+					++*p;
 					*state = 20;	/* number: frac start */
 					break;
+
+				case 'e':
+				case 'E':
+					if (rcs_catc (*text, **p) != RS_OK)
+						return LEX_MEMORY;
+					++*p;
+					*state = 22;    /* number: exp start */
+					break;	
 
 				default:
 					return LEX_INVALID_CHARACTER;
