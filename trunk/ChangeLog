@@ -2,4 +2,4 @@ Version 0.9
 * fixed a bunch of bugs
 * MJSON is now completely free of any wchar_t reference
 * tweaked json_parse_document() and fixed a memory leak
-* Fixed incomplete lexing of numbers beginning with '0', courtesy of Markus Eisenbach.
+* removed the rstring.h dependency from json.c
