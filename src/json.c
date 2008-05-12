@@ -26,7 +26,6 @@
 #include <memory.h>
 #include <wchar.h>
 
-#include "rstring.h"
 
 enum LEX_VALUE
 { LEX_MORE = 0,
@@ -45,6 +44,153 @@ enum LEX_VALUE
 	LEX_ERROR,
 	LEX_MEMORY
 };
+
+
+/* rc_string part */
+
+#define RSTRING_INCSTEP 3
+
+struct rui_cstring
+{
+	char *text;	/*<! char c-string */
+	size_t max;	/*<! usable memory allocated to text minus the space for the nul character */
+};
+
+typedef struct rui_cstring rcstring;
+
+enum rui_string_error_codes
+{ RS_MEMORY, RS_OK = 1, RS_UNKNOWN };
+
+typedef enum rui_string_error_codes rstring_code;
+
+
+rcstring *
+rcs_create (size_t length)
+{
+	rcstring *rcs;
+	rcs = malloc (sizeof (rcstring));	/* allocates memory for a struct rcstring */
+	if (rcs == NULL)
+		return NULL;
+
+	rcs->max = length;
+
+	rcs->text = calloc (rcs->max + 1, sizeof (char));
+	if (rcs->text == NULL)
+	{
+		free (rcs);
+		return NULL;
+	}
+
+	return rcs;
+}
+
+
+void
+rcs_free (rcstring ** rcs)
+{
+	assert (rcs != NULL);
+	if (*rcs != NULL)
+	{
+		if ((*rcs)->text != NULL)
+		{
+			free ((*rcs)->text);
+			(*rcs)->text = NULL;
+		}
+		free (*rcs);
+		*rcs = NULL;
+	}
+
+}
+
+
+rstring_code
+rcs_resize (rcstring * rcs, size_t length)
+{
+	char *temp;
+	assert (rcs != NULL);
+
+	temp = realloc (rcs->text, sizeof (char) * (length + 1));	/* length plus L'\0' */
+	if (temp == NULL)
+	{
+		free (rcs);
+		return RS_MEMORY;
+	}
+	rcs->text = temp;
+	rcs->max = length;
+	rcs->text[rcs->max] = L'\0';
+	return RS_OK;
+}
+
+
+rstring_code
+rcs_catcs (rcstring * pre, const char *pos, const size_t length)
+{
+	size_t pre_length;
+
+	assert (pre != NULL);
+	assert (pos != NULL);
+
+	pre_length = strlen (pre->text);
+
+	if (pre->max < pre_length + length)
+	{
+		if (rcs_resize (pre, pre_length + length + 5) != RS_OK)
+			return RS_MEMORY;
+	}
+	strncpy (pre->text + pre_length, pos, length);
+	pre->text[pre_length + length] = '\0';
+	return RS_OK;
+}
+
+
+rstring_code
+rcs_catc (rcstring * pre, const char c)
+{
+	size_t pre_length;
+
+	assert (pre != NULL);
+
+	pre_length = strlen (pre->text);
+	if (pre->max <= pre_length)
+	{
+		pre->max += RSTRING_INCSTEP;
+		if (rcs_resize (pre, pre->max) != RS_OK)
+			return RS_MEMORY;
+	}
+	pre->text[pre_length] = c;
+	pre->text[pre_length + 1] = '\0';
+	return RS_OK;
+}
+
+
+char *
+rcs_unwrap (rcstring * rcs)
+{
+	char *out;
+	assert (rcs != NULL);
+
+	if (rcs->text == NULL)
+		out = NULL;
+	else
+		out = realloc (rcs->text, sizeof (char) * (strlen (rcs->text) + 1));
+
+	free (rcs);
+	return out;
+}
+
+
+
+size_t
+rcs_length (rcstring * rcs)
+{
+	/*TODO account for UTF8 */
+	assert (rcs != NULL);
+	return strlen (rcs->text);
+}
+
+
+/* end of rc_string part */
+
 
 
 json_t *
