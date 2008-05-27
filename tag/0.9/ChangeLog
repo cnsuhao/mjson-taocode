@@ -1,0 +1,5 @@
+Version 0.9
+* fixed a bunch of bugs
+* MJSON is now completely free of any wchar_t reference
+* tweaked json_parse_document() and fixed a memory leak
+* removed the rstring.h dependency from json.c
