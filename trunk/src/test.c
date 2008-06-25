@@ -9,52 +9,51 @@
 int
 main (void)
 {
-  char buffer[BUFFER_SIZE];
-  char *temp = NULL;
-  unsigned int error = JSON_INCOMPLETE_DOCUMENT;
+	char buffer[BUFFER_SIZE];
+	char *temp = NULL;
+	unsigned int error = JSON_INCOMPLETE_DOCUMENT;
 
-  struct json_parsing_info state;
+	struct json_parsing_info state;
 
-  json_jpi_init (&state);
+	json_jpi_init (&state);
 
-  while ((error == JSON_WAITING_FOR_EOF)
-	 || (error == JSON_INCOMPLETE_DOCUMENT))
-    {
-      if (fgets (buffer, BUFFER_SIZE, stdin) != NULL)
+	while ((error == JSON_WAITING_FOR_EOF) || (error == JSON_INCOMPLETE_DOCUMENT))
 	{
-	  switch (error = json_parse_fragment (&state, buffer))
-	    {
-	    case JSON_OK:
-	      printf ("complete\n");
-	      json_tree_to_string (state.cursor, &temp);
-	      printf ("%s\n", temp);
-	      break;
+		if (fgets (buffer, BUFFER_SIZE, stdin) != NULL)
+		{
+			switch (error = json_parse_fragment (&state, buffer))
+			{
+			case JSON_OK:
+				printf ("complete\n");
+				json_tree_to_string (state.cursor, &temp);
+				printf ("%s\n", temp);
+				break;
 
-	    case JSON_WAITING_FOR_EOF:
-	    case JSON_INCOMPLETE_DOCUMENT:
-	      break;
+			case JSON_WAITING_FOR_EOF:
+			case JSON_INCOMPLETE_DOCUMENT:
+				break;
 
-	    default:
-	      printf ("Some error occurred: %d\n", error);
-	    }
+			default:
+				printf ("Some error occurred: %d\n", error);
+			}
+		}
+		else
+		{
+			if (error == JSON_WAITING_FOR_EOF)
+				error = JSON_OK;
+			else
+				error = JSON_UNKNOWN_PROBLEM;
+		}
 	}
-      else
+	if (error == JSON_OK)
 	{
-	  if (error == JSON_WAITING_FOR_EOF)
-	    error = JSON_OK;
-	  else
-	    error = JSON_UNKNOWN_PROBLEM;
+		json_render_tree (state.cursor);
 	}
-    }
-  if (error == JSON_OK)
-    {
-      json_render_tree (state.cursor);
-    }
-  else
-    {
-      printf ("Document wasn't valid.\n");
-    }
-  /* perform cleanup */
-  json_free_value (&state.cursor);
-  return 0;
+	else
+	{
+		printf ("Document wasn't valid.\n");
+	}
+	/* perform cleanup */
+	json_free_value (&state.cursor);
+	return 0;
 }

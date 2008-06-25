@@ -52,8 +52,8 @@ enum LEX_VALUE
 
 struct rui_cstring
 {
-	char *text;	/*<! char c-string */
-	size_t max;	/*<! usable memory allocated to text minus the space for the nul character */
+	char *text;		/*<! char c-string */
+	size_t max;		/*<! usable memory allocated to text minus the space for the nul character */
 };
 
 typedef struct rui_cstring rcstring;
@@ -714,7 +714,7 @@ json_tree_to_string (json_t * root, char **text)
 
       end:
 	{
-		*text = rcs_unwrap(output);
+		*text = rcs_unwrap (output);
 		return JSON_OK;
 	}
 }
@@ -777,17 +777,18 @@ json_strip_white_spaces (char *text)
 
 
 char *
-json_format_string (char *text)
+json_format_string (const char *text)
 {
-	size_t pos = 0;
+	size_t pos = 0, text_length;
 	unsigned int indentation = 0;	/* the current indentation level */
 	unsigned int i;		/* loop iterator variable */
 	char loop;
 
 	rcstring *output;
+	text_length = strlen (text);
 
-	output = rcs_create (strlen (text));
-	while (pos < strlen (text))
+	output = rcs_create (text_length);
+	while (pos < text_length)
 	{
 		switch (text[pos])
 		{
@@ -800,7 +801,7 @@ json_format_string (char *text)
 
 		case '{':
 			indentation++;
-			rcs_catc (output, '{');
+			rcs_catcs (output, "{\n", 2);
 			for (i = 0; i < indentation; i++)
 			{
 				rcs_catc (output, '\t');
@@ -837,7 +838,7 @@ json_format_string (char *text)
 			rcs_catc (output, text[pos]);
 			pos++;
 			loop = 1;	/* inner string loop trigger is enabled */
-			while (loop)	/* parse the inner part of the string   ///TODO rethink this loop */
+			while (loop)
 			{
 				if (text[pos] == '\\')	/* escaped sequence */
 				{
@@ -857,7 +858,7 @@ json_format_string (char *text)
 				rcs_catc (output, text[pos]);
 
 				pos++;
-				if (pos >= strlen (text))
+				if (pos >= text_length)
 				{
 					loop = 0;
 				}
@@ -876,7 +877,7 @@ json_format_string (char *text)
 
 
 char *
-json_escape (char * text)
+json_escape (char *text)
 {
 	rcstring *output;
 	size_t i, length;
@@ -885,7 +886,7 @@ json_escape (char * text)
 	assert (text != NULL);
 
 	/* defining the temporary variables */
-	length = strlen(text);
+	length = strlen (text);
 	output = rcs_create (length);
 	if (output == NULL)
 		return NULL;
@@ -929,8 +930,8 @@ json_escape (char * text)
 		}
 		else if (text[i] < 0x20)
 		{
-			sprintf(buffer,"\\u%4.4x",text[i]);
-			rcs_catcs(output,buffer,6);
+			sprintf (buffer, "\\u%4.4x", text[i]);
+			rcs_catcs (output, buffer, 6);
 		}
 		else
 		{
@@ -1424,8 +1425,8 @@ lexer (char *buffer, char **p, unsigned int *state, rcstring ** text)
 					if (rcs_catc (*text, **p) != RS_OK)
 						return LEX_MEMORY;
 					++*p;
-					*state = 22;    /* number: exp start */
-					break;	
+					*state = 22;	/* number: exp start */
+					break;
 
 				default:
 					return LEX_INVALID_CHARACTER;
@@ -2302,39 +2303,40 @@ json_parse_fragment (struct json_parsing_info *info, char *buffer)
 
 
 
-enum json_error json_parse_document (json_t **root, char *text)
+enum json_error
+json_parse_document (json_t ** root, char *text)
 {
 	enum json_error error;
 	struct json_parsing_info *jpi;
 
-	assert(root != NULL);
-	assert(*root == NULL);
-	assert(text != NULL);
+	assert (root != NULL);
+	assert (*root == NULL);
+	assert (text != NULL);
 
 	/* initialize the parsing structure */
-	jpi = malloc(sizeof(struct json_parsing_info));
-	if(jpi == NULL)
+	jpi = malloc (sizeof (struct json_parsing_info));
+	if (jpi == NULL)
 	{
 		return JSON_MEMORY;
 	}
 	json_jpi_init (jpi);
 
 	error = json_parse_fragment (jpi, text);
-	if ( (error == JSON_WAITING_FOR_EOF) || (error == JSON_OK))
+	if ((error == JSON_WAITING_FOR_EOF) || (error == JSON_OK))
 	{
 		*root = jpi->cursor;
-		free(jpi);
+		free (jpi);
 		return JSON_OK;
 	}
 	else
 	{
-		free(jpi);
+		free (jpi);
 		return error;
 	}
 }
 
 
-	enum json_error
+enum json_error
 json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_functions *jsf, char c)
 {
 	/*TODO handle a string instead of a single char */
