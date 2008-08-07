@@ -24,7 +24,6 @@
 #include <stdio.h>
 #include <assert.h>
 #include <memory.h>
-#include <wchar.h>
 
 
 enum LEX_VALUE
@@ -48,7 +47,8 @@ enum LEX_VALUE
 
 /* rc_string part */
 
-#define RSTRING_INCSTEP 3
+#define RSTRING_INCSTEP 5
+#define RSTRING_DEFAULT 8
 
 struct rui_cstring
 {
@@ -134,7 +134,7 @@ rcs_catcs (rcstring * pre, const char *pos, const size_t length)
 
 	if (pre->max < pre_length + length)
 	{
-		if (rcs_resize (pre, pre_length + length + 5) != RS_OK)
+		if (rcs_resize (pre, pre_length + length + RSTRING_INCSTEP) != RS_OK)
 			return RS_MEMORY;
 	}
 	strncpy (pre->text + pre_length, pos, length);
@@ -153,8 +153,7 @@ rcs_catc (rcstring * pre, const char c)
 	pre_length = strlen (pre->text);
 	if (pre->max <= pre_length)
 	{
-		pre->max += RSTRING_INCSTEP;
-		if (rcs_resize (pre, pre->max) != RS_OK)
+		if (rcs_resize (pre, pre->max + RSTRING_INCSTEP) != RS_OK)
 			return RS_MEMORY;
 	}
 	pre->text[pre_length] = c;
@@ -172,7 +171,9 @@ rcs_unwrap (rcstring * rcs)
 	if (rcs->text == NULL)
 		out = NULL;
 	else
+	{
 		out = realloc (rcs->text, sizeof (char) * (strlen (rcs->text) + 1));
+	}
 
 	free (rcs);
 	return out;
@@ -502,7 +503,7 @@ json_tree_to_string (json_t * root, char **text)
 
 	cursor = root;
 	/* set up the output and temporary rwstrings */
-	output = rcs_create (5);
+	output = rcs_create (RSTRING_DEFAULT);
 
 	/* start the convoluted fun */
       state1:			/* open value */
@@ -994,7 +995,7 @@ lexer (char *buffer, char **p, unsigned int *state, rcstring ** text)
 					return LEX_VALUE_SEPARATOR;
 
 				case '\"':
-					*text = rcs_create (5);
+					*text = rcs_create (RSTRING_DEFAULT);
 					if (*text == NULL)
 						return LEX_MEMORY;
 					*state = 1;	/* inside a JSON string */
@@ -1013,7 +1014,7 @@ lexer (char *buffer, char **p, unsigned int *state, rcstring ** text)
 					break;
 
 				case '-':
-					*text = rcs_create (5);
+					*text = rcs_create (RSTRING_DEFAULT);
 					if (*text == NULL)
 						return LEX_MEMORY;
 					if (rcs_catc (*text, '-') != RS_OK)
@@ -1022,7 +1023,7 @@ lexer (char *buffer, char **p, unsigned int *state, rcstring ** text)
 					break;
 
 				case '0':
-					*text = rcs_create (5);
+					*text = rcs_create (RSTRING_DEFAULT);
 					if (*text == NULL)
 						return LEX_MEMORY;
 					if (rcs_catc (*text, '0') != RS_OK)
@@ -1039,7 +1040,7 @@ lexer (char *buffer, char **p, unsigned int *state, rcstring ** text)
 				case '7':
 				case '8':
 				case '9':
-					*text = rcs_create (5);
+					*text = rcs_create (RSTRING_DEFAULT);
 					if (*text == NULL)
 						return LEX_MEMORY;
 					if (rcs_catc (*text, *(*p - 1)) != RS_OK)
@@ -3713,7 +3714,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 
 		case '-':
 			jsps->state = 23;	/* number: */
-			if ((jsps->temp = rcs_create (5)) == NULL)
+			if ((jsps->temp = rcs_create (RSTRING_DEFAULT)) == NULL)
 			{
 				return JSON_MEMORY;
 			}
