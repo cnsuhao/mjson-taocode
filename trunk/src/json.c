@@ -1416,7 +1416,6 @@ lexer (char *buffer, char **p, unsigned int *state, rcstring ** text)
 				case '.':
 					if (rcs_catc (*text, **p) != RS_OK)
 						return LEX_MEMORY;
-					/*TODO finish this state */
 					++*p;
 					*state = 20;	/* number: frac start */
 					break;
