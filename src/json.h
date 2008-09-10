@@ -26,7 +26,6 @@
 \version v0.10
 */
 
-#include <wchar.h>
 #include <stdint.h>
 
 #ifndef JSON_H
