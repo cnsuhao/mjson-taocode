@@ -53,6 +53,7 @@ enum LEX_VALUE
 struct rui_cstring
 {
 	char *text;		/*<! char c-string */
+	size_t length;		/*<! put in place to avoid strlen() calls */
 	size_t max;		/*<! usable memory allocated to text minus the space for the nul character */
 };
 
@@ -73,6 +74,7 @@ rcs_create (size_t length)
 		return NULL;
 
 	rcs->max = length;
+	rcs->length = 0;
 
 	rcs->text = malloc ( (rcs->max + 1)* sizeof (char));
 	if (rcs->text == NULL)
@@ -80,6 +82,7 @@ rcs_create (size_t length)
 		free (rcs);
 		return NULL;
 	}
+	rcs->text[0] = '\0';
 
 	return rcs;
 }
@@ -109,7 +112,7 @@ rcs_resize (rcstring * rcs, size_t length)
 	char *temp;
 	assert (rcs != NULL);
 
-	temp = realloc (rcs->text, sizeof (char) * (length + 1));	/* length plus L'\0' */
+	temp = realloc (rcs->text, sizeof (char) * (length + 1));	/* length plus '\0' */
 	if (temp == NULL)
 	{
 		free (rcs);
@@ -117,7 +120,7 @@ rcs_resize (rcstring * rcs, size_t length)
 	}
 	rcs->text = temp;
 	rcs->max = length;
-	rcs->text[rcs->max] = L'\0';
+	rcs->text[rcs->max] = '\0';
 	return RS_OK;
 }
 
@@ -130,15 +133,14 @@ rcs_catcs (rcstring * pre, const char *pos, const size_t length)
 	assert (pre != NULL);
 	assert (pos != NULL);
 
-	pre_length = strlen (pre->text);
-
-	if (pre->max < pre_length + length)
+	if (pre->max < pre->length + length)
 	{
-		if (rcs_resize (pre, pre_length + length + RSTRING_INCSTEP) != RS_OK)
+		if (rcs_resize (pre, pre->length + length + RSTRING_INCSTEP) != RS_OK)
 			return RS_MEMORY;
 	}
-	strncpy (pre->text + pre_length, pos, length);
-	pre->text[pre_length + length] = '\0';
+	strncpy (pre->text + pre->length, pos, length);
+	pre->text[pre->length + length] = '\0';
+	pre->length += length;
 	return RS_OK;
 }
 
@@ -150,14 +152,14 @@ rcs_catc (rcstring * pre, const char c)
 
 	assert (pre != NULL);
 
-	pre_length = strlen (pre->text);
-	if (pre->max <= pre_length)
+	if (pre->max <= pre->length)
 	{
 		if (rcs_resize (pre, pre->max + RSTRING_INCSTEP) != RS_OK)
 			return RS_MEMORY;
 	}
-	pre->text[pre_length] = c;
-	pre->text[pre_length + 1] = '\0';
+	pre->text[pre->length] = c;
+	pre->length++;
+	pre->text[pre->length] = '\0';
 	return RS_OK;
 }
 
@@ -172,6 +174,7 @@ rcs_unwrap (rcstring * rcs)
 		out = NULL;
 	else
 	{
+		//TODO replace strlen() with a reference to rcs->length
 		out = realloc (rcs->text, sizeof (char) * (strlen (rcs->text) + 1));
 	}
 
@@ -186,7 +189,7 @@ rcs_length (rcstring * rcs)
 {
 	/*TODO account for UTF8 */
 	assert (rcs != NULL);
-	return strlen (rcs->text);
+	return rcs->length;
 }
 
 
@@ -525,7 +528,7 @@ json_tree_to_string (json_t * root, char **text)
 			{
 				return JSON_MEMORY;
 			}
-			if (rcs_catcs (output, cursor->text, strlen (cursor->text)) != RS_OK)
+			if (rcs_catcs (output, cursor->text, strlen(cursor->text)) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -577,7 +580,7 @@ json_tree_to_string (json_t * root, char **text)
 		case JSON_NUMBER:
 			/* must not have any children */
 			/* set the new size */
-			if (rcs_catcs (output, cursor->text, strlen (cursor->text)) != RS_OK)
+			if (rcs_catcs (output, cursor->text, strlen(cursor->text) ) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
