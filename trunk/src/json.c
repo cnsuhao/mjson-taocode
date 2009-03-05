@@ -74,7 +74,7 @@ rcs_create (size_t length)
 
 	rcs->max = length;
 
-	rcs->text = calloc (rcs->max + 1, sizeof (char));
+	rcs->text = malloc ( (rcs->max + 1)* sizeof (char));
 	if (rcs->text == NULL)
 	{
 		free (rcs);
@@ -230,7 +230,7 @@ json_new_string (const char *text)
 
 	/* initialize members */
 	length = strlen (text) + 1;
-	new_object->text = calloc (sizeof (char), length);
+	new_object->text = malloc (length * sizeof (char));
 	if (new_object->text == NULL)
 	{
 		free (new_object);
@@ -262,7 +262,7 @@ json_new_number (const char *text)
 
 	/* initialize members */
 	length = strlen (text) + 1;
-	new_object->text = calloc (sizeof (char), length);
+	new_object->text = malloc (length*sizeof (char));
 	if (new_object->text == NULL)
 	{
 		free (new_object);
