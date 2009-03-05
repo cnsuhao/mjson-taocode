@@ -1,0 +1,3 @@
+Version 0.10
+* fixed a bunch of bugs
+* replaced magic number with a CPP constant
