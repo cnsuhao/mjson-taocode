@@ -66,7 +66,7 @@ The error messages produced by the JSON parsers
 /**
 The JSON document tree node, which is a basic JSON type
 **/
-	struct json_value
+	typedef struct json_value
 	{
 		enum json_value_type type;	/*!< the type of node */
 		char *text;	/*!< The text stored by the node. It stores UTF-8 strings and is used exclusively by the JSON_STRING and JSON_NUMBER node types */
@@ -77,10 +77,7 @@ The JSON document tree node, which is a basic JSON type
 		struct json_value *parent;	/*!< The pointer pointing to the parent node in the document tree */
 		struct json_value *child;	/*!< The pointer pointing to the first child node in the document tree */
 		struct json_value *child_end;	/*!< The pointer pointing to the last child node in the document tree */
-	};
-
-
-	typedef struct json_value json_t;
+	} json_t;
 
 
 /**
