@@ -76,7 +76,7 @@ rcs_create (size_t length)
 	rcs->max = length;
 	rcs->length = 0;
 
-	rcs->text = malloc ( (rcs->max + 1)* sizeof (char));
+	rcs->text = malloc ((rcs->max + 1) * sizeof (char));
 	if (rcs->text == NULL)
 	{
 		free (rcs);
@@ -128,8 +128,6 @@ rcs_resize (rcstring * rcs, size_t length)
 rstring_code
 rcs_catcs (rcstring * pre, const char *pos, const size_t length)
 {
-	size_t pre_length;
-
 	assert (pre != NULL);
 	assert (pos != NULL);
 
@@ -148,8 +146,6 @@ rcs_catcs (rcstring * pre, const char *pos, const size_t length)
 rstring_code
 rcs_catc (rcstring * pre, const char c)
 {
-	size_t pre_length;
-
 	assert (pre != NULL);
 
 	if (pre->max <= pre->length)
@@ -174,7 +170,6 @@ rcs_unwrap (rcstring * rcs)
 		out = NULL;
 	else
 	{
-		//TODO replace strlen() with a reference to rcs->length
 		out = realloc (rcs->text, sizeof (char) * (strlen (rcs->text) + 1));
 	}
 
@@ -265,7 +260,7 @@ json_new_number (const char *text)
 
 	/* initialize members */
 	length = strlen (text) + 1;
-	new_object->text = malloc (length*sizeof (char));
+	new_object->text = malloc (length * sizeof (char));
 	if (new_object->text == NULL)
 	{
 		free (new_object);
@@ -437,6 +432,7 @@ json_insert_child (json_t * parent, json_t * child)
 		case JSON_OBJECT:
 		case JSON_ARRAY:
 			break;
+
 		default:
 			return JSON_BAD_TREE_STRUCTURE;
 		}
@@ -468,6 +464,7 @@ json_insert_pair_into_object (json_t * parent, const char *text_label, json_t * 
 {
 	enum json_error error;
 	json_t *label;
+
 	/* verify if the parameters are valid */
 	assert (parent != NULL);
 	assert (text_label != NULL);
@@ -501,6 +498,7 @@ json_tree_to_string (json_t * root, char **text)
 {
 	json_t *cursor;
 	rcstring *output;
+
 	assert (root != NULL);
 	assert (text != NULL);
 
@@ -528,7 +526,7 @@ json_tree_to_string (json_t * root, char **text)
 			{
 				return JSON_MEMORY;
 			}
-			if (rcs_catcs (output, cursor->text, strlen(cursor->text)) != RS_OK)
+			if (rcs_catcs (output, cursor->text, strlen (cursor->text)) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
@@ -580,7 +578,7 @@ json_tree_to_string (json_t * root, char **text)
 		case JSON_NUMBER:
 			/* must not have any children */
 			/* set the new size */
-			if (rcs_catcs (output, cursor->text, strlen(cursor->text) ) != RS_OK)
+			if (rcs_catcs (output, cursor->text, strlen (cursor->text)) != RS_OK)
 			{
 				return JSON_MEMORY;
 			}
