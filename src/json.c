@@ -1151,13 +1151,13 @@ lexer (char *buffer, char **p, unsigned int *state, rcstring ** text)
 		case 3:	/*inside a JSON string: escape unicode */
 			{
 				assert (*text != NULL);
-				if ((**p >= 'a') && (**p <= 'e'))
+				if ((**p >= 'a') && (**p <= 'f'))
 				{
 					if (rcs_catc (*text, **p) != RS_OK)
 						return LEX_MEMORY;
 					*state = 4;	/* inside a JSON string: escape unicode */
 				}
-				else if ((**p >= 'A') && (**p <= 'E'))
+				else if ((**p >= 'A') && (**p <= 'F'))
 				{
 					if (rcs_catc (*text, **p) != RS_OK)
 						return LEX_MEMORY;
@@ -1178,13 +1178,13 @@ lexer (char *buffer, char **p, unsigned int *state, rcstring ** text)
 		case 4:	/* inside a JSON string: escape unicode */
 			{
 				assert (*text != NULL);
-				if ((**p >= 'a') && (**p <= 'e'))
+				if ((**p >= 'a') && (**p <= 'f'))
 				{
 					if (rcs_catc (*text, **p) != RS_OK)
 						return LEX_MEMORY;
 					*state = 5;	/* inside a JSON string: escape unicode */
 				}
-				else if ((**p >= 'A') && (**p <= 'E'))
+				else if ((**p >= 'A') && (**p <= 'F'))
 				{
 					if (rcs_catc (*text, **p) != RS_OK)
 						return LEX_MEMORY;
@@ -1204,13 +1204,13 @@ lexer (char *buffer, char **p, unsigned int *state, rcstring ** text)
 		case 5:	/* inside a JSON string: escape unicode */
 			{
 				assert (*text != NULL);
-				if ((**p >= 'a') && (**p <= 'e'))
+				if ((**p >= 'a') && (**p <= 'f'))
 				{
 					if (rcs_catc (*text, **p) != RS_OK)
 						return LEX_MEMORY;
 					*state = 6;	/* inside a JSON string: escape unicode */
 				}
-				else if ((**p >= 'A') && (**p <= 'E'))
+				else if ((**p >= 'A') && (**p <= 'F'))
 				{
 					if (rcs_catc (*text, **p) != RS_OK)
 						return LEX_MEMORY;
@@ -1231,13 +1231,13 @@ lexer (char *buffer, char **p, unsigned int *state, rcstring ** text)
 		case 6:	/* inside a JSON string: escape unicode */
 			{
 				assert (*text != NULL);
-				if ((**p >= 'a') && (**p <= 'e'))
+				if ((**p >= 'a') && (**p <= 'f'))
 				{
 					if (rcs_catc (*text, **p) != RS_OK)
 						return LEX_MEMORY;
 					*state = 1;	/* inside a JSON string: escape unicode */
 				}
-				else if ((**p >= 'A') && (**p <= 'E'))
+				else if ((**p >= 'A') && (**p <= 'F'))
 				{
 					if (rcs_catc (*text, **p) != RS_OK)
 						return LEX_MEMORY;
