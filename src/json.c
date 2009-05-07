@@ -1105,7 +1105,7 @@ lexer (char *buffer, char **p, unsigned int *state, rcstring ** text)
 				case 30:
 				case 31:
 					/* ASCII control characters can only be present in a JSON string if they are escaped. If not then the document is invalid */
-					return JSON_ILLEGAL_CHARACTER;
+					return LEX_INVALID_CHARACTER;
 					break;
 
 				case '\"':	/* close JSON string */
@@ -1752,6 +1752,10 @@ json_parse_fragment (struct json_parsing_info *info, char *buffer)
 					info->state = 7;	/* begin array */
 					break;
 
+				case LEX_INVALID_CHARACTER:
+					return JSON_MALFORMED_DOCUMENT;
+					break;
+					
 				default:
 					printf ("state %d: defaulted\n", info->state);
 					return JSON_MALFORMED_DOCUMENT;
@@ -1941,6 +1945,10 @@ json_parse_fragment (struct json_parsing_info *info, char *buffer)
 					return JSON_INCOMPLETE_DOCUMENT;
 					break;
 
+				case LEX_INVALID_CHARACTER:
+					return JSON_ILLEGAL_CHARACTER;
+					break;
+
 				default:
 					printf ("state %d: defaulted\n", info->state);
 					return JSON_MALFORMED_DOCUMENT;
@@ -2100,6 +2108,10 @@ json_parse_fragment (struct json_parsing_info *info, char *buffer)
 					return JSON_MEMORY;
 					break;
 
+				case LEX_INVALID_CHARACTER:
+					return JSON_ILLEGAL_CHARACTER;
+					break;
+
 				default:
 					printf ("state %d: defaulted\n", info->state);
 					return JSON_MALFORMED_DOCUMENT;
@@ -2245,6 +2257,10 @@ json_parse_fragment (struct json_parsing_info *info, char *buffer)
 
 				case LEX_MORE:
 					return JSON_INCOMPLETE_DOCUMENT;
+					break;
+
+				case LEX_INVALID_CHARACTER:
+					return JSON_ILLEGAL_CHARACTER;
 					break;
 
 				default:
