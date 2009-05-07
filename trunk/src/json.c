@@ -326,7 +326,7 @@ json_free_value (json_t ** value)
 		while (i != NULL)
 		{
 			j = i->previous;
-			json_free_value (&i);
+			json_free_value (&i);	/*TODO replace recursive solution with an iterative one */
 			i = j;
 		}
 	}
@@ -352,19 +352,31 @@ json_free_value (json_t ** value)
 	/*fixing parent node connections */
 	if ((*value)->parent)
 	{
+		/* fix the tree connection to the first node in the children's list */
 		if ((*value)->parent->child == (*value))
 		{
 			if ((*value)->next)
 			{
-				(*value)->parent->child = (*value)->next;	/* the parent node always points to the first node */
+				(*value)->parent->child = (*value)->next;	/* the parent node always points to the first node in the children linked list*/
 			}
 			else
 			{
-				if ((*value)->previous)
-					(*value)->parent->child = (*value)->next;	/* the parent node always points to the first node */
 				(*value)->parent->child = NULL;
 			}
 		}
+
+		/* fix the tree connection to the last node in the children's list */
+                if ((*value)->parent->child_end == (*value))
+                {
+                        if ((*value)->previous)
+                        {
+                                (*value)->parent->child_end = (*value)->previous; /* the parent node always points to the last node in the children linked list*/
+                        }
+                        else
+                        {
+                                (*value)->parent->child_end = NULL;
+                        }
+                }
 	}
 
 	/*finally, freeing the memory allocated for this value */
