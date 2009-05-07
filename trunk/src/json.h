@@ -23,7 +23,7 @@
 
 \note error handling is only in a very rudimentary form.
 \author Rui Maciel	rui_maciel@users.sourceforge.net
-\version v0.10
+\version v1.1
 */
 
 #include <stdint.h>
