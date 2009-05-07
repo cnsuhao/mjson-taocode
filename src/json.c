@@ -357,7 +357,7 @@ json_free_value (json_t ** value)
 		{
 			if ((*value)->next)
 			{
-				(*value)->parent->child = (*value)->next;	/* the parent node always points to the first node in the children linked list*/
+				(*value)->parent->child = (*value)->next;	/* the parent node always points to the first node in the children linked list */
 			}
 			else
 			{
@@ -366,17 +366,17 @@ json_free_value (json_t ** value)
 		}
 
 		/* fix the tree connection to the last node in the children's list */
-                if ((*value)->parent->child_end == (*value))
-                {
-                        if ((*value)->previous)
-                        {
-                                (*value)->parent->child_end = (*value)->previous; /* the parent node always points to the last node in the children linked list*/
-                        }
-                        else
-                        {
-                                (*value)->parent->child_end = NULL;
-                        }
-                }
+		if ((*value)->parent->child_end == (*value))
+		{
+			if ((*value)->previous)
+			{
+				(*value)->parent->child_end = (*value)->previous;	/* the parent node always points to the last node in the children linked list */
+			}
+			else
+			{
+				(*value)->parent->child_end = NULL;
+			}
+		}
 	}
 
 	/*finally, freeing the memory allocated for this value */
@@ -1755,7 +1755,7 @@ json_parse_fragment (struct json_parsing_info *info, char *buffer)
 				case LEX_INVALID_CHARACTER:
 					return JSON_MALFORMED_DOCUMENT;
 					break;
-					
+
 				default:
 					printf ("state %d: defaulted\n", info->state);
 					return JSON_MALFORMED_DOCUMENT;
