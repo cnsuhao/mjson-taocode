@@ -3807,14 +3807,10 @@ json_find_first_label (const json_t * object, const char *text_label)
 	assert (text_label != NULL);
 	assert (object->type == JSON_OBJECT);
 
-	if (object->child == NULL)
-		return NULL;
-	cursor = object->child;
-	while (cursor != NULL)
+	for (cursor = object->child; cursor != NULL; cursor = cursor->next)
 	{
-		if (strncmp (cursor->text, text_label, strlen (text_label)) == 0)
-			return cursor;
-		cursor = cursor->next;
+		if (strcmp (cursor->text, text_label) == 0)
+			break;
 	}
-	return NULL;
+	return cursor;
 }
