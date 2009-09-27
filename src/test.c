@@ -1,59 +1,47 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <locale.h>
 
 #include "json.h"
-#include "json_helper.h"
 
-#define BUFFER_SIZE 1024
 int
-main (void)
+main (int argc, char **argv)
 {
-	char buffer[BUFFER_SIZE];
-	char *temp = NULL;
-	unsigned int error = JSON_INCOMPLETE_DOCUMENT;
+	json_t *document = NULL;
+	FILE *fp;
+	int i;
 
-	struct json_parsing_info state;
-
-	json_jpi_init (&state);
-
-	while ((error == JSON_WAITING_FOR_EOF) || (error == JSON_INCOMPLETE_DOCUMENT))
+	if(argc < 2)
 	{
-		if (fgets (buffer, BUFFER_SIZE, stdin) != NULL)
+		printf("usage: test document1.json ...\n");
+		return EXIT_SUCCESS;
+	}
+
+	
+	for(i = 1; i < argc; i++)
+	{
+		printf("processing file %s...\n",argv[i]);
+		fp = fopen(argv[i],"r");
+		if(fp == NULL)
 		{
-			switch (error = json_parse_fragment (&state, buffer))
-			{
-			case JSON_OK:
-				printf ("complete\n");
-				json_tree_to_string (state.cursor, &temp);
-				printf ("%s\n", temp);
-				break;
-
-			case JSON_WAITING_FOR_EOF:
-			case JSON_INCOMPLETE_DOCUMENT:
-				break;
-
-			default:
-				printf ("Some error occurred: %d\n", error);
-			}
+			printf("file \"%s\" couldn't be open\n",argv[i]);
 		}
 		else
 		{
-			if (error == JSON_WAITING_FOR_EOF)
-				error = JSON_OK;
-			else
-				error = JSON_UNKNOWN_PROBLEM;
+			switch(json_stream_parse(fp, &document))
+			{
+				case JSON_OK:
+					json_stream_output(stdout,document);
+					json_free_value(&document);
+					break;
+
+				default:
+					printf("some problem occurred\n");
+					break;
+			}
 		}
 	}
-	if (error == JSON_OK)
-	{
-		json_render_tree (state.cursor);
-	}
-	else
-	{
-		printf ("Document wasn't valid.\n");
-	}
-	/* perform cleanup */
-	json_free_value (&state.cursor);
-	return 0;
+	
+	return EXIT_SUCCESS;
 }

@@ -27,6 +27,7 @@
 */
 
 #include <stdint.h>
+#include <stdio.h>
 
 #ifndef JSON_H
 #define JSON_H
@@ -122,6 +123,16 @@ The structure holding the information needed for json_saxy_parse to resume parsi
 		int string_length_limit_reached;	/*!< flag informing if the string limit length defined by JSON_MAX_STRING_LENGTH was reached */
 		void *temp;	/*!< temporary string which will be used to build up parsed strings between parser runs. */
 	};
+
+
+/** 
+Buils a json_t document by parsing an open file
+@param file a pointer to an object controlling a stream, returned by fopen()
+@param document a reference to a json_t pointer, set to NULL, which will store the parsed document
+@return a json_error error code according to how the parsing operation went.
+**/
+	enum json_error json_stream_parse (FILE * file, json_t ** document);
+
 
 /**
 Creates a new JSON value and defines it's type
@@ -219,11 +230,11 @@ Produces a JSON markup text document from a document tree
 
 /**
 Produces a JSON markup text document from a json_t document tree to a text stream 
+@param file a opened file stream
 @param root The document's root node
-@param text a pointer to a char string that will hold the JSON document text.
 @return  a json_error code describing how the operation went
 **/
-/*	enum json_error json_tree_to_file (json_t * root, FILE *file); */
+	enum json_error json_stream_output (FILE * file, json_t * root);
 
 
 /**
