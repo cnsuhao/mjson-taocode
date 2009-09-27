@@ -191,6 +191,57 @@ rcs_length (rcstring * rcs)
 /* end of rc_string part */
 
 
+enum json_error
+json_stream_parse (FILE * file, json_t ** document)
+{
+	char buffer[1024];	/* hard-coded value */
+	unsigned int error = JSON_INCOMPLETE_DOCUMENT;
+
+	struct json_parsing_info state;
+
+	assert (file != NULL);	/* must be an open stream */
+	assert (document != NULL);	/* must be a valid pointer reference */
+	assert (*document == NULL);	/* only accepts a null json_t pointer, to avoid memory leaks */
+
+	json_jpi_init (&state);	/* initializes the json_parsing_info object */
+
+	while ((error == JSON_WAITING_FOR_EOF) || (error == JSON_INCOMPLETE_DOCUMENT))
+	{
+		if (fgets (buffer, 1024, file) != NULL)
+		{
+			switch (error = json_parse_fragment (&state, buffer))
+			{
+			case JSON_OK:
+			case JSON_WAITING_FOR_EOF:
+			case JSON_INCOMPLETE_DOCUMENT:
+				break;
+
+			default:
+				json_free_value (&state.cursor);
+				return error;
+				break;
+			}
+		}
+		else
+		{
+			if (error == JSON_WAITING_FOR_EOF)
+				error = JSON_OK;
+			else
+			{
+				/*TODO refine this error code */
+				error = JSON_UNKNOWN_PROBLEM;
+			}
+		}
+	}
+
+	if (error == JSON_OK)
+	{
+		*document = state.cursor;
+	}
+
+	return error;
+}
+
 
 json_t *
 json_new_value (const enum json_value_type type)
@@ -729,6 +780,187 @@ json_tree_to_string (json_t * root, char **text)
       end:
 	{
 		*text = rcs_unwrap (output);
+		return JSON_OK;
+	}
+}
+
+
+enum json_error
+json_stream_output (FILE * file, json_t * root)
+{
+	json_t *cursor;
+
+	assert (root != NULL);
+	assert (file != NULL);	/* the file stream must be opened */
+
+	cursor = root;
+	/* set up the output and temporary rwstrings */
+
+	/* start the convoluted fun */
+      state1:			/* open value */
+	{
+		if ((cursor->previous) && (cursor != root))	/*if cursor is children and not root than it is a followup sibling */
+		{
+			/* append comma */
+			fprintf (file, ",");
+		}
+		switch (cursor->type)
+		{
+		case JSON_STRING:
+			/* append the "text"\0, which means 1 + wcslen(cursor->text) + 1 + 1 */
+			/* set the new output size */
+			fprintf (file, "\"%s\"", cursor->text);
+
+			if (cursor->parent != NULL)
+			{
+				if (cursor->parent->type == JSON_OBJECT)	/* cursor is label in label:value pair */
+				{
+					/* error checking: if parent is object and cursor is string then cursor must have a single child */
+					if (cursor->child != NULL)
+					{
+						if (fprintf (file, ":") != RS_OK)
+						{
+							return JSON_MEMORY;
+						}
+					}
+					else
+					{
+						/* malformed document tree: label without value in label:value pair */
+						return JSON_BAD_TREE_STRUCTURE;
+					}
+				}
+			}
+			else	/* does not have a parent */
+			{
+				if (cursor->child != NULL)	/* is root label in label:value pair */
+				{
+					fprintf (file, ":");
+				}
+				else
+				{
+					/* malformed document tree: label without value in label:value pair */
+					return JSON_BAD_TREE_STRUCTURE;
+				}
+			}
+			break;
+
+		case JSON_NUMBER:
+			/* must not have any children */
+			/* set the new size */
+			fprintf (file, "%s", cursor->text);
+			goto state2;	/* close value */
+			break;
+
+		case JSON_OBJECT:
+			fprintf (file, "{");
+
+			if (cursor->child)
+			{
+				cursor = cursor->child;
+				goto state1;	/* open value */
+			}
+			else
+			{
+				goto state2;	/* close value */
+			}
+			break;
+
+		case JSON_ARRAY:
+			fprintf (file, "[");
+
+			if (cursor->child != NULL)
+			{
+				cursor = cursor->child;
+				goto state1;
+			}
+			else
+			{
+				goto state2;	/* close value */
+			}
+			break;
+
+		case JSON_TRUE:
+			/* must not have any children */
+			fprintf (file, "true");
+			goto state2;	/* close value */
+			break;
+
+		case JSON_FALSE:
+			/* must not have any children */
+			fprintf (file, "false");
+			goto state2;	/* close value */
+			break;
+
+		case JSON_NULL:
+			/* must not have any children */
+			fprintf (file, "null");
+			goto state2;	/* close value */
+			break;
+
+		default:
+			goto error;
+		}
+		if (cursor->child)
+		{
+			cursor = cursor->child;
+			goto state1;	/* open value */
+		}
+		else
+		{
+			/* does not have any children */
+			goto state2;	/* close value */
+		}
+	}
+
+      state2:			/* close value */
+	{
+		switch (cursor->type)
+		{
+		case JSON_OBJECT:
+			fprintf (file, "}");
+			break;
+
+		case JSON_ARRAY:
+			fprintf (file, "]");
+			break;
+
+		case JSON_STRING:
+			break;
+		case JSON_NUMBER:
+			break;
+		case JSON_TRUE:
+			break;
+		case JSON_FALSE:
+			break;
+		case JSON_NULL:
+			break;
+		default:
+			goto error;
+		}
+		if ((cursor->parent == NULL) || (cursor == root))
+		{
+			goto end;
+		}
+		else if (cursor->next)
+		{
+			cursor = cursor->next;
+			goto state1;	/* open value */
+		}
+		else
+		{
+			cursor = cursor->parent;
+			goto state2;	/* close value */
+		}
+	}
+
+      error:
+	{
+		return JSON_UNKNOWN_PROBLEM;
+	}
+
+      end:
+	{
+		fprintf (file, "\n");
 		return JSON_OK;
 	}
 }
