@@ -41,6 +41,7 @@ main (int argc, char **argv)
 					break;
 			}
 		}
+		fclose(fp);
 	}
 	
 	return EXIT_SUCCESS;
