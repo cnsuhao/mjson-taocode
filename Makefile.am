@@ -2,7 +2,10 @@
 # have all needed files, that a GNU package needs
 AUTOMAKE_OPTIONS = gnu
 
-SUBDIRS = src
+SUBDIRS=\
+	src \
+	tests \
+	$(NULL)
 
 pkgconfigdir=$(libdir)/pkgconfig
 pkgconfig_DATA=mjson-@MILESTONE@.pc

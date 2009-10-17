@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <memory.h>
+#include <sys/types.h>
 
 
 enum LEX_VALUE
@@ -1177,6 +1178,162 @@ json_escape (char *text)
 		}
 	}
 	return rcs_unwrap (output);
+}
+
+
+char*
+json_unescape (char *text)
+{
+  char *result = malloc (strlen (text) + 1);
+  size_t r; /* read cursor */
+  size_t w; /* write cursor */
+
+  assert (text);
+
+  for (r = w = 0; text[r]; r++)
+    {
+      switch (text[r])
+        {
+          case '\\':
+            switch (text[++r])
+              {
+                case '\"':
+                case '\\':
+                case '/':
+                  /* literal translation */
+                  result[w++] = text[r];
+                  break;
+                case 'b':
+                  result[w++] = '\b';
+                  break;
+                case 'f':
+                  result[w++] = '\f';
+                  break;
+                case 'n':
+                  result[w++] = '\n';
+                  break;
+                case 'r':
+                  result[w++] = '\r';
+                  break;
+                case 't':
+                  result[w++] = '\t';
+                  break;
+                case 'u':
+                  {
+                    char    buf[5];
+                    int64_t unicode;
+
+                    buf[0] = text[++r];
+                    buf[1] = text[++r];
+                    buf[2] = text[++r];
+                    buf[3] = text[++r];
+                    buf[4] = '\0';
+
+                    unicode = strtol (buf, NULL, 16);
+
+                    if (unicode < 0x80)
+                      {
+                        /* ASCII: map to UTF-8 literally */
+                        result[w++] = (char) unicode;
+                      }
+                    else if (unicode < 0x800)
+                      {
+                        /* two-byte-encoding */
+                        char one = 0xC0; /* 110 00000 */
+                        char two = 0x80; /* 10 000000 */
+
+                        two += (unicode & 0x3F);
+                        unicode >>= 6;
+                        one += (unicode & 0x1F);
+
+                        result[w++] = one;
+                        result[w++] = two;
+                      }
+                    else if (unicode < 0x10000)
+                      {
+                        if (unicode < 0xD800 || 0xDBFF < unicode)
+                          {
+                            /* three-byte-encoding */
+                            char one = 0xE0;   /* 1110 0000 */
+                            char two = 0x80;   /* 10 000000 */
+                            char three = 0x80; /* 10 000000 */
+
+                            three += (unicode & 0x3F);
+                            unicode >>= 6;
+                            two   += (unicode & 0x3F);
+                            unicode >>= 6;
+                            one   += (unicode & 0xF);
+
+                            result[w++] = one;
+                            result[w++] = two;
+                            result[w++] = three;
+                          }
+                        else
+                          {
+                            /* unicode is a UTF-16 high surrogate, continue with the low surrogate */
+                            uint64_t high_surrogate = unicode; /* 110110 00;00000000 */
+                            uint64_t low_surrogate;
+                            char     one   = 0xF0; /* 11110 000 */
+                            char     two   = 0x80; /* 10 000000 */
+                            char     three = 0x80; /* 10 000000 */
+                            char     four  = 0x80; /* 10 000000 */
+
+                            if (!text[++r] == '\\')
+                              {
+                                break;
+                              }
+                            if (!text[++r] == 'u')
+                              {
+                                break;
+                              }
+
+                            buf[0] = text[++r];
+                            buf[1] = text[++r];
+                            buf[2] = text[++r];
+                            buf[3] = text[++r];
+
+                            low_surrogate = strtol (buf, NULL, 16); /* 110111 00;00000000 */
+
+                            /* strip surrogate markers */
+                            high_surrogate -= 0xD800; /* 11011000;00000000 */
+                            low_surrogate  -= 0xDC00; /* 11011100;00000000 */
+
+                            unicode = (high_surrogate << 10) + (low_surrogate) + 0x10000;
+
+                            /* now encode into four-byte UTF-8 (as we are larger than 0x10000) */
+                            four  += (unicode & 0x3F);
+                            unicode >>= 6;
+                            three += (unicode & 0x3F);
+                            unicode >>= 6;
+                            two   += (unicode & 0x3F);
+                            unicode >>= 6;
+                            one   += (unicode & 0x7);
+
+                            result[w++] = one;
+                            result[w++] = two;
+                            result[w++] = three;
+                            result[w++] = four;
+                          }
+                      }
+                    else
+                      {
+                        fprintf (stderr,"unsupported unicode value: 0x%X\n", unicode);
+                      }
+                  }
+                  break;
+                default:
+                  assert (0);
+                  break;
+              }
+            break;
+          default:
+            result[w++] = text[r];
+            break;
+        }
+    }
+  result[w] = '\0';
+
+  return result;
 }
 
 

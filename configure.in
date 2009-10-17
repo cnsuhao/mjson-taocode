@@ -12,6 +12,7 @@ F77=no
 
 # Checks for programs.
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
 
 # Checks for libraries.
@@ -35,5 +36,7 @@ MILESTONE=1.1
 AC_SUBST([MILESTONE])
 AC_CONFIG_FILES([mjson.pc])
 
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile
+		 src/Makefile
+		 tests/Makefile])
 AC_OUTPUT
