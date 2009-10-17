@@ -3,3 +3,12 @@
 AUTOMAKE_OPTIONS = gnu
 
 SUBDIRS = src
+
+pkgconfigdir=$(libdir)/pkgconfig
+pkgconfig_DATA=mjson-@MILESTONE@.pc
+
+mjson-@MILESTONE@.pc: mjson.pc Makefile
+	cmp -s $< $@ || cp $< $@
+
+CLEANFILES=$(pkgconfig_DATA)
+
