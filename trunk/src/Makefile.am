@@ -18,3 +18,8 @@ libmjson_la_SOURCES=\
 test_LDFLAGS = $(all_libraries)
 test_LDADD = libmjson.la
 test_SOURCES = test.c
+
+installcheck-local:
+	cat $(srcdir)/test.c | \
+		$(CC) -x c - -o /dev/null \
+		$(shell PKG_CONFIG_PATH=$(pkgconfigdir):$$PKG_CONFIG_PATH pkg-config --cflags --libs mjson-@MILESTONE@)
