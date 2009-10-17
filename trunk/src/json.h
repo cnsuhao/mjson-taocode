@@ -48,14 +48,14 @@ The descriptions of the json_value node type
 /**
 String implementation
 **/
-struct rui_cstring
-{
-	char *text;		/*<! char c-string */
-	size_t length;		/*<! put in place to avoid strlen() calls */
-	size_t max;		/*<! usable memory allocated to text minus the space for the nul character */
-};
+	struct rui_cstring
+	{
+		char *text;	/*<! char c-string */
+		size_t length;	/*<! put in place to avoid strlen() calls */
+		size_t max;	/*<! usable memory allocated to text minus the space for the nul character */
+	};
 
-typedef struct rui_cstring rcstring;
+	typedef struct rui_cstring rcstring;
 
 /**
 The error messages produced by the JSON parsers
