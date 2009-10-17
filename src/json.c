@@ -1181,159 +1181,159 @@ json_escape (char *text)
 }
 
 
-char*
+char *
 json_unescape (char *text)
 {
-  char *result = malloc (strlen (text) + 1);
-  size_t r; /* read cursor */
-  size_t w; /* write cursor */
+	char *result = malloc (strlen (text) + 1);
+	size_t r;		/* read cursor */
+	size_t w;		/* write cursor */
 
-  assert (text);
+	assert (text);
 
-  for (r = w = 0; text[r]; r++)
-    {
-      switch (text[r])
-        {
-          case '\\':
-            switch (text[++r])
-              {
-                case '\"':
-                case '\\':
-                case '/':
-                  /* literal translation */
-                  result[w++] = text[r];
-                  break;
-                case 'b':
-                  result[w++] = '\b';
-                  break;
-                case 'f':
-                  result[w++] = '\f';
-                  break;
-                case 'n':
-                  result[w++] = '\n';
-                  break;
-                case 'r':
-                  result[w++] = '\r';
-                  break;
-                case 't':
-                  result[w++] = '\t';
-                  break;
-                case 'u':
-                  {
-                    char    buf[5];
-                    int64_t unicode;
+	for (r = w = 0; text[r]; r++)
+	{
+		switch (text[r])
+		{
+		case '\\':
+			switch (text[++r])
+			{
+			case '\"':
+			case '\\':
+			case '/':
+				/* literal translation */
+				result[w++] = text[r];
+				break;
+			case 'b':
+				result[w++] = '\b';
+				break;
+			case 'f':
+				result[w++] = '\f';
+				break;
+			case 'n':
+				result[w++] = '\n';
+				break;
+			case 'r':
+				result[w++] = '\r';
+				break;
+			case 't':
+				result[w++] = '\t';
+				break;
+			case 'u':
+				{
+					char buf[5];
+					int64_t unicode;
 
-                    buf[0] = text[++r];
-                    buf[1] = text[++r];
-                    buf[2] = text[++r];
-                    buf[3] = text[++r];
-                    buf[4] = '\0';
+					buf[0] = text[++r];
+					buf[1] = text[++r];
+					buf[2] = text[++r];
+					buf[3] = text[++r];
+					buf[4] = '\0';
 
-                    unicode = strtol (buf, NULL, 16);
+					unicode = strtol (buf, NULL, 16);
 
-                    if (unicode < 0x80)
-                      {
-                        /* ASCII: map to UTF-8 literally */
-                        result[w++] = (char) unicode;
-                      }
-                    else if (unicode < 0x800)
-                      {
-                        /* two-byte-encoding */
-                        char one = 0xC0; /* 110 00000 */
-                        char two = 0x80; /* 10 000000 */
+					if (unicode < 0x80)
+					{
+						/* ASCII: map to UTF-8 literally */
+						result[w++] = (char) unicode;
+					}
+					else if (unicode < 0x800)
+					{
+						/* two-byte-encoding */
+						char one = 0xC0;	/* 110 00000 */
+						char two = 0x80;	/* 10 000000 */
 
-                        two += (unicode & 0x3F);
-                        unicode >>= 6;
-                        one += (unicode & 0x1F);
+						two += (unicode & 0x3F);
+						unicode >>= 6;
+						one += (unicode & 0x1F);
 
-                        result[w++] = one;
-                        result[w++] = two;
-                      }
-                    else if (unicode < 0x10000)
-                      {
-                        if (unicode < 0xD800 || 0xDBFF < unicode)
-                          {
-                            /* three-byte-encoding */
-                            char one = 0xE0;   /* 1110 0000 */
-                            char two = 0x80;   /* 10 000000 */
-                            char three = 0x80; /* 10 000000 */
+						result[w++] = one;
+						result[w++] = two;
+					}
+					else if (unicode < 0x10000)
+					{
+						if (unicode < 0xD800 || 0xDBFF < unicode)
+						{
+							/* three-byte-encoding */
+							char one = 0xE0;	/* 1110 0000 */
+							char two = 0x80;	/* 10 000000 */
+							char three = 0x80;	/* 10 000000 */
 
-                            three += (unicode & 0x3F);
-                            unicode >>= 6;
-                            two   += (unicode & 0x3F);
-                            unicode >>= 6;
-                            one   += (unicode & 0xF);
+							three += (unicode & 0x3F);
+							unicode >>= 6;
+							two += (unicode & 0x3F);
+							unicode >>= 6;
+							one += (unicode & 0xF);
 
-                            result[w++] = one;
-                            result[w++] = two;
-                            result[w++] = three;
-                          }
-                        else
-                          {
-                            /* unicode is a UTF-16 high surrogate, continue with the low surrogate */
-                            uint64_t high_surrogate = unicode; /* 110110 00;00000000 */
-                            uint64_t low_surrogate;
-                            char     one   = 0xF0; /* 11110 000 */
-                            char     two   = 0x80; /* 10 000000 */
-                            char     three = 0x80; /* 10 000000 */
-                            char     four  = 0x80; /* 10 000000 */
+							result[w++] = one;
+							result[w++] = two;
+							result[w++] = three;
+						}
+						else
+						{
+							/* unicode is a UTF-16 high surrogate, continue with the low surrogate */
+							uint64_t high_surrogate = unicode;	/* 110110 00;00000000 */
+							uint64_t low_surrogate;
+							char one = 0xF0;	/* 11110 000 */
+							char two = 0x80;	/* 10 000000 */
+							char three = 0x80;	/* 10 000000 */
+							char four = 0x80;	/* 10 000000 */
 
-                            if (!text[++r] == '\\')
-                              {
-                                break;
-                              }
-                            if (!text[++r] == 'u')
-                              {
-                                break;
-                              }
+							if (!text[++r] == '\\')
+							{
+								break;
+							}
+							if (!text[++r] == 'u')
+							{
+								break;
+							}
 
-                            buf[0] = text[++r];
-                            buf[1] = text[++r];
-                            buf[2] = text[++r];
-                            buf[3] = text[++r];
+							buf[0] = text[++r];
+							buf[1] = text[++r];
+							buf[2] = text[++r];
+							buf[3] = text[++r];
 
-                            low_surrogate = strtol (buf, NULL, 16); /* 110111 00;00000000 */
+							low_surrogate = strtol (buf, NULL, 16);	/* 110111 00;00000000 */
 
-                            /* strip surrogate markers */
-                            high_surrogate -= 0xD800; /* 11011000;00000000 */
-                            low_surrogate  -= 0xDC00; /* 11011100;00000000 */
+							/* strip surrogate markers */
+							high_surrogate -= 0xD800;	/* 11011000;00000000 */
+							low_surrogate -= 0xDC00;	/* 11011100;00000000 */
 
-                            unicode = (high_surrogate << 10) + (low_surrogate) + 0x10000;
+							unicode = (high_surrogate << 10) + (low_surrogate) + 0x10000;
 
-                            /* now encode into four-byte UTF-8 (as we are larger than 0x10000) */
-                            four  += (unicode & 0x3F);
-                            unicode >>= 6;
-                            three += (unicode & 0x3F);
-                            unicode >>= 6;
-                            two   += (unicode & 0x3F);
-                            unicode >>= 6;
-                            one   += (unicode & 0x7);
+							/* now encode into four-byte UTF-8 (as we are larger than 0x10000) */
+							four += (unicode & 0x3F);
+							unicode >>= 6;
+							three += (unicode & 0x3F);
+							unicode >>= 6;
+							two += (unicode & 0x3F);
+							unicode >>= 6;
+							one += (unicode & 0x7);
 
-                            result[w++] = one;
-                            result[w++] = two;
-                            result[w++] = three;
-                            result[w++] = four;
-                          }
-                      }
-                    else
-                      {
-                        fprintf (stderr,"unsupported unicode value: 0x%X\n", unicode);
-                      }
-                  }
-                  break;
-                default:
-                  assert (0);
-                  break;
-              }
-            break;
-          default:
-            result[w++] = text[r];
-            break;
-        }
-    }
-  result[w] = '\0';
+							result[w++] = one;
+							result[w++] = two;
+							result[w++] = three;
+							result[w++] = four;
+						}
+					}
+					else
+					{
+						fprintf (stderr, "unsupported unicode value: 0x%X\n", unicode);
+					}
+				}
+				break;
+			default:
+				assert (0);
+				break;
+			}
+			break;
+		default:
+			result[w++] = text[r];
+			break;
+		}
+	}
+	result[w] = '\0';
 
-  return result;
+	return result;
 }
 
 
@@ -2123,7 +2123,7 @@ json_parse_fragment (struct json_parsing_info *info, char *buffer)
 		{
 		case 0:	/* starting point */
 			{
-				switch (lexer (buffer, &info->p, &info->lex_state, & info->lex_text))
+				switch (lexer (buffer, &info->p, &info->lex_state, &info->lex_text))
 				{
 				case LEX_BEGIN_OBJECT:
 					info->state = 1;	/* begin object */
@@ -2180,7 +2180,7 @@ json_parse_fragment (struct json_parsing_info *info, char *buffer)
 				assert (info->cursor != NULL);
 				assert (info->cursor->type == JSON_OBJECT);
 
-				switch (lexer (buffer, &info->p, &info->lex_state, & info->lex_text))
+				switch (lexer (buffer, &info->p, &info->lex_state, &info->lex_text))
 				{
 				case LEX_STRING:
 					if ((temp = json_new_value (JSON_STRING)) == NULL)
@@ -2249,7 +2249,7 @@ json_parse_fragment (struct json_parsing_info *info, char *buffer)
 				assert (info->cursor != NULL);
 				assert (info->cursor->type == JSON_OBJECT);
 
-				switch (lexer (buffer, &info->p, &info->lex_state, & info->lex_text))
+				switch (lexer (buffer, &info->p, &info->lex_state, &info->lex_text))
 				{
 				case LEX_VALUE_SEPARATOR:
 					info->state = 4;	/* sibling, post-object */
@@ -2307,7 +2307,7 @@ json_parse_fragment (struct json_parsing_info *info, char *buffer)
 				assert (info->cursor != NULL);
 				assert (info->cursor->type == JSON_OBJECT);
 
-				switch (lexer (buffer, &info->p, &info->lex_state, & info->lex_text))
+				switch (lexer (buffer, &info->p, &info->lex_state, &info->lex_text))
 				{
 				case LEX_STRING:
 					if ((temp = json_new_value (JSON_STRING)) == NULL)
@@ -2344,7 +2344,7 @@ json_parse_fragment (struct json_parsing_info *info, char *buffer)
 				assert (info->cursor != NULL);
 				assert (info->cursor->type == JSON_STRING);
 
-				switch (lexer (buffer, &info->p, &info->lex_state, & info->lex_text))
+				switch (lexer (buffer, &info->p, &info->lex_state, &info->lex_text))
 				{
 				case LEX_NAME_SEPARATOR:
 					info->state = 6;	/* label, pos label:value separator */
@@ -2369,7 +2369,7 @@ json_parse_fragment (struct json_parsing_info *info, char *buffer)
 				assert (info->cursor != NULL);
 				assert (info->cursor->type == JSON_STRING);
 
-				switch (value = lexer (buffer, &info->p, &info->lex_state, & info->lex_text))
+				switch (value = lexer (buffer, &info->p, &info->lex_state, &info->lex_text))
 				{
 				case LEX_STRING:
 					if ((temp = json_new_value (JSON_STRING)) == NULL)
@@ -2536,7 +2536,7 @@ json_parse_fragment (struct json_parsing_info *info, char *buffer)
 				assert (info->cursor != NULL);
 				assert (info->cursor->type == JSON_ARRAY);
 
-				switch (lexer (buffer, &info->p, &info->lex_state, & info->lex_text))
+				switch (lexer (buffer, &info->p, &info->lex_state, &info->lex_text))
 				{
 				case LEX_STRING:
 					if ((temp = json_new_value (JSON_STRING)) == NULL)
@@ -2656,7 +2656,7 @@ json_parse_fragment (struct json_parsing_info *info, char *buffer)
 			{
 				/*TODO perform tree sanity checks */
 				assert (info->cursor != NULL);
-				switch (lexer (buffer, &info->p, &info->lex_state, & info->lex_text))
+				switch (lexer (buffer, &info->p, &info->lex_state, &info->lex_text))
 				{
 				case LEX_VALUE_SEPARATOR:
 					info->state = 8;
@@ -2717,7 +2717,7 @@ json_parse_fragment (struct json_parsing_info *info, char *buffer)
 			{
 				/* perform tree sanity check */
 				assert (info->cursor->parent == NULL);
-				switch (lexer (buffer, &info->p, &info->lex_state, & info->lex_text))
+				switch (lexer (buffer, &info->p, &info->lex_state, &info->lex_text))
 				{
 				case LEX_MORE:
 					return JSON_WAITING_FOR_EOF;
@@ -3032,7 +3032,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				jsps->state = 0;	/* starting point */
 				if (jsf->new_string != NULL)
 					jsf->new_string (((jsps->temp))->text);	/*copied or integral? */
-				rcs_free (& jsps->temp);
+				rcs_free (&jsps->temp);
 			}
 			else
 				return JSON_UNKNOWN_PROBLEM;
@@ -3449,7 +3449,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			{
 				jsf->new_number ((jsps->temp)->text);
 			}
-			rcs_free (& jsps->temp);
+			rcs_free (&jsps->temp);
 
 			jsps->state = 0;
 			break;
@@ -3461,7 +3461,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			{
 				jsf->new_number ((jsps->temp)->text);
 			}
-			rcs_free (& jsps->temp);
+			rcs_free (&jsps->temp);
 
 			if (jsf->open_object != NULL)
 				jsf->close_object ();
@@ -3476,7 +3476,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			{
 				jsf->new_number ((jsps->temp)->text);
 			}
-			rcs_free (& jsps->temp);
+			rcs_free (&jsps->temp);
 
 			if (jsf->open_object != NULL)
 				jsf->close_array ();
@@ -3491,7 +3491,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			{
 				jsf->new_number ((jsps->temp)->text);
 			}
-			rcs_free (& jsps->temp);
+			rcs_free (&jsps->temp);
 
 			if (jsf->open_object != NULL)
 				jsf->label_value_separator ();
@@ -3597,7 +3597,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			{
 				jsf->new_number ((jsps->temp)->text);
 			}
-			rcs_free (& jsps->temp);
+			rcs_free (&jsps->temp);
 
 			jsps->state = 0;
 			break;
@@ -3610,7 +3610,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			{
 				jsf->new_number ((jsps->temp)->text);
 			}
-			rcs_free (& jsps->temp);
+			rcs_free (&jsps->temp);
 
 			if (jsf->open_object != NULL)
 				jsf->close_object ();
@@ -3623,11 +3623,11 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 				if ((jsps->temp) == NULL)
 					return JSON_MEMORY;
 				jsf->new_number ((jsps->temp)->text);
-				rcs_free (& jsps->temp);
+				rcs_free (&jsps->temp);
 			}
 			else
 			{
-				rcs_free (& jsps->temp);
+				rcs_free (&jsps->temp);
 				jsps->temp = NULL;
 			}
 			if (jsf->open_object != NULL)
@@ -3643,7 +3643,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			{
 				jsf->new_number ((jsps->temp)->text);
 			}
-			rcs_free (& jsps->temp);
+			rcs_free (&jsps->temp);
 
 			if (jsf->label_value_separator != NULL)
 				jsf->label_value_separator ();
@@ -3750,7 +3750,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			{
 				jsf->new_number ((jsps->temp)->text);
 			}
-			rcs_free (& jsps->temp);
+			rcs_free (&jsps->temp);
 
 			jsps->state = 0;
 			break;
@@ -3762,7 +3762,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			{
 				jsf->new_number ((jsps->temp)->text);
 			}
-			rcs_free (& jsps->temp);
+			rcs_free (&jsps->temp);
 
 			if (jsf->open_object != NULL)
 				jsf->close_object ();
@@ -3968,7 +3968,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			{
 				jsf->new_number ((jsps->temp)->text);
 			}
-			rcs_free (& jsps->temp);
+			rcs_free (&jsps->temp);
 
 			jsps->state = 0;
 			break;
@@ -3980,7 +3980,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			{
 				jsf->new_number ((jsps->temp)->text);
 			}
-			rcs_free (& jsps->temp);
+			rcs_free (&jsps->temp);
 
 			if (jsf->open_object != NULL)
 				jsf->close_object ();
@@ -3994,7 +3994,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			{
 				jsf->new_number ((jsps->temp)->text);
 			}
-			rcs_free (& jsps->temp);
+			rcs_free (&jsps->temp);
 
 			if (jsf->open_object != NULL)
 				jsf->close_array ();
@@ -4008,7 +4008,7 @@ json_saxy_parse (struct json_saxy_parser_status *jsps, struct json_saxy_function
 			{
 				jsf->new_number ((jsps->temp)->text);
 			}
-			rcs_free (& jsps->temp);
+			rcs_free (&jsps->temp);
 
 			if (jsf->label_value_separator != NULL)
 				jsf->label_value_separator ();
