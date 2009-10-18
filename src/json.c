@@ -356,24 +356,12 @@ json_new_false (void)
 }
 
 
-void
-json_free_value (json_t ** value)
+static void
+intern_json_free_value (json_t ** value)
 {
 	assert (value != NULL);
 	assert ((*value) != NULL);
-
-	/* free each and every child node */
-	if ((*value)->child != NULL)
-	{
-		json_t *i, *j;
-		i = (*value)->child_end;
-		while (i != NULL)
-		{
-			j = i->previous;
-			json_free_value (&i);	/*TODO replace recursive solution with an iterative one */
-			i = j;
-		}
-	}
+	assert ((*value)->child == NULL);
 
 	/* fixing sibling linked list connections */
 	if ((*value)->previous && (*value)->next)
@@ -430,6 +418,36 @@ json_free_value (json_t ** value)
 	}
 	free (*value);		/* the json value */
 	(*value) = NULL;
+}
+
+
+void
+json_free_value (json_t ** value)
+{
+	json_t *cursor = *value;
+
+	assert (value);
+	assert (*value);
+
+	while (*value)
+	{
+		json_t *parent;
+
+		if (cursor->child)
+		{
+			cursor = cursor->child;
+			continue;
+		}
+
+		if (cursor == *value)
+		{
+			*value = NULL;
+		}
+
+		parent = cursor->parent;
+		intern_json_free_value (&cursor);
+		cursor = parent;
+	}
 }
 
 
