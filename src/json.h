@@ -44,7 +44,14 @@ extern "C"
 The descriptions of the json_value node type
 **/
 	enum json_value_type
-	{ JSON_STRING = 0, JSON_NUMBER, JSON_OBJECT, JSON_ARRAY, JSON_TRUE, JSON_FALSE, JSON_NULL };
+	{ JSON_STRING = 0, 
+	JSON_NUMBER, 
+	JSON_OBJECT, 
+	JSON_ARRAY, 
+	JSON_TRUE, 
+	JSON_FALSE, 
+	JSON_NULL 
+	};
 
 /**
 String implementation
@@ -103,6 +110,7 @@ The structure holding all information needed to resume parsing
 		rcstring *lex_text;
 		char *p;
 		int string_length_limit_reached;	/*!< flag informing if the string limit length defined by JSON_MAX_STRING_LENGTH was reached */
+		size_t line;	// current document line
 		json_t *cursor;	/*!< pointers to nodes belonging to the document tree which aid the document parsing */
 	};
 
@@ -138,7 +146,7 @@ The structure holding the information needed for json_saxy_parse to resume parsi
 
 
 /** 
-Buils a json_t document by parsing an open file
+Buils a json_t document by parsing an open file stream
 @param file a pointer to an object controlling a stream, returned by fopen()
 @param document a reference to a json_t pointer, set to NULL, which will store the parsed document
 @return a json_error error code according to how the parsing operation went.
