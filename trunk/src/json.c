@@ -1138,7 +1138,7 @@ json_escape (char *text)
 {
 	rcstring *output;
 	size_t i, length;
-	char buffer[6];
+	char buffer[7];
 	/* check if pre-conditions are met */
 	assert (text != NULL);
 
@@ -1187,7 +1187,7 @@ json_escape (char *text)
 		}
 		else if (text[i] < 0x20)
 		{
-			sprintf (buffer, "\\u%4.4x", text[i]);
+			snprintf (buffer, 7, "\\u%4.4x", text[i]);
 			rcs_catcs (output, buffer, 6);
 		}
 		else
