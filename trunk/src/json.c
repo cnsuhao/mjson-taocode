@@ -1616,6 +1616,7 @@ lexer (char *buffer, char **p, unsigned int *state, rcstring ** text, size_t *li
 					return LEX_INVALID_CHARACTER;
 				++*p;
 			}
+			break;
 
 		case 5:	/* inside a JSON string: escape unicode */
 			{
@@ -2255,6 +2256,7 @@ json_parse_fragment (struct json_parsing_info *info, char *buffer)
 					break;
 
 				default:
+						/* this should never run */
 					fprintf (stderr, "JSON: state %d: defaulted at line %zd\n", info->state, info->line);
 					return JSON_MALFORMED_DOCUMENT;
 					break;
@@ -2349,7 +2351,7 @@ json_parse_fragment (struct json_parsing_info *info, char *buffer)
 					return JSON_ILLEGAL_CHARACTER;
 					break;
 
-				default:
+				default:	/* this should never run */
 					fprintf (stderr, "JSON: state %d: defaulted at line %zd\n", info->state, info->line);
 					return JSON_MALFORMED_DOCUMENT;
 					break;
