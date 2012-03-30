@@ -120,17 +120,17 @@ The structure which holds the pointers to the functions that will be called by t
 **/
 	struct json_saxy_functions
 	{
-		int (*open_object) ();
-		int (*close_object) ();
-		int (*open_array) ();
-		int (*close_array) ();
+		int (*open_object) (void);
+		int (*close_object) (void);
+		int (*open_array) (void);
+		int (*close_array) (void);
 		int (*new_string) (char *text);
 		int (*new_number) (char *text);
-		int (*new_true) ();
-		int (*new_false) ();
-		int (*new_null) ();
-		int (*label_value_separator) ();
-		int (*sibling_separator) ();
+		int (*new_true) (void);
+		int (*new_false) (void);
+		int (*new_null) (void);
+		int (*label_value_separator) (void);
+		int (*sibling_separator) (void);
 	};
 
 
