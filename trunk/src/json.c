@@ -1134,7 +1134,7 @@ json_format_string (const char *text)
 
 
 char *
-json_escape (char *text)
+json_escape (const char *text)
 {
 	rcstring *output;
 	size_t i, length;
@@ -1200,7 +1200,7 @@ json_escape (char *text)
 
 
 char *
-json_unescape (char *text)
+json_unescape (const char *text)
 {
 	char *result = malloc (strlen (text) + 1);
 	size_t r;		/* read cursor */
