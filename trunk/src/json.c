@@ -1370,7 +1370,7 @@ json_jpi_init (struct json_parsing_info *jpi)
 
 
 int
-lexer (char *buffer, char **p, unsigned int *state, rcstring ** text, size_t *line)
+lexer (const char *buffer, const char **p, unsigned int *state, rcstring ** text, size_t *line)
 {
 	assert (buffer != NULL);
 	assert (p != NULL);
@@ -2133,7 +2133,7 @@ lexer (char *buffer, char **p, unsigned int *state, rcstring ** text, size_t *li
 
 
 enum json_error
-json_parse_fragment (struct json_parsing_info *info, char *buffer)
+json_parse_fragment (struct json_parsing_info *info, const char *buffer)
 {
 	json_t *temp = NULL;
 
@@ -2770,7 +2770,7 @@ json_parse_fragment (struct json_parsing_info *info, char *buffer)
 
 
 enum json_error
-json_parse_document (json_t ** root, char *text)
+json_parse_document (json_t ** root, const char *text)
 {
 	enum json_error error;
 	struct json_parsing_info *jpi;
