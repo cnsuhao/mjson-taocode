@@ -108,7 +108,7 @@ The structure holding all information needed to resume parsing
 		unsigned int state;	/*!< the state where the parsing was left on the last parser run */
 		unsigned int lex_state;
 		rcstring *lex_text;
-		char *p;
+		const char *p;
 		int string_length_limit_reached;	/*!< flag informing if the string limit length defined by JSON_MAX_STRING_LENGTH was reached */
 		size_t line;	// current document line
 		json_t *cursor;	/*!< pointers to nodes belonging to the document tree which aid the document parsing */
@@ -303,7 +303,7 @@ Produces a document tree sequentially from a JSON markup text fragment
 @param buffer a null-terminated c-string containing a JSON document fragment
 @return a code describing how the operation ended up
 **/
-	enum json_error json_parse_fragment (struct json_parsing_info *info, char *buffer);
+	enum json_error json_parse_fragment (struct json_parsing_info *info, const char *buffer);
 
 
 /**
@@ -312,7 +312,7 @@ Produces a document tree from a JSON markup text string that contains a complete
 @param text a c-string containing a complete JSON text document
 @return a pointer to the new document tree or NULL if some error occurred
 **/
-	enum json_error json_parse_document (json_t ** root, char *text);
+	enum json_error json_parse_document (json_t ** root, const char *text);
 
 
 /**
