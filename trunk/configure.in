@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT(json, 1.6)
-AM_INIT_AUTOMAKE(json, 1.6)
+AC_INIT(json, 1.7)
+AM_INIT_AUTOMAKE(json, 1.7)
 AC_CONFIG_SRCDIR([src/test.c])
 AC_CONFIG_HEADER([config.h])
 
@@ -32,7 +32,7 @@ AC_FUNC_REALLOC
 AC_CHECK_FUNCS([memset setlocale])
 
 # The pkgconfig file
-MILESTONE=1.6
+MILESTONE=1.7
 AC_SUBST([MILESTONE])
 AC_CONFIG_FILES([mjson.pc])
 
