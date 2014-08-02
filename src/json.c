@@ -1395,7 +1395,7 @@ lexer (const char *buffer, const char **p, unsigned int *state, rcstring ** text
 
 				case '\x0A':	/* line feed or new line */
 				case '\x0D':	/* Carriage return */
-					*line += 1;	// increment line number
+					*line += 1;	/* increment line number */
 					break;
 
 				case '{':
